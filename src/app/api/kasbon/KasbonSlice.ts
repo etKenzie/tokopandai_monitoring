@@ -303,6 +303,31 @@ export interface LoanDisbursementMonthlyParams {
   end_date?: string;
 }
 
+// Types for Loan Purpose API
+export interface LoanPurpose {
+  purpose_id: number;
+  purpose_name: string;
+  total_count: number;
+  total_amount: number;
+}
+
+export interface LoanPurposeResponse {
+  status: string;
+  count: number;
+  results: LoanPurpose[];
+  message: string | null;
+}
+
+// Types for Loan Purpose Query Parameters
+export interface LoanPurposeParams {
+  employer?: string;
+  sourced_to?: string;
+  project?: string;
+  id_karyawan?: string;
+  month?: string;
+  year?: string;
+}
+
 import { config } from '../../../utils/config';
 
 // API service functions
@@ -687,6 +712,38 @@ export const fetchLoanDisbursementMonthly = async (params: LoanDisbursementMonth
   
   if (!response.ok) {
     throw new Error(`Failed to fetch loan disbursement monthly: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Fetch Loan Purpose
+export const fetchLoanPurpose = async (params: LoanPurposeParams): Promise<LoanPurposeResponse> => {
+  const baseUrl = config.AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.employer) queryParams.append('employer', params.employer);
+  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
+  if (params.project) queryParams.append('project', params.project);
+  if (params.id_karyawan) queryParams.append('id_karyawan', params.id_karyawan);
+  if (params.month) queryParams.append('month', params.month);
+  if (params.year) queryParams.append('year', params.year);
+  
+  const url = `${baseUrl}/kasbon/loan-purpose?${queryParams.toString()}`;
+  
+  console.log('Fetching loan purpose from:', url);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch loan purpose: ${response.status} ${response.statusText}`);
   }
   
   return response.json();

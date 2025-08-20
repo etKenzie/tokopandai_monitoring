@@ -123,7 +123,7 @@ const LoanFeesChart = ({ filters }: LoanFeesChartProps) => {
           data: months.map(month => chartData.monthly_data[month].total_collected_admin_fee)
         },
         {
-          name: 'Failed Payment',
+          name: 'Unrecovered Kasbon',
           data: months.map(month => chartData.monthly_data[month].total_failed_payment)
         },
         {

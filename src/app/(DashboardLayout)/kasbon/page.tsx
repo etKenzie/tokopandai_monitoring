@@ -1,13 +1,14 @@
 'use client';
 
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, CircularProgress } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { fetchKaryawan, fetchKasbonLoanFees, fetchKasbonSummary, fetchLoanDisbursement, fetchLoanRequests, fetchLoanRisk, fetchUserCoverage, Karyawan, KasbonLoanFeesResponse, KasbonSummaryResponse, LoanDisbursementResponse, LoanRequestsResponse, LoanRiskResponse, UserCoverageResponse } from '../../api/kasbon/KasbonSlice';
+import { fetchKaryawan, fetchKasbonLoanFees, fetchKasbonSummary, fetchLoanDisbursement, fetchLoanRequests, fetchLoanRisk, fetchUserCoverage, fetchLoanPurpose, Karyawan, KasbonLoanFeesResponse, KasbonSummaryResponse, LoanDisbursementResponse, LoanRequestsResponse, LoanRiskResponse, UserCoverageResponse, LoanPurposeResponse } from '../../api/kasbon/KasbonSlice';
 import PageContainer from '../../components/container/PageContainer';
 import KaryawanOverdueTable from '../../components/kasbon/KaryawanOverdueTable';
 import KasbonFilters, { KasbonFilterValues } from '../../components/kasbon/KasbonFilters';
 import LoanDisbursementChart from '../../components/kasbon/LoanDisbursementChart';
 import LoanFeesChart from '../../components/kasbon/LoanFeesChart';
+import LoanPurposeChart from '../../components/kasbon/LoanPurposeChart';
 import LoanRiskChart from '../../components/kasbon/LoanRiskChart';
 import UserCoverageChart from '../../components/kasbon/UserCoverageChart';
 import SummaryTiles from '../../components/shared/SummaryTiles';
@@ -29,6 +30,8 @@ const KasbonDashboard = () => {
   const [loanRequestsLoading, setLoanRequestsLoading] = useState(false);
   const [loanDisbursementData, setLoanDisbursementData] = useState<LoanDisbursementResponse | null>(null);
   const [loanDisbursementLoading, setLoanDisbursementLoading] = useState(false);
+  const [loanPurposeData, setLoanPurposeData] = useState<LoanPurposeResponse | null>(null);
+  const [loanPurposeLoading, setLoanPurposeLoading] = useState(false);
   
   // Initialize filters with empty values to avoid hydration mismatch
   const [filters, setFilters] = useState<KasbonFilterValues>({
@@ -197,6 +200,30 @@ const KasbonDashboard = () => {
     }
   };
 
+  const fetchLoanPurposeData = async (currentFilters: KasbonFilterValues) => {
+    setLoanPurposeLoading(true);
+    try {
+      // Only fetch loan purpose if we have month and year (required)
+      if (currentFilters.month && currentFilters.year) {
+        const response = await fetchLoanPurpose({
+          employer: currentFilters.employer || undefined,
+          sourced_to: currentFilters.placement || undefined,
+          project: currentFilters.project || undefined,
+          month: currentFilters.month,
+          year: currentFilters.year,
+        });
+        setLoanPurposeData(response);
+      } else {
+        setLoanPurposeData(null);
+      }
+    } catch (err) {
+      console.error('Failed to fetch loan purpose data:', err);
+      setLoanPurposeData(null);
+    } finally {
+      setLoanPurposeLoading(false);
+    }
+  };
+
   const handleFiltersChange = (newFilters: KasbonFilterValues) => {
     setFilters(newFilters);
     fetchSummaryData(newFilters);
@@ -205,6 +232,7 @@ const KasbonDashboard = () => {
     fetchUserCoverageData(newFilters);
     fetchLoanRequestsData(newFilters);
     fetchLoanDisbursementData(newFilters);
+    fetchLoanPurposeData(newFilters);
   };
 
   useEffect(() => {
@@ -217,6 +245,7 @@ const KasbonDashboard = () => {
       fetchUserCoverageData(filters);
       fetchLoanRequestsData(filters);
       fetchLoanDisbursementData(filters);
+      fetchLoanPurposeData(filters);
     }
   }, [filters.month, filters.year]); // Only run when month/year change
 
@@ -301,7 +330,7 @@ const KasbonDashboard = () => {
         isCurrency: true 
       },
       { 
-        title: "Total Failed Payment", 
+        title: "Total Unrecovered Kasbon", 
         value: loanFeesData.total_failed_payment,
         isCurrency: true 
       },
@@ -414,93 +443,210 @@ const KasbonDashboard = () => {
           />
         </Box>
 
+        {/* User Coverage Tiles */}
+        <Box mb={3}>
+          <Typography variant="h5" fontWeight="bold" mb={2}>
+            User Coverage Summary
+          </Typography>
+          {userCoverageLoading ? (
+            <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+              <CircularProgress />
+            </Box>
+          ) : userCoverageData ? (
+            <SummaryTiles 
+              tiles={createUserCoverageTiles()} 
+              md={3} 
+            />
+          ) : (
+            <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+              <Typography variant="body1" color="textSecondary">
+                No data available
+              </Typography>
+            </Box>
+          )}
+        </Box>
+
+                 {/* User Coverage Chart */}
+         <Box mb={3}>
+           {/* <Typography variant="h5" fontWeight="bold" mb={2}>
+             User Coverage Chart
+           </Typography> */}
+           {userCoverageLoading ? (
+             <Box display="flex" justifyContent="center" alignItems="center" height="300px">
+               <CircularProgress />
+             </Box>
+           ) : userCoverageData ? (
+             <UserCoverageChart 
+               filters={{
+                 employer: filters.employer,
+                 placement: filters.placement,
+                 project: filters.project
+               }}
+             />
+           ) : (
+             <Box display="flex" justifyContent="center" alignItems="center" height="300px">
+               <Typography variant="body1" color="textSecondary">
+                 No data available
+               </Typography>
+             </Box>
+           )}
+         </Box>
+
         {/* Loan Fees Tiles */}
-        {loanFeesData && (
-          <Box mb={3}>
-            <Typography variant="h5" fontWeight="bold" mb={2}>
-              Loan Fees Summary
-            </Typography>
+        <Box mb={3}>
+          <Typography variant="h5" fontWeight="bold" mb={2}>
+            Loan Fees Summary
+          </Typography>
+          {loanFeesLoading ? (
+            <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+              <CircularProgress />
+            </Box>
+          ) : loanFeesData ? (
             <SummaryTiles 
               tiles={createLoanFeesTiles()} 
               md={4} 
             />
-          </Box>
-        )}
+          ) : (
+            <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+              <Typography variant="body1" color="textSecondary">
+                No data available
+              </Typography>
+            </Box>
+          )}
+        </Box>
 
         
 
         {/* Loan Fees Chart */}
         <Box mb={3}>
-          <LoanFeesChart 
-            filters={{
-              employer: filters.employer,
-              placement: filters.placement,
-              project: filters.project
-            }}
-          />
+          {/* <Typography variant="h5" fontWeight="bold" mb={2}>
+            Loan Fees Chart
+          </Typography> */}
+          {loanFeesLoading ? (
+            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
+              <CircularProgress />
+            </Box>
+          ) : loanFeesData ? (
+            <LoanFeesChart 
+              filters={{
+                employer: filters.employer,
+                placement: filters.placement,
+                project: filters.project
+              }}
+            />
+          ) : (
+            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
+              <Typography variant="body1" color="textSecondary">
+                No data available
+              </Typography>
+            </Box>
+          )}
         </Box>
 
-        {/* User Coverage Tiles */}
-        {userCoverageData && (
-          <Box mb={3}>
-            <Typography variant="h5" fontWeight="bold" mb={2}>
-              User Coverage Summary
-            </Typography>
-            <SummaryTiles 
-              tiles={createUserCoverageTiles()} 
-              md={3} 
-            />
-          </Box>
-        )}
-
-                 {/* User Coverage Chart */}
-         <Box mb={3}>
-           <UserCoverageChart 
-             filters={{
-               employer: filters.employer,
-               placement: filters.placement,
-               project: filters.project
-             }}
-           />
-         </Box>
+        
 
          {/* Loan Disbursement Tiles */}
-         {loanDisbursementData && (
-           <Box mb={3}>
-             <Typography variant="h5" fontWeight="bold" mb={2}>
-               Loan Disbursement Summary
-             </Typography>
+         <Box mb={3}>
+           <Typography variant="h5" fontWeight="bold" mb={2}>
+             Loan Disbursement Summary
+           </Typography>
+           {loanDisbursementLoading ? (
+             <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+               <CircularProgress />
+             </Box>
+           ) : loanDisbursementData ? (
              <SummaryTiles 
                tiles={createLoanDisbursementTiles()} 
                md={6} 
              />
-           </Box>
-         )}
+           ) : (
+             <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+               <Typography variant="body1" color="textSecondary">
+                 No data available
+               </Typography>
+             </Box>
+           )}
+         </Box>
 
 
          {/* Loan Disbursement Chart */}
          <Box mb={3}>
-           <LoanDisbursementChart 
-             filters={{
-               employer: filters.employer,
-               placement: filters.placement,
-               project: filters.project
-             }}
-           />
+           {/* <Typography variant="h5" fontWeight="bold" mb={2}>
+             Loan Disbursement Chart
+           </Typography> */}
+           {loanDisbursementLoading ? (
+             <Box display="flex" justifyContent="center" alignItems="center" height="300px">
+               <CircularProgress />
+             </Box>
+           ) : loanDisbursementData ? (
+             <LoanDisbursementChart 
+               filters={{
+                 employer: filters.employer,
+                 placement: filters.placement,
+                 project: filters.project
+               }}
+             />
+           ) : (
+             <Box display="flex" justifyContent="center" alignItems="center" height="300px">
+               <Typography variant="body1" color="textSecondary">
+                 No data available
+               </Typography>
+             </Box>
+           )}
          </Box>
 
          {/* Loan Requests Tiles */}
-         {loanRequestsData && (
-           <Box mb={3}>
-             <Typography variant="h5" fontWeight="bold" mb={2}>
-               Loan Requests Summary
-             </Typography>
+         <Box mb={3}>
+           <Typography variant="h5" fontWeight="bold" mb={2}>
+             Loan Requests Summary
+           </Typography>
+           {loanRequestsLoading ? (
+             <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+               <CircularProgress />
+             </Box>
+           ) : loanRequestsData ? (
              <SummaryTiles 
                tiles={createLoanRequestsTiles()} 
                md={3} 
              />
-           </Box>
-         )}
+           ) : (
+             <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+               <Typography variant="body1" color="textSecondary">
+                 No data available
+               </Typography>
+             </Box>
+           )}
+         </Box>
+
+          {/* Loan Purpose Chart */}
+        <Box mb={3}>
+           {/* <Typography variant="h5" fontWeight="bold" mb={2}>
+             Loan Purpose Chart
+           </Typography> */}
+           {loanPurposeLoading ? (
+             <Box display="flex" justifyContent="center" alignItems="center" height="300px">
+               <CircularProgress />
+             </Box>
+           ) : loanPurposeData ? (
+             <LoanPurposeChart
+               filters={{
+                 employer: filters.employer,
+                 placement: filters.placement,
+                 project: filters.project,
+                 month: filters.month,
+                 year: filters.year
+               }}
+             />
+           ) : (
+             <Box display="flex" justifyContent="center" alignItems="center" height="300px">
+               <Typography variant="body1" color="textSecondary">
+                 No data available
+               </Typography>
+             </Box>
+           )}
+         </Box>
+
+         
 
          
         {/* Summary Tiles
@@ -525,11 +671,15 @@ const KasbonDashboard = () => {
         /> */}
 
         {/* Loan Risk Tiles */}
-        {loanRiskData && (
-          <Box mb={3}>
-            <Typography variant="h5" fontWeight="bold" mb={2}>
-              Loan Risk Summary
-            </Typography>
+        <Box mb={3}>
+          <Typography variant="h5" fontWeight="bold" mb={2}>
+            Loan Risk Summary
+          </Typography>
+          {loanRiskLoading ? (
+            <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+              <CircularProgress />
+            </Box>
+          ) : loanRiskData ? (
             <SummaryTiles 
               tiles={[
                 { 
@@ -555,12 +705,25 @@ const KasbonDashboard = () => {
               ]}
               md={6}
             />
-          </Box>
-        )}
+          ) : (
+            <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+              <Typography variant="body1" color="textSecondary">
+                No data available
+              </Typography>
+            </Box>
+          )}
+        </Box>
 
         {/* Loan Risk Chart */}
-        {loanRiskData && (
-          <Box mb={3}>
+        <Box mb={3}>
+          {/* <Typography variant="h5" fontWeight="bold" mb={2}>
+            Loan Risk Chart
+          </Typography> */}
+          {loanRiskLoading ? (
+            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
+              <CircularProgress />
+            </Box>
+          ) : loanRiskData ? (
             <LoanRiskChart
               filters={{
                 employer: filters.employer,
@@ -568,8 +731,16 @@ const KasbonDashboard = () => {
                 project: filters.project
               }}
             />
-          </Box>
-        )}
+          ) : (
+            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
+              <Typography variant="body1" color="textSecondary">
+                No data available
+              </Typography>
+            </Box>
+          )}
+        </Box>
+
+       
 
         {/* Karyawan Overdue Table Component */}
         <KaryawanOverdueTable
