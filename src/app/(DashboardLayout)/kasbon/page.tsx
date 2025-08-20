@@ -2,11 +2,14 @@
 
 import { Box, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { fetchKaryawan, fetchKasbonLoanFees, fetchKasbonSummary, Karyawan, KasbonLoanFeesResponse, KasbonSummaryResponse } from '../../api/kasbon/KasbonSlice';
+import { fetchKaryawan, fetchKasbonLoanFees, fetchKasbonSummary, fetchLoanDisbursement, fetchLoanRequests, fetchLoanRisk, fetchUserCoverage, Karyawan, KasbonLoanFeesResponse, KasbonSummaryResponse, LoanDisbursementResponse, LoanRequestsResponse, LoanRiskResponse, UserCoverageResponse } from '../../api/kasbon/KasbonSlice';
 import PageContainer from '../../components/container/PageContainer';
-import KaryawanTable from '../../components/kasbon/KaryawanTable';
+import KaryawanOverdueTable from '../../components/kasbon/KaryawanOverdueTable';
 import KasbonFilters, { KasbonFilterValues } from '../../components/kasbon/KasbonFilters';
+import LoanDisbursementChart from '../../components/kasbon/LoanDisbursementChart';
 import LoanFeesChart from '../../components/kasbon/LoanFeesChart';
+import LoanRiskChart from '../../components/kasbon/LoanRiskChart';
+import UserCoverageChart from '../../components/kasbon/UserCoverageChart';
 import SummaryTiles from '../../components/shared/SummaryTiles';
 
 const KasbonDashboard = () => {
@@ -18,19 +21,36 @@ const KasbonDashboard = () => {
   const [loanFeesData, setLoanFeesData] = useState<KasbonLoanFeesResponse | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [loanFeesLoading, setLoanFeesLoading] = useState(false);
+  const [loanRiskData, setLoanRiskData] = useState<LoanRiskResponse | null>(null);
+  const [loanRiskLoading, setLoanRiskLoading] = useState(false);
+  const [userCoverageData, setUserCoverageData] = useState<UserCoverageResponse | null>(null);
+  const [userCoverageLoading, setUserCoverageLoading] = useState(false);
+  const [loanRequestsData, setLoanRequestsData] = useState<LoanRequestsResponse | null>(null);
+  const [loanRequestsLoading, setLoanRequestsLoading] = useState(false);
+  const [loanDisbursementData, setLoanDisbursementData] = useState<LoanDisbursementResponse | null>(null);
+  const [loanDisbursementLoading, setLoanDisbursementLoading] = useState(false);
   
-  // Get current month and year
-  const currentDate = new Date();
-  const currentMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0');
-  const currentYear = currentDate.getFullYear().toString();
-  
+  // Initialize filters with empty values to avoid hydration mismatch
   const [filters, setFilters] = useState<KasbonFilterValues>({
-    month: currentMonth,
-    year: currentYear,
+    month: '',
+    year: '',
     employer: '',
     placement: '',
     project: ''
   });
+
+  // Set initial date values in useEffect to avoid hydration issues
+  useEffect(() => {
+    const currentDate = new Date();
+    const currentMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+    const currentYear = currentDate.getFullYear().toString();
+    
+    setFilters(prev => ({
+      ...prev,
+      month: currentMonth,
+      year: currentYear
+    }));
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -93,18 +113,112 @@ const KasbonDashboard = () => {
     }
   };
 
+  const fetchLoanRiskData = async (currentFilters: KasbonFilterValues) => {
+    setLoanRiskLoading(true);
+    try {
+      // Only fetch loan risk if we have month and year (required)
+      if (currentFilters.month && currentFilters.year) {
+        const response = await fetchLoanRisk({
+          month: currentFilters.month,
+          year: currentFilters.year,
+        });
+        setLoanRiskData(response);
+      } else {
+        setLoanRiskData(null);
+      }
+    } catch (err) {
+      console.error('Failed to fetch loan risk data:', err);
+      setLoanRiskData(null);
+    } finally {
+      setLoanRiskLoading(false);
+    }
+  };
+
+  const fetchUserCoverageData = async (currentFilters: KasbonFilterValues) => {
+    setUserCoverageLoading(true);
+    try {
+      // Only fetch user coverage if we have month and year (required)
+      if (currentFilters.month && currentFilters.year) {
+        const response = await fetchUserCoverage({
+          month: currentFilters.month,
+          year: currentFilters.year,
+        });
+        setUserCoverageData(response);
+      } else {
+        setUserCoverageData(null);
+      }
+    } catch (err) {
+      console.error('Failed to fetch user coverage data:', err);
+      setUserCoverageData(null);
+    } finally {
+      setUserCoverageLoading(false);
+    }
+  };
+
+  const fetchLoanRequestsData = async (currentFilters: KasbonFilterValues) => {
+    setLoanRequestsLoading(true);
+    try {
+      // Only fetch loan requests if we have month and year (required)
+      if (currentFilters.month && currentFilters.year) {
+        const response = await fetchLoanRequests({
+          month: currentFilters.month,
+          year: currentFilters.year,
+        });
+        setLoanRequestsData(response);
+      } else {
+        setLoanRequestsData(null);
+      }
+    } catch (err) {
+      console.error('Failed to fetch loan requests data:', err);
+      setLoanRequestsData(null);
+    } finally {
+      setLoanRequestsLoading(false);
+    }
+  };
+
+  const fetchLoanDisbursementData = async (currentFilters: KasbonFilterValues) => {
+    setLoanDisbursementLoading(true);
+    try {
+      // Only fetch loan disbursement if we have month and year (required)
+      if (currentFilters.month && currentFilters.year) {
+        const response = await fetchLoanDisbursement({
+          month: currentFilters.month,
+          year: currentFilters.year,
+        });
+        setLoanDisbursementData(response);
+      } else {
+        setLoanDisbursementData(null);
+      }
+    } catch (err) {
+      console.error('Failed to fetch loan disbursement data:', err);
+      setLoanDisbursementData(null);
+    } finally {
+      setLoanDisbursementLoading(false);
+    }
+  };
+
   const handleFiltersChange = (newFilters: KasbonFilterValues) => {
     setFilters(newFilters);
     fetchSummaryData(newFilters);
     fetchLoanFeesData(newFilters);
+    fetchLoanRiskData(newFilters);
+    fetchUserCoverageData(newFilters);
+    fetchLoanRequestsData(newFilters);
+    fetchLoanDisbursementData(newFilters);
   };
 
   useEffect(() => {
     fetchData();
-    // Fetch initial summary and loan fees data with default month and year
-    fetchSummaryData(filters);
-    fetchLoanFeesData(filters);
-  }, []);
+    // Only fetch data if month and year are set (after initialization)
+    if (filters.month && filters.year) {
+      fetchSummaryData(filters);
+      fetchLoanFeesData(filters);
+      fetchLoanRiskData(filters);
+      fetchUserCoverageData(filters);
+      fetchLoanRequestsData(filters);
+      fetchLoanDisbursementData(filters);
+    }
+  }, [filters.month, filters.year]); // Only run when month/year change
 
   // Create summary tiles from the data
   const createSummaryTiles = () => {
@@ -172,13 +286,14 @@ const KasbonDashboard = () => {
 
     return [
       { 
-        title: "Total Expected Admin Fee", 
-        value: loanFeesData.total_expected_admin_fee,
+        title: "Admin Fee Profit", 
+        value: loanFeesData.admin_fee_profit,
         isCurrency: true 
       },
       { 
-        title: "Expected Loans Count", 
-        value: loanFeesData.expected_loans_count 
+        title: "Total Expected Admin Fee", 
+        value: loanFeesData.total_expected_admin_fee,
+        isCurrency: true 
       },
       { 
         title: "Total Collected Admin Fee", 
@@ -186,18 +301,96 @@ const KasbonDashboard = () => {
         isCurrency: true 
       },
       { 
-        title: "Collected Loans Count", 
-        value: loanFeesData.collected_loans_count 
-      },
-      { 
         title: "Total Failed Payment", 
         value: loanFeesData.total_failed_payment,
         isCurrency: true 
       },
       { 
-        title: "Admin Fee Profit", 
-        value: loanFeesData.admin_fee_profit,
-        isCurrency: true 
+        title: "Expected Loans Count", 
+        value: loanFeesData.expected_loans_count,
+        isCurrency: false
+      },
+      
+      { 
+        title: "Collected Loans Count", 
+        value: loanFeesData.collected_loans_count,
+        isCurrency: false
+      },
+      
+      
+    ];
+  };
+
+  // Create user coverage tiles from the data
+  const createUserCoverageTiles = () => {
+    if (!userCoverageData) return [];
+
+    return [
+      { 
+        title: "Total Eligible Employees", 
+        value: userCoverageData.total_eligible_employees,
+        isCurrency: false
+      },
+      { 
+        title: "Total Kasbon Requests", 
+        value: userCoverageData.total_kasbon_requests,
+        isCurrency: false
+      },
+      { 
+        title: "Penetration Rate", 
+        value: userCoverageData.penetration_rate,
+        isCurrency: false
+      },
+      { 
+        title: "Total First Borrow", 
+        value: userCoverageData.total_first_borrow,
+        isCurrency: false
+      },
+    ];
+  };
+
+  // Create loan requests tiles from the data
+  const createLoanRequestsTiles = () => {
+    if (!loanRequestsData) return [];
+
+    return [
+      { 
+        title: "Total Approved Requests", 
+        value: loanRequestsData.total_approved_requests,
+        isCurrency: false
+      },
+      { 
+        title: "Total Rejected Requests", 
+        value: loanRequestsData.total_rejected_requests,
+        isCurrency: false
+      },
+      { 
+        title: "Approval Rate", 
+        value: loanRequestsData.approval_rate,
+        isCurrency: false
+      },
+      { 
+        title: "Average Approval Time", 
+        value: loanRequestsData.average_approval_time,
+        isCurrency: false
+      },
+    ];
+  };
+
+  // Create loan disbursement tiles from the data
+  const createLoanDisbursementTiles = () => {
+    if (!loanDisbursementData) return [];
+
+    return [
+      { 
+        title: "Total Disbursed Amount", 
+        value: loanDisbursementData.total_disbursed_amount,
+        isCurrency: true
+      },
+      { 
+        title: "Average Disbursed Amount", 
+        value: loanDisbursementData.average_disbursed_amount,
+        isCurrency: true
       },
     ];
   };
@@ -221,8 +414,6 @@ const KasbonDashboard = () => {
           />
         </Box>
 
-        
-
         {/* Loan Fees Tiles */}
         {loanFeesData && (
           <Box mb={3}>
@@ -236,6 +427,8 @@ const KasbonDashboard = () => {
           </Box>
         )}
 
+        
+
         {/* Loan Fees Chart */}
         <Box mb={3}>
           <LoanFeesChart 
@@ -247,7 +440,70 @@ const KasbonDashboard = () => {
           />
         </Box>
 
-        {/* Summary Tiles */}
+        {/* User Coverage Tiles */}
+        {userCoverageData && (
+          <Box mb={3}>
+            <Typography variant="h5" fontWeight="bold" mb={2}>
+              User Coverage Summary
+            </Typography>
+            <SummaryTiles 
+              tiles={createUserCoverageTiles()} 
+              md={3} 
+            />
+          </Box>
+        )}
+
+                 {/* User Coverage Chart */}
+         <Box mb={3}>
+           <UserCoverageChart 
+             filters={{
+               employer: filters.employer,
+               placement: filters.placement,
+               project: filters.project
+             }}
+           />
+         </Box>
+
+         {/* Loan Disbursement Tiles */}
+         {loanDisbursementData && (
+           <Box mb={3}>
+             <Typography variant="h5" fontWeight="bold" mb={2}>
+               Loan Disbursement Summary
+             </Typography>
+             <SummaryTiles 
+               tiles={createLoanDisbursementTiles()} 
+               md={6} 
+             />
+           </Box>
+         )}
+
+
+         {/* Loan Disbursement Chart */}
+         <Box mb={3}>
+           <LoanDisbursementChart 
+             filters={{
+               employer: filters.employer,
+               placement: filters.placement,
+               project: filters.project
+             }}
+           />
+         </Box>
+
+         {/* Loan Requests Tiles */}
+         {loanRequestsData && (
+           <Box mb={3}>
+             <Typography variant="h5" fontWeight="bold" mb={2}>
+               Loan Requests Summary
+             </Typography>
+             <SummaryTiles 
+               tiles={createLoanRequestsTiles()} 
+               md={3} 
+             />
+           </Box>
+         )}
+
+         
+        {/* Summary Tiles
         {summaryData && (
           <Box mb={3}>
             <Typography variant="h5" fontWeight="bold" mb={2}>
@@ -258,14 +514,73 @@ const KasbonDashboard = () => {
               md={4} 
             />
           </Box>
-        )}
+        )} */}
 
         {/* Karyawan Table Component */}
-        <KaryawanTable
+        {/* <KaryawanTable
           karyawan={karyawan}
           title="Employee Data"
           loading={loading}
           onRefresh={fetchData}
+        /> */}
+
+        {/* Loan Risk Tiles */}
+        {loanRiskData && (
+          <Box mb={3}>
+            <Typography variant="h5" fontWeight="bold" mb={2}>
+              Loan Risk Summary
+            </Typography>
+            <SummaryTiles 
+              tiles={[
+                { 
+                  title: "Total Unrecovered Kasbon", 
+                  value: loanRiskData.total_unrecovered_kasbon,
+                  isCurrency: true
+                },
+                { 
+                  title: "Total Expected Repayment", 
+                  value: loanRiskData.total_expected_repayment,
+                  isCurrency: true
+                },
+                { 
+                  title: "Unrecovered Kasbon Count", 
+                  value: loanRiskData.unrecovered_kasbon_count,
+                  isCurrency: false
+                },
+                { 
+                  title: "Principal Recovery Rate", 
+                  value: loanRiskData.kasbon_principal_recovery_rate,
+                  isCurrency: false
+                },
+              ]}
+              md={6}
+            />
+          </Box>
+        )}
+
+        {/* Loan Risk Chart */}
+        {loanRiskData && (
+          <Box mb={3}>
+            <LoanRiskChart
+              filters={{
+                employer: filters.employer,
+                placement: filters.placement,
+                project: filters.project
+              }}
+            />
+          </Box>
+        )}
+
+        {/* Karyawan Overdue Table Component */}
+        <KaryawanOverdueTable
+          filters={{
+            employer: filters.employer,
+            placement: filters.placement,
+            project: filters.project,
+            month: filters.month,
+            year: filters.year
+          }}
+          title="Overdue Employees"
         />
       </Box>
     </PageContainer>

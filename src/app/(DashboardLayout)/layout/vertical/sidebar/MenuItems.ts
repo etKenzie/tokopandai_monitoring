@@ -1,5 +1,6 @@
 import {
-  IconAperture
+  IconAperture,
+  IconCash
 } from "@tabler/icons-react";
 import { uniqueId } from "lodash";
 
@@ -32,12 +33,12 @@ const Menuitems: MenuitemsType[] = [
     chip: "New",
     chipColor: "secondary",
   },
-  // {
-  //   id: uniqueId(),
-  //   title: "Sample page",
-  //   icon: IconAperture,
-  //   href: "/sample-page",
-  // },
+  {
+    id: uniqueId(),
+    title: "Kasbon",
+    icon: IconCash,
+    href: "/kasbon",
+  },
 
   // {
   //   navlabel: true,

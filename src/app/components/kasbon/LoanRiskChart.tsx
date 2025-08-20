@@ -1,25 +1,25 @@
 'use client';
 
 import {
-  Box,
-  Card,
-  CardContent,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
-  Typography
+    Box,
+    Card,
+    CardContent,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
+    SelectChangeEvent,
+    Typography
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import dynamic from "next/dynamic";
 import { useEffect, useState } from 'react';
-import { fetchKasbonLoanFeesMonthly, KasbonLoanFeesMonthlyResponse } from '../../api/kasbon/KasbonSlice';
+import { fetchLoanRiskMonthly, LoanRiskMonthlyResponse } from '../../api/kasbon/KasbonSlice';
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
-interface LoanFeesChartProps {
+interface LoanRiskChartProps {
   filters: {
     employer: string;
     placement: string;
@@ -27,12 +27,12 @@ interface LoanFeesChartProps {
   };
 }
 
-type ChartType = 'fees' | 'count';
+type ChartType = 'amounts' | 'counts' | 'rates';
 
-const LoanFeesChart = ({ filters }: LoanFeesChartProps) => {
-  const [chartData, setChartData] = useState<KasbonLoanFeesMonthlyResponse | null>(null);
+const LoanRiskChart = ({ filters }: LoanRiskChartProps) => {
+  const [chartData, setChartData] = useState<LoanRiskMonthlyResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const [chartType, setChartType] = useState<ChartType>('fees');
+  const [chartType, setChartType] = useState<ChartType>('amounts');
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
 
@@ -54,7 +54,7 @@ const LoanFeesChart = ({ filters }: LoanFeesChartProps) => {
     
     setLoading(true);
     try {
-      const response = await fetchKasbonLoanFeesMonthly({
+      const response = await fetchLoanRiskMonthly({
         employer: filters.employer || undefined,
         sourced_to: filters.placement || undefined,
         project: filters.project || undefined,
@@ -92,15 +92,17 @@ const LoanFeesChart = ({ filters }: LoanFeesChartProps) => {
   };
 
   const formatValue = (value: number) => {
-    if (chartType === 'fees') {
-      return new Intl.NumberFormat('id-ID', {
+    if (chartType === 'amounts') {
+      return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'IDR',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(value);
+    } else if (chartType === 'rates') {
+      return `${(value * 100).toFixed(2)}%`;
     }
-    return value.toLocaleString('id-ID');
+    return value.toLocaleString('en-US');
   };
 
   // Prepare chart data
@@ -112,34 +114,29 @@ const LoanFeesChart = ({ filters }: LoanFeesChartProps) => {
     
     let series: any[] = [];
 
-    if (chartType === 'fees') {
+    if (chartType === 'amounts') {
       series = [
         {
-          name: 'Expected Admin Fee',
-          data: months.map(month => chartData.monthly_data[month].total_expected_admin_fee)
+          name: 'Total Unrecovered Kasbon',
+          data: months.map(month => chartData.monthly_data[month].total_unrecovered_kasbon)
         },
         {
-          name: 'Collected Admin Fee',
-          data: months.map(month => chartData.monthly_data[month].total_collected_admin_fee)
-        },
+          name: 'Total Expected Repayment',
+          data: months.map(month => chartData.monthly_data[month].total_expected_repayment)
+        }
+      ];
+    } else if (chartType === 'counts') {
+      series = [
         {
-          name: 'Failed Payment',
-          data: months.map(month => chartData.monthly_data[month].total_failed_payment)
-        },
-        {
-          name: 'Admin Fee Profit',
-          data: months.map(month => chartData.monthly_data[month].admin_fee_profit)
+          name: 'Unrecovered Kasbon Count',
+          data: months.map(month => chartData.monthly_data[month].unrecovered_kasbon_count)
         }
       ];
     } else {
       series = [
         {
-          name: 'Expected Loans Count',
-          data: months.map(month => chartData.monthly_data[month].expected_loans_count)
-        },
-        {
-          name: 'Collected Loans Count',
-          data: months.map(month => chartData.monthly_data[month].collected_loans_count)
+          name: 'Principal Recovery Rate',
+          data: months.map(month => chartData.monthly_data[month].kasbon_principal_recovery_rate)
         }
       ];
     }
@@ -186,7 +183,7 @@ const LoanFeesChart = ({ filters }: LoanFeesChartProps) => {
         }
       }
     },
-    colors: ['#3B82F6', '#10B981', '#EF4444', '#F59E0B'],
+    colors: ['#EF4444', '#10B981', '#3B82F6'],
     grid: {
       borderColor: '#E5E7EB',
       strokeDashArray: 4
@@ -205,11 +202,10 @@ const LoanFeesChart = ({ filters }: LoanFeesChartProps) => {
   return (
     <Card>
       <CardContent>
-        
         {/* Controls */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 3 }}>
           <Typography variant="h6" sx={{ margin: 0 }}>
-            Loan Fees Monthly Trend
+            Loan Risk Monthly Trend
           </Typography>
           
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
@@ -220,8 +216,9 @@ const LoanFeesChart = ({ filters }: LoanFeesChartProps) => {
                 label="Chart Type"
                 onChange={handleChartTypeChange}
               >
-                <MenuItem value="fees">Fees Amount</MenuItem>
-                <MenuItem value="count">Loan Count</MenuItem>
+                <MenuItem value="amounts">Amounts</MenuItem>
+                <MenuItem value="counts">Counts</MenuItem>
+                <MenuItem value="rates">Recovery Rates</MenuItem>
               </Select>
             </FormControl>
             
@@ -283,4 +280,4 @@ const LoanFeesChart = ({ filters }: LoanFeesChartProps) => {
   );
 };
 
-export default LoanFeesChart;
+export default LoanRiskChart;

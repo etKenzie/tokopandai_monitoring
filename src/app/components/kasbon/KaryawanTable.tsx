@@ -2,28 +2,28 @@
 
 import { Download as DownloadIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    Chip,
-    FormControl,
-    Grid,
-    InputAdornment,
-    InputLabel,
-    MenuItem,
-    Paper,
-    Select,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    TableSortLabel,
-    TextField,
-    Typography,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  FormControl,
+  Grid,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TableSortLabel,
+  TextField,
+  Typography,
 } from '@mui/material';
 import React, { useState } from 'react';
 import { Karyawan } from '../../api/kasbon/KasbonSlice';
@@ -167,6 +167,9 @@ const KaryawanTable = ({
   };
 
   const handleExport = () => {
+    // Only run on client side
+    if (typeof window === 'undefined' || typeof document === 'undefined' || typeof Blob === 'undefined') return;
+    
     const data = prepareDataForExport(filteredKaryawan);
     const csvContent = [
       Object.keys(data[0]).join(','),

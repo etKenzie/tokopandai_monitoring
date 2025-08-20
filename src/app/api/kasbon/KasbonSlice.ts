@@ -124,6 +124,185 @@ export interface KasbonLoanFeesMonthlyParams {
   end_date?: string;
 }
 
+// Types for Karyawan Overdue API
+export interface KaryawanOverdue {
+  id_karyawan: number;
+  name: string;
+  company: string;
+  sourced_to: string;
+  project: string;
+  rec_status: string | null;
+  total_amount_owed: number;
+}
+
+export interface KaryawanOverdueResponse {
+  status: string;
+  count: number;
+  results: KaryawanOverdue[];
+  message: string | null;
+}
+
+// Types for Karyawan Overdue Query Parameters
+export interface KaryawanOverdueParams {
+  employer?: string;
+  sourced_to?: string;
+  project?: string;
+  id_karyawan?: string;
+  month?: string;
+  year?: string;
+}
+
+// Types for Loan Risk API
+export interface LoanRiskResponse {
+  status: string;
+  total_unrecovered_kasbon: number;
+  unrecovered_kasbon_count: number;
+  total_expected_repayment: number;
+  kasbon_principal_recovery_rate: number;
+  message: string | null;
+}
+
+// Types for Loan Risk Query Parameters
+export interface LoanRiskParams {
+  employer?: string;
+  sourced_to?: string;
+  project?: string;
+  id_karyawan?: string;
+  month?: string;
+  year?: string;
+}
+
+// Types for Loan Risk Monthly API
+export interface LoanRiskMonthlyData {
+  total_unrecovered_kasbon: number;
+  unrecovered_kasbon_count: number;
+  total_expected_repayment: number;
+  kasbon_principal_recovery_rate: number;
+}
+
+export interface LoanRiskMonthlyResponse {
+  status: string;
+  monthly_data: Record<string, LoanRiskMonthlyData>;
+  message: string | null;
+}
+
+// Types for Loan Risk Monthly Query Parameters
+export interface LoanRiskMonthlyParams {
+  employer?: string;
+  sourced_to?: string;
+  project?: string;
+  id_karyawan?: string;
+  start_date?: string;
+  end_date?: string;
+}
+
+// Types for User Coverage API
+export interface UserCoverage {
+  total_eligible_employees: number;
+  total_kasbon_requests: number;
+  penetration_rate: number;
+  total_first_borrow: number;
+  message: string | null;
+}
+
+export interface UserCoverageResponse {
+  status: string;
+  total_eligible_employees: number;
+  total_kasbon_requests: number;
+  penetration_rate: number;
+  total_first_borrow: number;
+  message: string | null;
+}
+
+// Types for User Coverage Query Parameters
+export interface UserCoverageParams {
+  month?: string;
+  year?: string;
+}
+
+// Types for User Coverage Monthly API
+export interface UserCoverageMonthlyData {
+  total_eligible_employees: number;
+  total_kasbon_requests: number;
+  penetration_rate: number;
+  total_first_borrow: number;
+}
+
+export interface UserCoverageMonthlyResponse {
+  status: string;
+  monthly_data: Record<string, UserCoverageMonthlyData>;
+  message: string | null;
+}
+
+// Types for User Coverage Monthly Query Parameters
+export interface UserCoverageMonthlyParams {
+  start_date?: string;
+  end_date?: string;
+}
+
+// Types for Loan Requests API
+export interface LoanRequests {
+  total_approved_requests: number;
+  total_rejected_requests: number;
+  approval_rate: number;
+  average_approval_time: number;
+  message: string | null;
+}
+
+export interface LoanRequestsResponse {
+  status: string;
+  total_approved_requests: number;
+  total_rejected_requests: number;
+  approval_rate: number;
+  average_approval_time: number;
+  message: string | null;
+}
+
+// Types for Loan Requests Query Parameters
+export interface LoanRequestsParams {
+  month?: string;
+  year?: string;
+}
+
+// Types for Loan Disbursement API
+export interface LoanDisbursement {
+  total_disbursed_amount: number;
+  average_disbursed_amount: number;
+  message: string | null;
+}
+
+export interface LoanDisbursementResponse {
+  status: string;
+  total_disbursed_amount: number;
+  average_disbursed_amount: number;
+  message: string | null;
+}
+
+// Types for Loan Disbursement Query Parameters
+export interface LoanDisbursementParams {
+  month?: string;
+  year?: string;
+}
+
+// Types for Loan Disbursement Monthly API
+export interface LoanDisbursementMonthlyData {
+  total_disbursed_amount: number;
+  total_loans: number;
+  average_disbursed_amount: number;
+}
+
+export interface LoanDisbursementMonthlyResponse {
+  status: string;
+  monthly_data: Record<string, LoanDisbursementMonthlyData>;
+  message: string | null;
+}
+
+// Types for Loan Disbursement Monthly Query Parameters
+export interface LoanDisbursementMonthlyParams {
+  start_date?: string;
+  end_date?: string;
+}
+
 import { config } from '../../../utils/config';
 
 // API service functions
@@ -272,6 +451,242 @@ export const fetchKasbonLoanFeesMonthly = async (params: KasbonLoanFeesMonthlyPa
   
   if (!response.ok) {
     throw new Error(`Failed to fetch kasbon loan fees monthly: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Fetch Karyawan Overdue
+export const fetchKaryawanOverdue = async (params: KaryawanOverdueParams): Promise<KaryawanOverdueResponse> => {
+  const baseUrl = config.AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.employer) queryParams.append('employer', params.employer);
+  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
+  if (params.project) queryParams.append('project', params.project);
+  if (params.id_karyawan) queryParams.append('id_karyawan', params.id_karyawan);
+  if (params.month) queryParams.append('month', params.month);
+  if (params.year) queryParams.append('year', params.year);
+  
+  const url = `${baseUrl}/kasbon/karyawan-overdue?${queryParams.toString()}`;
+  
+  console.log('Fetching karyawan overdue from:', url);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch karyawan overdue: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Fetch Loan Risk
+export const fetchLoanRisk = async (params: LoanRiskParams): Promise<LoanRiskResponse> => {
+  const baseUrl = config.AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.employer) queryParams.append('employer', params.employer);
+  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
+  if (params.project) queryParams.append('project', params.project);
+  if (params.id_karyawan) queryParams.append('id_karyawan', params.id_karyawan);
+  if (params.month) queryParams.append('month', params.month);
+  if (params.year) queryParams.append('year', params.year);
+  
+  const url = `${baseUrl}/kasbon/loan-risk?${queryParams.toString()}`;
+  
+  console.log('Fetching loan risk from:', url);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch loan risk: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Fetch Loan Risk Monthly
+export const fetchLoanRiskMonthly = async (params: LoanRiskMonthlyParams): Promise<LoanRiskMonthlyResponse> => {
+  const baseUrl = config.AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.employer) queryParams.append('employer', params.employer);
+  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
+  if (params.project) queryParams.append('project', params.project);
+  if (params.id_karyawan) queryParams.append('id_karyawan', params.id_karyawan);
+  if (params.start_date) queryParams.append('start_date', params.start_date);
+  if (params.end_date) queryParams.append('end_date', params.end_date);
+  
+  const url = `${baseUrl}/kasbon/loan-risk-monthly?${queryParams.toString()}`;
+  
+  console.log('Fetching loan risk monthly from:', url);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch loan risk monthly: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Fetch User Coverage
+export const fetchUserCoverage = async (params: UserCoverageParams): Promise<UserCoverageResponse> => {
+  const baseUrl = config.AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.month) queryParams.append('month', params.month);
+  if (params.year) queryParams.append('year', params.year);
+  
+  const url = `${baseUrl}/kasbon/user-coverage?${queryParams.toString()}`;
+  
+  console.log('Fetching user coverage from:', url);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch user coverage: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Fetch User Coverage Monthly
+export const fetchUserCoverageMonthly = async (params: UserCoverageMonthlyParams): Promise<UserCoverageMonthlyResponse> => {
+  const baseUrl = config.AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.start_date) queryParams.append('start_date', params.start_date);
+  if (params.end_date) queryParams.append('end_date', params.end_date);
+  
+  const url = `${baseUrl}/kasbon/user-coverage-monthly?${queryParams.toString()}`;
+  
+  console.log('Fetching user coverage monthly from:', url);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch user coverage monthly: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Fetch Loan Requests
+export const fetchLoanRequests = async (params: LoanRequestsParams): Promise<LoanRequestsResponse> => {
+  const baseUrl = config.AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.month) queryParams.append('month', params.month);
+  if (params.year) queryParams.append('year', params.year);
+  
+  const url = `${baseUrl}/kasbon/requests?${queryParams.toString()}`;
+  
+  console.log('Fetching loan requests from:', url);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch loan requests: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Fetch Loan Disbursement
+export const fetchLoanDisbursement = async (params: LoanDisbursementParams): Promise<LoanDisbursementResponse> => {
+  const baseUrl = config.AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.month) queryParams.append('month', params.month);
+  if (params.year) queryParams.append('year', params.year);
+  
+  const url = `${baseUrl}/kasbon/disbursement?${queryParams.toString()}`;
+  
+  console.log('Fetching loan disbursement from:', url);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch loan disbursement: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Fetch Loan Disbursement Monthly
+export const fetchLoanDisbursementMonthly = async (params: LoanDisbursementMonthlyParams): Promise<LoanDisbursementMonthlyResponse> => {
+  const baseUrl = config.AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.start_date) queryParams.append('start_date', params.start_date);
+  if (params.end_date) queryParams.append('end_date', params.end_date);
+  
+  const url = `${baseUrl}/kasbon/disbursement-monthly?${queryParams.toString()}`;
+  
+  console.log('Fetching loan disbursement monthly from:', url);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch loan disbursement monthly: ${response.status} ${response.statusText}`);
   }
   
   return response.json();
