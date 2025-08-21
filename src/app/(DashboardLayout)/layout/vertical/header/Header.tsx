@@ -67,7 +67,7 @@ const Header = () => {
         <Search />
         {lgUp ? (
           <>
-            <Navigation />
+            {/* <Navigation /> */}
           </>
         ) : null}
 
@@ -94,7 +94,7 @@ const Header = () => {
               />
             )}
           </IconButton>
-          <Notifications />
+          {/* <Notifications /> */}
           {/* ------------------------------------------- */}
           {/* Toggle Right Sidebar for mobile */}
           {/* ------------------------------------------- */}

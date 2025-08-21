@@ -30,14 +30,16 @@ const Menuitems: MenuitemsType[] = [
     title: "Dashboard",
     icon: IconAperture,
     href: "/",
-    chip: "New",
-    chipColor: "secondary",
+    // chip: "New",
+    // chipColor: "secondary",
   },
   {
     id: uniqueId(),
     title: "Kasbon",
     icon: IconCash,
+    chip: "New",
     href: "/kasbon",
+    chipColor: "secondary"
   },
 
   // {

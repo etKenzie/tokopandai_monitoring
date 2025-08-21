@@ -70,10 +70,10 @@ const Profile = () => {
         <Avatar src={"/images/profile/user-1.jpg"} alt={"ProfileImg"} sx={{ width: 95, height: 95 }} />
           <Box>
             <Typography variant="subtitle2" color="textPrimary" fontWeight={600}>
-              Mathew Anderson
+              Valdo
             </Typography>
             <Typography variant="subtitle2" color="textSecondary">
-              Designer
+              Admin
             </Typography>
             <Typography
               variant="subtitle2"
@@ -83,7 +83,7 @@ const Profile = () => {
               gap={1}
             >
               <IconMail width={15} height={15} />
-              info@modernize.com
+              valdo@valdoinc.com
             </Typography>
           </Box>
         </Stack>
@@ -141,7 +141,7 @@ const Profile = () => {
           </Box>
         ))}
         <Box mt={2}>
-          <Box bgcolor="primary.light" p={3} mb={3} overflow="hidden" position="relative">
+          {/* <Box bgcolor="primary.light" p={3} mb={3} overflow="hidden" position="relative">
             <Box display="flex" justifyContent="space-between">
               <Box>
                 <Typography variant="h5" mb={2}>
@@ -154,7 +154,7 @@ const Profile = () => {
               </Box>
               <Image src={"/images/backgrounds/unlimited-bg.png"} width={150} height={183} alt="unlimited" className="signup-bg" />
             </Box>
-          </Box>
+          </Box> */}
           <Button href="/auth/auth1/login" variant="outlined" color="primary" component={Link} fullWidth>
             Logout
           </Button>

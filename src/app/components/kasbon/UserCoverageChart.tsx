@@ -33,7 +33,7 @@ type ChartType = 'employees' | 'requests' | 'penetration' | 'firstBorrow';
 const UserCoverageChart = ({ filters }: UserCoverageChartProps) => {
   const [chartData, setChartData] = useState<UserCoverageMonthlyResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const [chartType, setChartType] = useState<ChartType>('employees');
+  const [chartType, setChartType] = useState<ChartType>('requests');
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
 
@@ -212,8 +212,8 @@ const UserCoverageChart = ({ filters }: UserCoverageChartProps) => {
                 label="Chart Type"
                 onChange={handleChartTypeChange}
               >
-                <MenuItem value="employees">Eligible Employees</MenuItem>
                 <MenuItem value="requests">Kasbon Requests</MenuItem>
+                <MenuItem value="employees">Eligible Employees</MenuItem>
                 <MenuItem value="firstBorrow">First Borrow</MenuItem>
                 <MenuItem value="penetration">Penetration Rate</MenuItem>
               </Select>
