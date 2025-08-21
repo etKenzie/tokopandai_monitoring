@@ -39,6 +39,7 @@
     "simplebar-react": "^3.2.4",
     "stylis-plugin-rtl": "^2.1.1",
     "typescript": "^5.2.2",
+    "xlsx": "^0.18.5",
     "yup": "^0.32.11"
   },
   "devDependencies": {
@@ -46,6 +47,7 @@
     "@types/lodash": "^4.14.199",
     "@types/node": "^20.8.4",
     "@types/react-helmet": "^6.1.7",
+    "@types/xlsx": "^0.0.36",
     "eslint": "latest",
     "eslint-config-next": "latest"
   }

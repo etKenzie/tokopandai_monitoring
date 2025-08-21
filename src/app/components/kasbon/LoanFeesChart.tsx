@@ -24,6 +24,8 @@ interface LoanFeesChartProps {
     employer: string;
     placement: string;
     project: string;
+    month?: string;
+    year?: string;
   };
 }
 
@@ -38,28 +40,70 @@ const LoanFeesChart = ({ filters }: LoanFeesChartProps) => {
 
   // Initialize dates in useEffect to avoid hydration issues
   useEffect(() => {
-    const newEndDate = new Date();
-    newEndDate.setMonth(newEndDate.getMonth() + 1, 0); // End of current month
-    
-    const newStartDate = new Date();
-    newStartDate.setMonth(newStartDate.getMonth() - 3);
-    newStartDate.setDate(1); // Set to first day of the month
+    updateDateRange();
+  }, []);
+
+  // Update date range when filters change
+  useEffect(() => {
+    updateDateRange();
+  }, [filters.month, filters.year, filters.employer, filters.placement, filters.project]);
+
+  const updateDateRange = () => {
+    let newEndDate: Date;
+    let newStartDate: Date;
+
+    if (filters.month && filters.year) {
+      // Use the selected month and year from filters
+      const selectedYear = parseInt(filters.year);
+      const selectedMonth = parseInt(filters.month) - 1; // Month is 0-indexed
+      
+      // End date: end of the selected month
+      newEndDate = new Date(selectedYear, selectedMonth + 1, 0);
+      
+      // Start date: 3 months before the selected month, start of that month
+      // Handle year boundary correctly
+      let startYear = selectedYear;
+      let startMonth = selectedMonth - 3;
+      
+      if (startMonth < 0) {
+        startYear = selectedYear - 1;
+        startMonth = 12 + startMonth; // Convert negative to positive month
+      }
+      
+      newStartDate = new Date(startYear, startMonth, 1);
+    } else {
+      // Fallback to current month logic
+      newEndDate = new Date();
+      newEndDate.setMonth(newEndDate.getMonth() + 1, 0); // End of current month
+      
+      newStartDate = new Date();
+      newStartDate.setMonth(newStartDate.getMonth() - 3);
+      newStartDate.setDate(1); // Set to first day of the month
+    }
     
     setStartDate(newStartDate);
     setEndDate(newEndDate);
-  }, []);
+  };
 
   const fetchChartData = async () => {
     if (!startDate || !endDate) return;
     
     setLoading(true);
     try {
+      // Format dates as YYYY-MM-DD without timezone issues
+      const formatDate = (date: Date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
       const response = await fetchKasbonLoanFeesMonthly({
         employer: filters.employer || undefined,
         sourced_to: filters.placement || undefined,
         project: filters.project || undefined,
-        start_date: startDate.toISOString().split('T')[0],
-        end_date: endDate.toISOString().split('T')[0],
+        start_date: formatDate(startDate),
+        end_date: formatDate(endDate),
       });
       setChartData(response);
     } catch (error) {
@@ -68,19 +112,6 @@ const LoanFeesChart = ({ filters }: LoanFeesChartProps) => {
       setLoading(false);
     }
   };
-
-  // Reset date range when filters change
-  useEffect(() => {
-    const newEndDate = new Date();
-    newEndDate.setMonth(newEndDate.getMonth() + 1, 0); // End of current month
-    
-    const newStartDate = new Date();
-    newStartDate.setMonth(newStartDate.getMonth() - 3);
-    newStartDate.setDate(1); // Set to first day of the month
-    
-    setStartDate(newStartDate);
-    setEndDate(newEndDate);
-  }, [filters.employer, filters.placement, filters.project]);
 
   // Fetch data when dates change
   useEffect(() => {
@@ -107,7 +138,25 @@ const LoanFeesChart = ({ filters }: LoanFeesChartProps) => {
   const prepareChartData = () => {
     if (!chartData?.monthly_data) return { categories: [], series: [] };
 
-    const months = Object.keys(chartData.monthly_data).sort().reverse(); // Reverse to show recent months on right
+    // Sort months chronologically (Month Year format like "January 2025")
+    const months = Object.keys(chartData.monthly_data).sort((a, b) => {
+      const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      
+      const [monthA, yearA] = a.split(' ');
+      const [monthB, yearB] = b.split(' ');
+      
+      const yearDiff = parseInt(yearA) - parseInt(yearB);
+      if (yearDiff !== 0) return yearDiff;
+      
+      const monthIndexA = monthNames.indexOf(monthA);
+      const monthIndexB = monthNames.indexOf(monthB);
+      
+      return monthIndexA - monthIndexB;
+    });
+    
     const categories = months;
     
     let series: any[] = [];

@@ -480,7 +480,9 @@ const KasbonDashboard = () => {
                filters={{
                  employer: filters.employer,
                  placement: filters.placement,
-                 project: filters.project
+                 project: filters.project,
+                 month: filters.month,
+                 year: filters.year
                }}
              />
            ) : (
@@ -531,7 +533,9 @@ const KasbonDashboard = () => {
               filters={{
                 employer: filters.employer,
                 placement: filters.placement,
-                project: filters.project
+                project: filters.project,
+                month: filters.month,
+                year: filters.year
               }}
             />
           ) : (
@@ -579,13 +583,15 @@ const KasbonDashboard = () => {
                <CircularProgress />
              </Box>
            ) : loanDisbursementData ? (
-             <LoanDisbursementChart 
-               filters={{
-                 employer: filters.employer,
-                 placement: filters.placement,
-                 project: filters.project
-               }}
-             />
+                         <LoanDisbursementChart 
+              filters={{
+                employer: filters.employer,
+                placement: filters.placement,
+                project: filters.project,
+                month: filters.month,
+                year: filters.year
+              }}
+            />
            ) : (
              <Box display="flex" justifyContent="center" alignItems="center" height="300px">
                <Typography variant="body1" color="textSecondary">
@@ -728,7 +734,9 @@ const KasbonDashboard = () => {
               filters={{
                 employer: filters.employer,
                 placement: filters.placement,
-                project: filters.project
+                project: filters.project,
+                month: filters.month,
+                year: filters.year
               }}
             />
           ) : (

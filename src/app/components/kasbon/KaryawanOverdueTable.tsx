@@ -27,6 +27,7 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { fetchKaryawanOverdue, KaryawanOverdue } from '../../api/kasbon/KasbonSlice';
+import * as XLSX from 'xlsx';
 
 type Order = 'asc' | 'desc';
 type SortableField = keyof KaryawanOverdue;
@@ -39,6 +40,8 @@ interface HeadCell {
 
 const headCells: HeadCell[] = [
   { id: 'id_karyawan', label: 'Employee ID', numeric: true },
+  { id: 'nik', label: 'NIK', numeric: false },
+  { id: 'ktp', label: 'KTP', numeric: false },
   { id: 'name', label: 'Name', numeric: false },
   { id: 'company', label: 'Company', numeric: false },
   { id: 'sourced_to', label: 'Sourced To', numeric: false },
@@ -74,8 +77,13 @@ const KaryawanOverdueTable = ({
   const [projectFilter, setProjectFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  // Use month and year from filters prop
+  const selectedMonth = filters.month || '';
+  const selectedYear = filters.year || '';
 
   const fetchOverdueData = async () => {
+    if (!selectedMonth || !selectedYear) return;
+    
     setLoading(true);
     setError(null);
     try {
@@ -84,8 +92,8 @@ const KaryawanOverdueTable = ({
         sourced_to: filters.placement || undefined,
         project: filters.project || undefined,
         id_karyawan: undefined,
-        month: filters.month || undefined,
-        year: filters.year || undefined
+        month: selectedMonth,
+        year: selectedYear
       });
       
       setKaryawan(response.results);
@@ -98,10 +106,12 @@ const KaryawanOverdueTable = ({
   };
 
   useEffect(() => {
-    if (filters.month && filters.year) {
+    if (selectedMonth && selectedYear) {
       fetchOverdueData();
     }
-  }, [filters]);
+  }, [selectedMonth, selectedYear, filters.employer, filters.placement, filters.project]);
+
+
 
   const handleRequestSort = (property: SortableField) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -133,6 +143,8 @@ const KaryawanOverdueTable = ({
 
     const searchableFields = [
       karyawan.id_karyawan.toString(),
+      karyawan.nik.toLowerCase(),
+      karyawan.ktp.toLowerCase(),
       karyawan.name.toLowerCase(),
       karyawan.company.toLowerCase(),
       karyawan.sourced_to.toLowerCase(),
@@ -186,6 +198,8 @@ const KaryawanOverdueTable = ({
   const prepareDataForExport = (karyawan: KaryawanOverdue[]) => {
     return karyawan.map((k) => ({
       'Employee ID': k.id_karyawan,
+      'NIK': k.nik,
+      'KTP': k.ktp,
       'Name': k.name,
       'Company': k.company,
       'Sourced To': k.sourced_to,
@@ -195,21 +209,44 @@ const KaryawanOverdueTable = ({
     }));
   };
 
-  const handleExport = () => {
+  const handleExcelExport = () => {
+    if (!karyawan.length) return;
+
     // Only run on client side
     if (typeof window === 'undefined' || typeof document === 'undefined' || typeof Blob === 'undefined') return;
-    
+
     const data = prepareDataForExport(filteredKaryawan);
-    const csvContent = [
-      Object.keys(data[0]).join(','),
-      ...data.map(row => Object.values(row).join(','))
-    ].join('\n');
     
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(data);
+
+    // Set column widths
+    const colWidths = [
+      { wch: 12 }, // Employee ID
+      { wch: 15 }, // NIK
+      { wch: 20 }, // KTP
+      { wch: 25 }, // Name
+      { wch: 25 }, // Company
+      { wch: 25 }, // Sourced To
+      { wch: 20 }, // Project
+      { wch: 15 }, // Status
+      { wch: 15 }  // Amount Owed
+    ];
+    ws['!cols'] = colWidths;
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Overdue Karyawan Data');
+
+    // Generate Excel file
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    
+    // Download file
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'karyawan-overdue-data.csv';
+    a.download = `karyawan-overdue-${selectedMonth}-${selectedYear}.xlsx`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -248,10 +285,10 @@ const KaryawanOverdueTable = ({
             <Button
               variant="outlined"
               startIcon={<DownloadIcon />}
-              onClick={handleExport}
+              onClick={handleExcelExport}
               disabled={filteredKaryawan.length === 0}
             >
-              Export
+              Export Excel
             </Button>
           </Box>
         </Box>
@@ -419,6 +456,8 @@ const KaryawanOverdueTable = ({
                   .map((row) => (
                     <TableRow key={row.id_karyawan} hover>
                       <TableCell align="right">{row.id_karyawan}</TableCell>
+                      <TableCell>{row.nik}</TableCell>
+                      <TableCell>{row.ktp}</TableCell>
                       <TableCell>{row.name}</TableCell>
                       <TableCell>{row.company}</TableCell>
                       <TableCell>{row.sourced_to}</TableCell>

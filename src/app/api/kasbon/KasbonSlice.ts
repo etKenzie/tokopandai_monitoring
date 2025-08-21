@@ -127,6 +127,8 @@ export interface KasbonLoanFeesMonthlyParams {
 // Types for Karyawan Overdue API
 export interface KaryawanOverdue {
   id_karyawan: number;
+  nik: string;
+  ktp: string;
   name: string;
   company: string;
   sourced_to: string;
