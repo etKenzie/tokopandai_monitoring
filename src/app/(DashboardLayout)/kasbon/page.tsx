@@ -792,87 +792,8 @@ const KasbonDashboard = () => {
           title="Overdue Employees"
         />
 
-        {/* Role Access Status */}
-        <Box mb={3}>
-          <Paper sx={{ p: 2, bgcolor: accessCheck.hasAccess ? 'success.light' : 'error.light' }}>
-            <Typography variant="h6" color="white" mb={1}>
-              🔐 Access Control Status
-            </Typography>
-            <Typography variant="body2" color="white" mb={1}>
-              User: {user?.email || 'Not authenticated'}
-            </Typography>
-            <Typography variant="body2" color="white" mb={1}>
-              User ID: {user?.id || 'Not available'}
-            </Typography>
-            <Typography variant="body2" color="white" mb={1}>
-              Roles: {accessCheck.userRoles.length > 0 ? accessCheck.userRoles.join(', ') : 'None'}
-            </Typography>
-            <Typography variant="body2" color="white" mb={1}>
-              Status: {accessCheck.hasAccess ? '✅ Access Granted' : '❌ Access Denied'}
-            </Typography>
-            <Button 
-              variant="outlined" 
-              size="small" 
-              onClick={() => refreshRoles()}
-              sx={{ mt: 1, color: 'white', borderColor: 'white' }}
-            >
-              🔄 Refresh Roles
-            </Button>
-          </Paper>
-        </Box>
-
-        {/* Role-Based Content Examples */}
-        <Box mb={3}>
-          <Typography variant="h5" fontWeight="bold" mb={2}>
-            Role-Based Access Control Examples
-          </Typography>
-          
-          {/* Content for all authenticated users */}
-          <Paper sx={{ p: 2, mb: 2, bgcolor: 'success.light' }}>
-            <Typography variant="h6" color="white">
-              ✅ Accessible to All Users
-            </Typography>
-            <Typography variant="body2" color="white">
-              This content is visible to anyone who is logged in.
-            </Typography>
-          </Paper>
-
-          {/* Content only for admins */}
-          <RoleBasedContent requiredRoles={getPageRoles('ADMIN_PANEL')}>
-            <Paper sx={{ p: 2, mb: 2, bgcolor: 'error.light' }}>
-              <Typography variant="h6" color="white">
-                🔒 Admin Only Content
-              </Typography>
-              <Typography variant="body2" color="white">
-                This sensitive information is only visible to administrators.
-              </Typography>
-            </Paper>
-          </RoleBasedContent>
-
-          {/* Content for managers or admins */}
-          <RoleBasedContent requiredRoles={getPageRoles('USER_MANAGEMENT')}>
-            <Paper sx={{ p: 2, mb: 2, bgcolor: 'warning.light' }}>
-              <Typography variant="h6" color="white">
-                ⚠️ Manager/Admin Content
-              </Typography>
-              <Typography variant="body2" color="white">
-                This content is visible to managers and administrators.
-              </Typography>
-            </Paper>
-          </RoleBasedContent>
-
-          {/* Content for analysts */}
-          <RoleBasedContent requiredRoles={getPageRoles('ANALYTICS_DASHBOARD')}>
-            <Paper sx={{ p: 2, mb: 2, bgcolor: 'info.light' }}>
-              <Typography variant="h6" color="white">
-                📊 Analyst Content
-              </Typography>
-              <Typography variant="body2" color="white">
-                This content is visible to data analysts.
-              </Typography>
-            </Paper>
-          </RoleBasedContent>
-        </Box>
+       
+        
       </Box>
     </PageContainer>
   );
