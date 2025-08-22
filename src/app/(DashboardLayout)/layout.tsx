@@ -1,6 +1,10 @@
 "use client";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import Grid from "@mui/material/Grid";
+import CircularProgress from "@mui/material/CircularProgress";
 import { styled, useTheme } from "@mui/material/styles";
 import React, { useState, useContext, useEffect } from "react";
 import { useRouter } from 'next/navigation';
@@ -12,6 +16,9 @@ import Navigation from "./layout/horizontal/navbar/Navigation";
 import HorizontalHeader from "./layout/horizontal/header/Header";
 import { CustomizerContext } from "@/app/context/customizerContext";
 import config from "@/app/context/config";
+import PageContainer from '@/app/components/container/PageContainer';
+import Logo from '@/app/(DashboardLayout)/layout/shared/logo/Logo';
+import Image from 'next/image';
 
 const MainWrapper = styled("div")(() => ({
   display: "flex",
@@ -39,7 +46,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const { activeLayout, isLayout, activeMode, isCollapse } = useContext(CustomizerContext);
-  const { user, loading } = useAuth();
+  const { user, loading, roles } = useAuth();
   const router = useRouter();
   const MiniSidebarWidth = config.miniSidebarWidth;
 
@@ -53,26 +60,101 @@ export default function RootLayout({
     }
   }, [user, loading, router]);
 
-  // Show loading while checking authentication
-  if (loading) {
+  // Show loading while checking authentication OR while roles are not loaded
+  if (loading || (user && (!roles || roles.length === 0))) {
     return (
-      <Container>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '100vh',
-            gap: 2,
-          }}
-        >
-          <div>Checking authentication...</div>
-          <div style={{ fontSize: '0.9rem', color: '#666' }}>
-            If this takes too long, try refreshing the page
-          </div>
-        </Box>
-      </Container>
+      <PageContainer title="Loading" description="Loading user data">
+        <Grid container spacing={0} justifyContent="center" sx={{ height: '100vh' }}>
+          <Grid
+            sx={{
+              position: 'relative',
+              '&:before': {
+                content: '""',
+                background: 'radial-gradient(#d2f1df, #d3d7fa, #bad8f4)',
+                backgroundSize: '400% 400%',
+                animation: 'gradient 15s ease infinite',
+                position: 'absolute',
+                height: '100%',
+                width: '100%',
+                opacity: '0.3',
+              },
+            }}
+            size={{
+              xs: 12,
+              sm: 12,
+              lg: 7,
+              xl: 8
+            }}>
+            <Box position="relative">
+              <Box px={3}>
+                <Logo />
+              </Box>
+              <Box
+                alignItems="center"
+                justifyContent="center"
+                height={'calc(100vh - 75px)'}
+                sx={{
+                  display: {
+                    xs: 'none',
+                    lg: 'flex',
+                  },
+                }}
+              >
+                <Image
+                  src={"/images/backgrounds/login-bg.svg"}
+                  alt="bg" width={500} height={500}
+                  style={{
+                    width: '100%',
+                    maxWidth: '500px',
+                    maxHeight: '500px',
+                  }}
+                />
+              </Box>
+            </Box>
+          </Grid>
+          <Grid
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            size={{
+              xs: 12,
+              sm: 12,
+              lg: 5,
+              xl: 4
+            }}>
+            <Box p={4}>
+              <Typography variant="h3" fontWeight="700" mb={1}>
+                {loading ? 'Checking Authentication...' : 'Loading User Data...'}
+              </Typography>
+              <Typography variant="subtitle1" color="textSecondary" mb={3}>
+                {loading ? 'Verifying your credentials...' : 'Preparing your dashboard...'}
+              </Typography>
+
+              {/* Loading Spinner */}
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                <CircularProgress size={60} />
+              </Box>
+
+              <Typography variant="body2" color="textSecondary" sx={{ mb: 3, textAlign: 'center' }}>
+                Page will refresh automatically if data doesn't load properly
+              </Typography>
+
+              {/* Manual Refresh Button */}
+              {!loading && user && (!roles || roles.length === 0) && (
+                <Button
+                  fullWidth
+                  variant="contained"
+                  size="large"
+                  onClick={() => window.location.reload()}
+                  sx={{ py: 1.5 }}
+                >
+                  Refresh Page
+                </Button>
+              )}
+            </Box>
+          </Grid>
+        </Grid>
+      </PageContainer>
     );
   }
 

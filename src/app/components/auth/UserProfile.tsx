@@ -30,7 +30,7 @@ import {
 } from '@mui/icons-material';
 
 export default function UserProfile() {
-  const { user, roles, signOut } = useAuth();
+  const { user, roles, signOut, loading } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -63,7 +63,7 @@ export default function UserProfile() {
     setModalOpen(false);
   };
 
-  if (!user) return null;
+  if (!user || loading) return null;
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

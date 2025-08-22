@@ -6,7 +6,7 @@ import { useContext } from 'react';
 
 export const Profile = () => {
   const lgUp = useMediaQuery((theme: any) => theme.breakpoints.up('lg'));
-  const { user, roles, signOut } = useAuth();
+  const { user, roles, signOut, loading } = useAuth();
 
   const { isSidebarHover, isCollapse } = useContext(CustomizerContext);
   const hideMenu = lgUp ? isCollapse == 'mini-sidebar' && !isSidebarHover : '';
@@ -21,6 +21,9 @@ export const Profile = () => {
       window.location.href = '/auth/login';
     }
   };
+  // Don't render if still loading
+  if (loading) return null;
+
   return (
     <Box
       display={'flex'}
