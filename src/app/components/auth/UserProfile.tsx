@@ -44,10 +44,13 @@ export default function UserProfile() {
 
   const handleSignOut = async () => {
     try {
-      await signOut();
       handleMenuClose();
+      await signOut();
+      // signOut function will handle the redirect
     } catch (error) {
       console.error('Error signing out:', error);
+      // Force redirect even if there's an error
+      window.location.href = '/auth/login';
     }
   };
 

@@ -117,8 +117,36 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    try {
+      console.log('Signing out user...');
+      
+      // Clear local state immediately
+      setUser(null);
+      setSession(null);
+      setRoles([]);
+      
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Error during sign out:', error);
+        // Even if there's an error, we should still clear local state
+        // and redirect to login
+      }
+      
+      console.log('Sign out completed');
+      
+      // Force redirect to login page
+      window.location.href = '/auth/login';
+      
+    } catch (error) {
+      console.error('Unexpected error during sign out:', error);
+      // Clear state and redirect even if there's an error
+      setUser(null);
+      setSession(null);
+      setRoles([]);
+      window.location.href = '/auth/login';
+    }
   };
 
   const refreshRoles = async () => {

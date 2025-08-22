@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import Link from 'next/link';
@@ -26,8 +26,15 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { signIn } = useAuth();
+  const { signIn, user, loading: authLoading } = useAuth();
   const router = useRouter();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push('/');
+    }
+  }, [user, authLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,19 +42,41 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      console.log('Attempting to sign in with email:', email);
       await signIn(email, password);
-      console.log('Sign in successful, redirecting to home page');
-      // After successful login, check user roles and redirect accordingly
-      // The home page will handle the role-based redirection
       router.push('/');
     } catch (error: any) {
-      console.error('Sign in error:', error);
       setError(error.message || 'Failed to sign in');
     } finally {
       setLoading(false);
     }
   };
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <PageContainer title="Login Page" description="this is Sample page">
+        <Grid container spacing={0} justifyContent="center" sx={{ height: '100vh' }}>
+          <Grid
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            size={{
+              xs: 12,
+              sm: 12,
+              lg: 5,
+              xl: 4
+            }}>
+            <Box p={4} textAlign="center">
+              <CircularProgress size={60} />
+              <Typography variant="h6" sx={{ mt: 2 }}>
+                Loading...
+              </Typography>
+            </Box>
+          </Grid>
+        </Grid>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer title="Login Page" description="this is Sample page">
