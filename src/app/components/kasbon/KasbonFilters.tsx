@@ -68,6 +68,8 @@ const KasbonFilters = ({ filters, onFiltersChange }: KasbonFiltersProps) => {
     event: SelectChangeEvent<string>
   ) => {
     const newFilters = { ...filters, [field]: event.target.value };
+    console.log('Filter changed in KasbonFilters:', field, 'to', event.target.value);
+    console.log('New filters:', newFilters);
     onFiltersChange(newFilters);
   };
 

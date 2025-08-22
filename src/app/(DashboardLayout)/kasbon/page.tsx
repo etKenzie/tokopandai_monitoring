@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Typography, CircularProgress } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { fetchKaryawan, fetchKasbonLoanFees, fetchKasbonSummary, fetchLoanDisbursement, fetchLoanRequests, fetchLoanRisk, fetchUserCoverage, fetchLoanPurpose, Karyawan, KasbonLoanFeesResponse, KasbonSummaryResponse, LoanDisbursementResponse, LoanRequestsResponse, LoanRiskResponse, UserCoverageResponse, LoanPurposeResponse } from '../../api/kasbon/KasbonSlice';
 import PageContainer from '../../components/container/PageContainer';
 import KaryawanOverdueTable from '../../components/kasbon/KaryawanOverdueTable';
@@ -69,7 +69,8 @@ const KasbonDashboard = () => {
     }
   };
 
-  const fetchSummaryData = async (currentFilters: KasbonFilterValues) => {
+  const fetchSummaryData = useCallback(async (currentFilters: KasbonFilterValues) => {
+    console.log('Fetching summary data with filters:', currentFilters);
     setSummaryLoading(true);
     try {
       // Only fetch summary if we have month and year (required)
@@ -81,6 +82,7 @@ const KasbonDashboard = () => {
           month: currentFilters.month,
           year: currentFilters.year,
         });
+        console.log('Summary data response:', response);
         setSummaryData(response);
       } else {
         setSummaryData(null);
@@ -91,9 +93,9 @@ const KasbonDashboard = () => {
     } finally {
       setSummaryLoading(false);
     }
-  };
+  }, []);
 
-  const fetchLoanFeesData = async (currentFilters: KasbonFilterValues) => {
+  const fetchLoanFeesData = useCallback(async (currentFilters: KasbonFilterValues) => {
     setLoanFeesLoading(true);
     try {
       // Only fetch loan fees if we have month and year (required)
@@ -114,7 +116,7 @@ const KasbonDashboard = () => {
     } finally {
       setLoanFeesLoading(false);
     }
-  };
+  }, []);
 
   const fetchLoanRiskData = async (currentFilters: KasbonFilterValues) => {
     setLoanRiskLoading(true);
@@ -122,6 +124,9 @@ const KasbonDashboard = () => {
       // Only fetch loan risk if we have month and year (required)
       if (currentFilters.month && currentFilters.year) {
         const response = await fetchLoanRisk({
+          employer: currentFilters.employer || undefined,
+          sourced_to: currentFilters.placement || undefined,
+          project: currentFilters.project || undefined,
           month: currentFilters.month,
           year: currentFilters.year,
         });
@@ -137,12 +142,15 @@ const KasbonDashboard = () => {
     }
   };
 
-  const fetchUserCoverageData = async (currentFilters: KasbonFilterValues) => {
+  const fetchUserCoverageData = useCallback(async (currentFilters: KasbonFilterValues) => {
     setUserCoverageLoading(true);
     try {
       // Only fetch user coverage if we have month and year (required)
       if (currentFilters.month && currentFilters.year) {
         const response = await fetchUserCoverage({
+          employer: currentFilters.employer || undefined,
+          sourced_to: currentFilters.placement || undefined,
+          project: currentFilters.project || undefined,
           month: currentFilters.month,
           year: currentFilters.year,
         });
@@ -156,14 +164,17 @@ const KasbonDashboard = () => {
     } finally {
       setUserCoverageLoading(false);
     }
-  };
+  }, []);
 
-  const fetchLoanRequestsData = async (currentFilters: KasbonFilterValues) => {
+  const fetchLoanRequestsData = useCallback(async (currentFilters: KasbonFilterValues) => {
     setLoanRequestsLoading(true);
     try {
       // Only fetch loan requests if we have month and year (required)
       if (currentFilters.month && currentFilters.year) {
         const response = await fetchLoanRequests({
+          employer: currentFilters.employer || undefined,
+          sourced_to: currentFilters.placement || undefined,
+          project: currentFilters.project || undefined,
           month: currentFilters.month,
           year: currentFilters.year,
         });
@@ -177,14 +188,16 @@ const KasbonDashboard = () => {
     } finally {
       setLoanRequestsLoading(false);
     }
-  };
+  }, []);
 
-  const fetchLoanDisbursementData = async (currentFilters: KasbonFilterValues) => {
+  const fetchLoanDisbursementData = useCallback(async (currentFilters: KasbonFilterValues) => {
     setLoanDisbursementLoading(true);
     try {
       // Only fetch loan disbursement if we have month and year (required)
       if (currentFilters.month && currentFilters.year) {
         const response = await fetchLoanDisbursement({
+          employer: currentFilters.employer || undefined,
+          project: currentFilters.project || undefined,
           month: currentFilters.month,
           year: currentFilters.year,
         });
@@ -198,9 +211,9 @@ const KasbonDashboard = () => {
     } finally {
       setLoanDisbursementLoading(false);
     }
-  };
+  }, []);
 
-  const fetchLoanPurposeData = async (currentFilters: KasbonFilterValues) => {
+  const fetchLoanPurposeData = useCallback(async (currentFilters: KasbonFilterValues) => {
     setLoanPurposeLoading(true);
     try {
       // Only fetch loan purpose if we have month and year (required)
@@ -222,24 +235,28 @@ const KasbonDashboard = () => {
     } finally {
       setLoanPurposeLoading(false);
     }
-  };
+  }, []);
 
-  const handleFiltersChange = (newFilters: KasbonFilterValues) => {
+  const handleFiltersChange = useCallback((newFilters: KasbonFilterValues) => {
+    console.log('Filters changed:', newFilters);
     setFilters(newFilters);
-    fetchSummaryData(newFilters);
+    // fetchSummaryData(newFilters);
     fetchLoanFeesData(newFilters);
     fetchLoanRiskData(newFilters);
     fetchUserCoverageData(newFilters);
     fetchLoanRequestsData(newFilters);
     fetchLoanDisbursementData(newFilters);
     fetchLoanPurposeData(newFilters);
-  };
+  }, [fetchSummaryData, fetchLoanFeesData, fetchLoanRiskData, fetchUserCoverageData, fetchLoanRequestsData, fetchLoanDisbursementData, fetchLoanPurposeData]);
 
   useEffect(() => {
     fetchData();
+  }, []); // Only run once on mount
+
+  useEffect(() => {
     // Only fetch data if month and year are set (after initialization)
     if (filters.month && filters.year) {
-      fetchSummaryData(filters);
+      // fetchSummaryData(filters);
       fetchLoanFeesData(filters);
       fetchLoanRiskData(filters);
       fetchUserCoverageData(filters);
@@ -247,7 +264,7 @@ const KasbonDashboard = () => {
       fetchLoanDisbursementData(filters);
       fetchLoanPurposeData(filters);
     }
-  }, [filters.month, filters.year]); // Only run when month/year change
+  }, [filters.month, filters.year, filters.employer, filters.placement, filters.project]); // Run when any filter changes
 
   // Create summary tiles from the data
   const createSummaryTiles = () => {

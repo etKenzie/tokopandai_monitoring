@@ -91,6 +91,7 @@ export interface KasbonSummaryParams {
 
 // Types for Loan Fees Query Parameters
 export interface KasbonLoanFeesParams {
+  employer?: string;
   sourced_to?: string;
   project?: string;
   id_karyawan?: string;
@@ -218,6 +219,9 @@ export interface UserCoverageResponse {
 
 // Types for User Coverage Query Parameters
 export interface UserCoverageParams {
+  employer?: string;
+  sourced_to?: string;
+  project?: string;
   month?: string;
   year?: string;
 }
@@ -238,6 +242,9 @@ export interface UserCoverageMonthlyResponse {
 
 // Types for User Coverage Monthly Query Parameters
 export interface UserCoverageMonthlyParams {
+  employer?: string;
+  sourced_to?: string;
+  project?: string;
   start_date?: string;
   end_date?: string;
 }
@@ -262,6 +269,9 @@ export interface LoanRequestsResponse {
 
 // Types for Loan Requests Query Parameters
 export interface LoanRequestsParams {
+  employer?: string;
+  sourced_to?: string;
+  project?: string;
   month?: string;
   year?: string;
 }
@@ -282,6 +292,9 @@ export interface LoanDisbursementResponse {
 
 // Types for Loan Disbursement Query Parameters
 export interface LoanDisbursementParams {
+  employer?: string;
+  sourced_to?: string;
+  project?: string;
   month?: string;
   year?: string;
 }
@@ -301,6 +314,9 @@ export interface LoanDisbursementMonthlyResponse {
 
 // Types for Loan Disbursement Monthly Query Parameters
 export interface LoanDisbursementMonthlyParams {
+  employer?: string;
+  sourced_to?: string;
+  project?: string;
   start_date?: string;
   end_date?: string;
 }
@@ -405,6 +421,8 @@ export const fetchKasbonSummary = async (params: KasbonSummaryParams): Promise<K
   const url = `${baseUrl}/kasbon/summary?${queryParams.toString()}`;
   
   console.log('Fetching kasbon summary from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
   
   const response = await fetch(url, {
     method: 'GET',
@@ -426,7 +444,8 @@ export const fetchKasbonLoanFees = async (params: KasbonLoanFeesParams): Promise
   
   // Build query string from parameters
   const queryParams = new URLSearchParams();
-  
+
+  if (params.employer) queryParams.append('employer', params.employer);
   if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
   if (params.project) queryParams.append('project', params.project);
   if (params.id_karyawan) queryParams.append('id_karyawan', params.id_karyawan);
@@ -466,6 +485,7 @@ export const fetchKasbonLoanFeesMonthly = async (params: KasbonLoanFeesMonthlyPa
   if (params.end_date) queryParams.append('end_date', params.end_date);
   
   const url = `${baseUrl}/kasbon/loan-fees-monthly?${queryParams.toString()}`;
+
   
   console.log('Fetching kasbon loan fees monthly from:', url);
   
@@ -586,6 +606,9 @@ export const fetchUserCoverage = async (params: UserCoverageParams): Promise<Use
   // Build query string from parameters
   const queryParams = new URLSearchParams();
   
+  if (params.employer) queryParams.append('employer', params.employer);
+  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
+  if (params.project) queryParams.append('project', params.project);
   if (params.month) queryParams.append('month', params.month);
   if (params.year) queryParams.append('year', params.year);
   
@@ -614,6 +637,9 @@ export const fetchUserCoverageMonthly = async (params: UserCoverageMonthlyParams
   // Build query string from parameters
   const queryParams = new URLSearchParams();
   
+  if (params.employer) queryParams.append('employer', params.employer);
+  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
+  if (params.project) queryParams.append('project', params.project);
   if (params.start_date) queryParams.append('start_date', params.start_date);
   if (params.end_date) queryParams.append('end_date', params.end_date);
   
@@ -642,6 +668,9 @@ export const fetchLoanRequests = async (params: LoanRequestsParams): Promise<Loa
   // Build query string from parameters
   const queryParams = new URLSearchParams();
   
+  if (params.employer) queryParams.append('employer', params.employer);
+  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
+  if (params.project) queryParams.append('project', params.project);
   if (params.month) queryParams.append('month', params.month);
   if (params.year) queryParams.append('year', params.year);
   
@@ -670,6 +699,9 @@ export const fetchLoanDisbursement = async (params: LoanDisbursementParams): Pro
   // Build query string from parameters
   const queryParams = new URLSearchParams();
   
+  if (params.employer) queryParams.append('employer', params.employer);
+  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
+  if (params.project) queryParams.append('project', params.project);
   if (params.month) queryParams.append('month', params.month);
   if (params.year) queryParams.append('year', params.year);
   
@@ -698,6 +730,9 @@ export const fetchLoanDisbursementMonthly = async (params: LoanDisbursementMonth
   // Build query string from parameters
   const queryParams = new URLSearchParams();
   
+  if (params.employer) queryParams.append('employer', params.employer);
+  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
+  if (params.project) queryParams.append('project', params.project);
   if (params.start_date) queryParams.append('start_date', params.start_date);
   if (params.end_date) queryParams.append('end_date', params.end_date);
   
