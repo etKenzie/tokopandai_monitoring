@@ -67,7 +67,10 @@ export default function RootLayout({
             gap: 2,
           }}
         >
-          <div>Loading...</div>
+          <div>Checking authentication...</div>
+          <div style={{ fontSize: '0.9rem', color: '#666' }}>
+            If this takes too long, try refreshing the page
+          </div>
         </Box>
       </Container>
     );

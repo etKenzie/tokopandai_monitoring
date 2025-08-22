@@ -346,11 +346,13 @@ export interface LoanPurposeParams {
   year?: string;
 }
 
-import { config } from '../../../utils/config';
+// Get API URL from environment variable with fallback
+const AM_API_URL = process.env.NEXT_PUBLIC_AM_API_URL;
+
 
 // API service functions
 export const fetchKaryawan = async (clientId?: string): Promise<KaryawanResponse> => {
-  const baseUrl = config.AM_API_URL;
+  const baseUrl = AM_API_URL;
   const url = clientId 
     ? `${baseUrl}/karyawan?klient=${clientId}`
     : `${baseUrl}/karyawan`;
@@ -377,7 +379,7 @@ export const fetchKaryawanByClient = async (clientId: string): Promise<KaryawanR
 
 // Fetch Kasbon Filters
 export const fetchKasbonFilters = async (employer?: string, placement?: string): Promise<KasbonFiltersResponse> => {
-  const baseUrl = config.AM_API_URL;
+  const baseUrl = AM_API_URL;
   
   // Build query string from parameters
   const queryParams = new URLSearchParams();
@@ -407,7 +409,7 @@ export const fetchKasbonFilters = async (employer?: string, placement?: string):
 
 // Fetch Kasbon Summary
 export const fetchKasbonSummary = async (params: KasbonSummaryParams): Promise<KasbonSummaryResponse> => {
-  const baseUrl = config.AM_API_URL;
+  const baseUrl = AM_API_URL;
   
   // Build query string from parameters
   const queryParams = new URLSearchParams();
@@ -440,7 +442,7 @@ export const fetchKasbonSummary = async (params: KasbonSummaryParams): Promise<K
 
 // Fetch Kasbon Loan Fees
 export const fetchKasbonLoanFees = async (params: KasbonLoanFeesParams): Promise<KasbonLoanFeesResponse> => {
-  const baseUrl = config.AM_API_URL;
+  const baseUrl = AM_API_URL;
   
   // Build query string from parameters
   const queryParams = new URLSearchParams();
@@ -472,7 +474,7 @@ export const fetchKasbonLoanFees = async (params: KasbonLoanFeesParams): Promise
 
 // Fetch Kasbon Loan Fees Monthly
 export const fetchKasbonLoanFeesMonthly = async (params: KasbonLoanFeesMonthlyParams): Promise<KasbonLoanFeesMonthlyResponse> => {
-  const baseUrl = config.AM_API_URL;
+  const baseUrl = AM_API_URL;
   
   // Build query string from parameters
   const queryParams = new URLSearchParams();
@@ -505,7 +507,7 @@ export const fetchKasbonLoanFeesMonthly = async (params: KasbonLoanFeesMonthlyPa
 
 // Fetch Karyawan Overdue
 export const fetchKaryawanOverdue = async (params: KaryawanOverdueParams): Promise<KaryawanOverdueResponse> => {
-  const baseUrl = config.AM_API_URL;
+  const baseUrl = AM_API_URL;
   
   // Build query string from parameters
   const queryParams = new URLSearchParams();
@@ -537,7 +539,7 @@ export const fetchKaryawanOverdue = async (params: KaryawanOverdueParams): Promi
 
 // Fetch Loan Risk
 export const fetchLoanRisk = async (params: LoanRiskParams): Promise<LoanRiskResponse> => {
-  const baseUrl = config.AM_API_URL;
+  const baseUrl = AM_API_URL;
   
   // Build query string from parameters
   const queryParams = new URLSearchParams();
@@ -569,7 +571,7 @@ export const fetchLoanRisk = async (params: LoanRiskParams): Promise<LoanRiskRes
 
 // Fetch Loan Risk Monthly
 export const fetchLoanRiskMonthly = async (params: LoanRiskMonthlyParams): Promise<LoanRiskMonthlyResponse> => {
-  const baseUrl = config.AM_API_URL;
+  const baseUrl = AM_API_URL;
   
   // Build query string from parameters
   const queryParams = new URLSearchParams();
@@ -601,7 +603,7 @@ export const fetchLoanRiskMonthly = async (params: LoanRiskMonthlyParams): Promi
 
 // Fetch User Coverage
 export const fetchUserCoverage = async (params: UserCoverageParams): Promise<UserCoverageResponse> => {
-  const baseUrl = config.AM_API_URL;
+  const baseUrl = AM_API_URL;
   
   // Build query string from parameters
   const queryParams = new URLSearchParams();
@@ -632,7 +634,7 @@ export const fetchUserCoverage = async (params: UserCoverageParams): Promise<Use
 
 // Fetch User Coverage Monthly
 export const fetchUserCoverageMonthly = async (params: UserCoverageMonthlyParams): Promise<UserCoverageMonthlyResponse> => {
-  const baseUrl = config.AM_API_URL;
+  const baseUrl = AM_API_URL;
   
   // Build query string from parameters
   const queryParams = new URLSearchParams();
@@ -663,7 +665,7 @@ export const fetchUserCoverageMonthly = async (params: UserCoverageMonthlyParams
 
 // Fetch Loan Requests
 export const fetchLoanRequests = async (params: LoanRequestsParams): Promise<LoanRequestsResponse> => {
-  const baseUrl = config.AM_API_URL;
+  const baseUrl = AM_API_URL;
   
   // Build query string from parameters
   const queryParams = new URLSearchParams();
@@ -694,7 +696,7 @@ export const fetchLoanRequests = async (params: LoanRequestsParams): Promise<Loa
 
 // Fetch Loan Disbursement
 export const fetchLoanDisbursement = async (params: LoanDisbursementParams): Promise<LoanDisbursementResponse> => {
-  const baseUrl = config.AM_API_URL;
+  const baseUrl = AM_API_URL;
   
   // Build query string from parameters
   const queryParams = new URLSearchParams();
@@ -725,7 +727,7 @@ export const fetchLoanDisbursement = async (params: LoanDisbursementParams): Pro
 
 // Fetch Loan Disbursement Monthly
 export const fetchLoanDisbursementMonthly = async (params: LoanDisbursementMonthlyParams): Promise<LoanDisbursementMonthlyResponse> => {
-  const baseUrl = config.AM_API_URL;
+  const baseUrl = AM_API_URL;
   
   // Build query string from parameters
   const queryParams = new URLSearchParams();
@@ -756,7 +758,7 @@ export const fetchLoanDisbursementMonthly = async (params: LoanDisbursementMonth
 
 // Fetch Loan Purpose
 export const fetchLoanPurpose = async (params: LoanPurposeParams): Promise<LoanPurposeResponse> => {
-  const baseUrl = config.AM_API_URL;
+  const baseUrl = AM_API_URL;
   
   // Build query string from parameters
   const queryParams = new URLSearchParams();

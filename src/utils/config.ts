@@ -1,8 +1,6 @@
 // API Configuration
 export const config = {
-  // Default API URL - you can change this to your actual API endpoint
-  AM_API_URL: "http://localhost:8000",
-  // AM_API_URL: "http://193.194.1.6:8000",
+  // API URL from environment variable with fallback
   // Add other configuration values here
   APP_NAME: 'AM Dashboard',
   VERSION: '1.0.0',

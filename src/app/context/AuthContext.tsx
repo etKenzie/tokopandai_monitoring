@@ -36,18 +36,60 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [roles, setRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Fallback timeout to prevent infinite loading
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.warn('Auth loading timeout - forcing completion');
+        setLoading(false);
+      }
+    }, 10000); // 3 seconds - faster timeout
+
+    return () => clearTimeout(timeoutId);
+  }, [loading]);
+
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        await getUserRoles(session.user.id);
+      try {
+        console.log('Getting initial session...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setLoading(false);
+          return;
+        }
+        
+        console.log('Session found:', !!session, 'User:', session?.user?.email);
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          console.log('User found, fetching roles...');
+          // Fetch roles immediately and await them
+          try {
+            const userRoles = await getUserRoles(session.user.id);
+            console.log('Roles fetched successfully:', userRoles);
+          } catch (error) {
+            console.error('Error fetching roles:', error);
+            setRoles([]);
+          }
+        } else {
+          console.log('No user found, setting empty roles');
+          setRoles([]);
+        }
+        
+        console.log('Setting loading to false');
+        setLoading(false);
+      } catch (error) {
+        console.error('Error in getInitialSession:', error);
+        setLoading(false);
+        setUser(null);
+        setSession(null);
+        setRoles([]);
       }
-      
-      setLoading(false);
     };
 
     getInitialSession();
@@ -55,12 +97,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, 'User:', session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          await getUserRoles(session.user.id);
+          console.log('User in auth change, fetching roles...');
+          try {
+            const userRoles = await getUserRoles(session.user.id);
+            console.log('Roles fetched in auth change:', userRoles);
+          } catch (error) {
+            console.error('Error fetching roles in auth change:', error);
+            setRoles([]);
+          }
         } else {
+          console.log('No user in auth change, clearing roles');
           setRoles([]);
         }
         
@@ -83,6 +134,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       if (error) {
         console.error('Error fetching user roles:', error);
+        // If profile doesn't exist, create one with default role
+        if (error.code === 'PGRST116') {
+          console.log('Profile not found, creating default profile...');
+          const { data: newProfile, error: createError } = await supabase
+            .from("profiles")
+            .insert([
+              { 
+                id: userId, 
+                roles: ['user'], // Default role
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }
+            ])
+            .select("roles")
+            .single();
+
+          if (createError) {
+            console.error('Error creating profile:', createError);
+            setRoles(['user']); // Fallback to default role
+            return ['user'];
+          }
+          
+          const userRoles = newProfile?.roles || ['user'];
+          console.log('Created profile with roles:', userRoles);
+          setRoles(userRoles);
+          return userRoles;
+        }
         return [];
       }
       
@@ -94,17 +172,38 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return userRoles;
     } catch (error) {
       console.error('Error fetching user roles:', error);
-      return [];
+      setRoles(['user']); // Fallback to default role
+      return ['user'];
     }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    if (error) throw error;
+    try {
+      console.log('Starting sign in process...');
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) throw error;
+      
+      if (data.user) {
+        console.log('Sign in successful, fetching roles immediately...');
+        // Fetch roles immediately after successful login
+        try {
+          await getUserRoles(data.user.id);
+        } catch (roleError) {
+          console.error('Error fetching roles after login:', roleError);
+          // Continue even if role fetching fails
+        }
+      }
+      
+      console.log('Sign in process completed');
+    } catch (error) {
+      console.error('Sign in error:', error);
+      throw error;
+    }
   };
 
   const signUp = async (email: string, password: string) => {
