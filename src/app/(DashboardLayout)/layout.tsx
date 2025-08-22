@@ -2,7 +2,9 @@
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import { styled, useTheme } from "@mui/material/styles";
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/app/context/AuthContext';
 import Header from "./layout/vertical/header/Header";
 import Sidebar from "./layout/vertical/sidebar/Sidebar";
 import Customizer from "./layout/shared/customizer/Customizer";
@@ -37,10 +39,44 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const { activeLayout, isLayout, activeMode, isCollapse } = useContext(CustomizerContext);
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const MiniSidebarWidth = config.miniSidebarWidth;
 
-
   const theme = useTheme();
+
+  // Handle authentication redirect
+  useEffect(() => {
+    if (!loading && !user) {
+      // User is not authenticated, redirect to login
+      router.push('/auth/login');
+    }
+  }, [user, loading, router]);
+
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+      <Container>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '100vh',
+            gap: 2,
+          }}
+        >
+          <div>Loading...</div>
+        </Box>
+      </Container>
+    );
+  }
+
+  // Don't render layout if user is not authenticated
+  if (!user) {
+    return null;
+  }
 
   return (
     <MainWrapper>

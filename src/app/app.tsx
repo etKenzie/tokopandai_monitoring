@@ -7,6 +7,7 @@ import { ThemeSettings } from "@/utils/theme/Theme";
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter';
 import "@/utils/i18n";
 import { CustomizerContext } from '@/app/context/customizerContext';
+import { AuthProvider } from '@/app/context/AuthContext';
 
 
 const MyApp = ({ children }: { children: React.ReactNode }) => {
@@ -19,7 +20,9 @@ const MyApp = ({ children }: { children: React.ReactNode }) => {
                 <ThemeProvider theme={theme}>
                     <RTL direction={activeDir}>
                         <CssBaseline />
-                        {children}
+                        <AuthProvider>
+                            {children}
+                        </AuthProvider>
                     </RTL>
                 </ThemeProvider>
             </AppRouterCacheProvider>

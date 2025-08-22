@@ -43,6 +43,7 @@
     "yup": "^0.32.11"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "^2.56.0",
     "@types/chance": "^1.1.4",
     "@types/lodash": "^4.14.199",
     "@types/node": "^20.8.4",

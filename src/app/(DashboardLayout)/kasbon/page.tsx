@@ -1,7 +1,8 @@
 'use client';
 
-import { Box, Typography, CircularProgress } from '@mui/material';
+import { Box, Typography, CircularProgress, Paper, Button } from '@mui/material';
 import { useEffect, useState, useCallback } from 'react';
+import { useAuth } from '@/app/context/AuthContext';
 import { fetchKaryawan, fetchKasbonLoanFees, fetchKasbonSummary, fetchLoanDisbursement, fetchLoanRequests, fetchLoanRisk, fetchUserCoverage, fetchLoanPurpose, Karyawan, KasbonLoanFeesResponse, KasbonSummaryResponse, LoanDisbursementResponse, LoanRequestsResponse, LoanRiskResponse, UserCoverageResponse, LoanPurposeResponse } from '../../api/kasbon/KasbonSlice';
 import PageContainer from '../../components/container/PageContainer';
 import KaryawanOverdueTable from '../../components/kasbon/KaryawanOverdueTable';
@@ -12,8 +13,20 @@ import LoanPurposeChart from '../../components/kasbon/LoanPurposeChart';
 import LoanRiskChart from '../../components/kasbon/LoanRiskChart';
 import UserCoverageChart from '../../components/kasbon/UserCoverageChart';
 import SummaryTiles from '../../components/shared/SummaryTiles';
+import ProtectedRoute from '../../components/auth/ProtectedRoute';
+import RoleBasedContent from '../../components/auth/RoleBasedContent';
+import { useCheckRoles } from '@/app/hooks/useCheckRoles';
+import { getPageRoles } from '@/config/roles';
 
 const KasbonDashboard = () => {
+  const { user, roles, refreshRoles } = useAuth();
+  
+  // Check access for allowed roles (configurable via roles config)
+  const accessCheck = useCheckRoles(getPageRoles('KASBON_DASHBOARD'));
+  
+  // Log access check result for debugging
+  console.log('Kasbon Dashboard Access Check:', accessCheck);
+  
   const [karyawan, setKaryawan] = useState<Karyawan[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -778,9 +791,97 @@ const KasbonDashboard = () => {
           }}
           title="Overdue Employees"
         />
+
+        {/* Role Access Status */}
+        <Box mb={3}>
+          <Paper sx={{ p: 2, bgcolor: accessCheck.hasAccess ? 'success.light' : 'error.light' }}>
+            <Typography variant="h6" color="white" mb={1}>
+              🔐 Access Control Status
+            </Typography>
+            <Typography variant="body2" color="white" mb={1}>
+              User: {user?.email || 'Not authenticated'}
+            </Typography>
+            <Typography variant="body2" color="white" mb={1}>
+              User ID: {user?.id || 'Not available'}
+            </Typography>
+            <Typography variant="body2" color="white" mb={1}>
+              Roles: {accessCheck.userRoles.length > 0 ? accessCheck.userRoles.join(', ') : 'None'}
+            </Typography>
+            <Typography variant="body2" color="white" mb={1}>
+              Status: {accessCheck.hasAccess ? '✅ Access Granted' : '❌ Access Denied'}
+            </Typography>
+            <Button 
+              variant="outlined" 
+              size="small" 
+              onClick={() => refreshRoles()}
+              sx={{ mt: 1, color: 'white', borderColor: 'white' }}
+            >
+              🔄 Refresh Roles
+            </Button>
+          </Paper>
+        </Box>
+
+        {/* Role-Based Content Examples */}
+        <Box mb={3}>
+          <Typography variant="h5" fontWeight="bold" mb={2}>
+            Role-Based Access Control Examples
+          </Typography>
+          
+          {/* Content for all authenticated users */}
+          <Paper sx={{ p: 2, mb: 2, bgcolor: 'success.light' }}>
+            <Typography variant="h6" color="white">
+              ✅ Accessible to All Users
+            </Typography>
+            <Typography variant="body2" color="white">
+              This content is visible to anyone who is logged in.
+            </Typography>
+          </Paper>
+
+          {/* Content only for admins */}
+          <RoleBasedContent requiredRoles={getPageRoles('ADMIN_PANEL')}>
+            <Paper sx={{ p: 2, mb: 2, bgcolor: 'error.light' }}>
+              <Typography variant="h6" color="white">
+                🔒 Admin Only Content
+              </Typography>
+              <Typography variant="body2" color="white">
+                This sensitive information is only visible to administrators.
+              </Typography>
+            </Paper>
+          </RoleBasedContent>
+
+          {/* Content for managers or admins */}
+          <RoleBasedContent requiredRoles={getPageRoles('USER_MANAGEMENT')}>
+            <Paper sx={{ p: 2, mb: 2, bgcolor: 'warning.light' }}>
+              <Typography variant="h6" color="white">
+                ⚠️ Manager/Admin Content
+              </Typography>
+              <Typography variant="body2" color="white">
+                This content is visible to managers and administrators.
+              </Typography>
+            </Paper>
+          </RoleBasedContent>
+
+          {/* Content for analysts */}
+          <RoleBasedContent requiredRoles={getPageRoles('ANALYTICS_DASHBOARD')}>
+            <Paper sx={{ p: 2, mb: 2, bgcolor: 'info.light' }}>
+              <Typography variant="h6" color="white">
+                📊 Analyst Content
+              </Typography>
+              <Typography variant="body2" color="white">
+                This content is visible to data analysts.
+              </Typography>
+            </Paper>
+          </RoleBasedContent>
+        </Box>
       </Box>
     </PageContainer>
   );
 };
 
-export default KasbonDashboard;
+export default function ProtectedKasbonDashboard() {
+  return (
+    <ProtectedRoute requiredRoles={getPageRoles('KASBON_DASHBOARD')}>
+      <KasbonDashboard />
+    </ProtectedRoute>
+  );
+}
