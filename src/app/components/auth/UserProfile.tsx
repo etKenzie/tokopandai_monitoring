@@ -1,33 +1,34 @@
 'use client';
 
-import { useState } from 'react';
 import { useAuth } from '@/app/context/AuthContext';
-import {
-  Box,
-  Avatar,
-  Typography,
-  Chip,
-  IconButton,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
-  Divider,
-  Modal,
-  Paper,
-  List,
-  ListItem,
-} from '@mui/material';
+import { createUrl } from '@/utils/basePath';
 import {
   AccountCircle,
-  Logout,
-  Settings,
-  ExpandMore,
-  Security,
-  Email,
-  Person,
   Close,
+  Email,
+  ExpandMore,
+  Logout,
+  Person,
+  Security,
+  Settings,
 } from '@mui/icons-material';
+import {
+  Avatar,
+  Box,
+  Chip,
+  Divider,
+  IconButton,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Modal,
+  Paper,
+  Typography,
+} from '@mui/material';
+import { useState } from 'react';
 
 export default function UserProfile() {
   const { user, roles, signOut, loading } = useAuth();
@@ -50,7 +51,7 @@ export default function UserProfile() {
     } catch (error) {
       console.error('Error signing out:', error);
       // Force redirect even if there's an error
-      window.location.href = '/auth/login';
+      window.location.href = createUrl('/auth/login');
     }
   };
 

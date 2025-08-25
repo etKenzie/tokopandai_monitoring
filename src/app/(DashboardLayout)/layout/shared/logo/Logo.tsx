@@ -1,9 +1,10 @@
 'use client'
+import config from '@/app/context/config';
 import { CustomizerContext } from "@/app/context/customizerContext";
-import Link from "next/link";
+import { createAssetUrl } from '@/utils/basePath';
 import { styled } from "@mui/material/styles";
-import config from '@/app/context/config'
 import Image from "next/image";
+import Link from "next/link";
 import { useContext } from "react";
 
 const Logo = () => {
@@ -24,7 +25,7 @@ const Logo = () => {
       <LinkStyled href="/">
         {activeMode === "dark" ? (
           <Image
-            src="/images/logos/light-logo.svg"
+            src={createAssetUrl("/images/logos/light-logo.svg")}
             alt="logo"
             height={TopbarHeight}
             width={174}
@@ -32,7 +33,7 @@ const Logo = () => {
           />
         ) : (
           <Image
-            src={"/images/logos/dark-logo.svg"}
+            src={createAssetUrl("/images/logos/dark-logo.svg")}
             alt="logo"
             height={TopbarHeight}
             width={174}
@@ -47,7 +48,7 @@ const Logo = () => {
     <LinkStyled href="/">
       {activeMode === "dark" ? (
         <Image
-          src="/images/logos/dark-rtl-logo.svg"
+          src={createAssetUrl("/images/logos/dark-rtl-logo.svg")}
           alt="logo"
           height={TopbarHeight}
           width={174}
@@ -55,7 +56,7 @@ const Logo = () => {
         />
       ) : (
         <Image
-          src="/images/logos/light-logo-rtl.svg"
+          src={createAssetUrl("/images/logos/light-logo-rtl.svg")}
           alt="logo"
           height={TopbarHeight}
           width={174}

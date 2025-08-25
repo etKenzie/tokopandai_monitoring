@@ -1,22 +1,21 @@
 'use client';
 
-import { Box, Typography, CircularProgress, Paper, Button } from '@mui/material';
-import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/app/context/AuthContext';
-import { fetchKaryawan, fetchKasbonLoanFees, fetchKasbonSummary, fetchLoanDisbursement, fetchLoanRequests, fetchLoanRisk, fetchUserCoverage, fetchLoanPurpose, Karyawan, KasbonLoanFeesResponse, KasbonSummaryResponse, LoanDisbursementResponse, LoanRequestsResponse, LoanRiskResponse, UserCoverageResponse, LoanPurposeResponse } from '../../api/kasbon/KasbonSlice';
-import PageContainer from '../../components/container/PageContainer';
-import KaryawanOverdueTable from '../../components/kasbon/KaryawanOverdueTable';
-import KasbonFilters, { KasbonFilterValues } from '../../components/kasbon/KasbonFilters';
-import LoanDisbursementChart from '../../components/kasbon/LoanDisbursementChart';
-import LoanFeesChart from '../../components/kasbon/LoanFeesChart';
-import LoanPurposeChart from '../../components/kasbon/LoanPurposeChart';
-import LoanRiskChart from '../../components/kasbon/LoanRiskChart';
-import UserCoverageChart from '../../components/kasbon/UserCoverageChart';
-import SummaryTiles from '../../components/shared/SummaryTiles';
-import ProtectedRoute from '../../components/auth/ProtectedRoute';
-import RoleBasedContent from '../../components/auth/RoleBasedContent';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { getPageRoles } from '@/config/roles';
+import { Box, CircularProgress, Typography } from '@mui/material';
+import { useCallback, useEffect, useState } from 'react';
+import { fetchKaryawan, fetchKasbonLoanFees, fetchKasbonSummary, fetchLoanDisbursement, fetchLoanPurpose, fetchLoanRequests, fetchLoanRisk, fetchUserCoverage, Karyawan, KasbonLoanFeesResponse, KasbonSummaryResponse, LoanDisbursementResponse, LoanPurposeResponse, LoanRequestsResponse, LoanRiskResponse, UserCoverageResponse } from '../../../api/kasbon/KasbonSlice';
+import ProtectedRoute from '../../../components/auth/ProtectedRoute';
+import PageContainer from '../../../components/container/PageContainer';
+import KaryawanOverdueTable from '../../../components/kasbon/KaryawanOverdueTable';
+import KasbonFilters, { KasbonFilterValues } from '../../../components/kasbon/KasbonFilters';
+import LoanDisbursementChart from '../../../components/kasbon/LoanDisbursementChart';
+import LoanFeesChart from '../../../components/kasbon/LoanFeesChart';
+import LoanPurposeChart from '../../../components/kasbon/LoanPurposeChart';
+import LoanRiskChart from '../../../components/kasbon/LoanRiskChart';
+import UserCoverageChart from '../../../components/kasbon/UserCoverageChart';
+import SummaryTiles from '../../../components/shared/SummaryTiles';
 
 const KasbonDashboard = () => {
   const { user, roles, refreshRoles } = useAuth();

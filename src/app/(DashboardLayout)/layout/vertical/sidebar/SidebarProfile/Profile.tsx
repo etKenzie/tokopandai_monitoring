@@ -1,7 +1,8 @@
-import { Box, Avatar, Typography, IconButton, Tooltip, useMediaQuery } from '@mui/material';
-import { IconPower } from '@tabler/icons-react';
-import { CustomizerContext } from "@/app/context/customizerContext";
 import { useAuth } from '@/app/context/AuthContext';
+import { CustomizerContext } from "@/app/context/customizerContext";
+import { createUrl } from '@/utils/basePath';
+import { Avatar, Box, IconButton, Tooltip, Typography, useMediaQuery } from '@mui/material';
+import { IconPower } from '@tabler/icons-react';
 import { useContext } from 'react';
 
 export const Profile = () => {
@@ -18,7 +19,7 @@ export const Profile = () => {
     } catch (error) {
       console.error('Error signing out:', error);
       // Force redirect even if there's an error
-      window.location.href = '/auth/login';
+      window.location.href = createUrl('/auth/login');
     }
   };
   // Don't render if still loading

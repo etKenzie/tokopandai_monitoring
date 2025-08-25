@@ -1,10 +1,11 @@
 'use client'
-import React, { useContext } from "react";
-import { Grid, Typography, Box, Breadcrumbs } from "@mui/material";
-import Link from "next/link";
+import { CustomizerContext } from "@/app/context/customizerContext";
+import { createAssetUrl } from '@/utils/basePath';
+import { Box, Breadcrumbs, Grid, Typography } from "@mui/material";
 import { IconCircle } from "@tabler/icons-react";
 import Image from "next/image";
-import { CustomizerContext } from "@/app/context/customizerContext";
+import Link from "next/link";
+import { useContext } from "react";
 
 interface BreadCrumbType {
   subtitle?: string;
@@ -94,7 +95,7 @@ const Breadcrumb = ({ subtitle, items, title, children }: BreadCrumbType) => {
             <>
               <Box sx={{ top: "0px", position: "absolute" }}>
                 <Image
-                  src="/images/breadcrumb/ChatBc.png"
+                  src={createAssetUrl("/images/breadcrumb/ChatBc.png")}
                   alt={"breadcrumbImg"}
                   style={{ width: "165px", height: "165px" }}
                   priority

@@ -1,3 +1,5 @@
+import { createAssetUrl, createUrl } from '@/utils/basePath';
+
 // Notifications dropdown
 
 interface notificationType {
@@ -8,42 +10,42 @@ interface notificationType {
 
 const notifications: notificationType[] = [
   {
-    avatar: "/images/profile/user-10.jpg",
+    avatar: createAssetUrl("/images/profile/user-10.jpg"),
     title: "Roman Joined the Team!",
     subtitle: "Congratulate him",
   },
   {
-    avatar: "/images/profile/user-2.jpg",
+    avatar: createAssetUrl("/images/profile/user-2.jpg"),
     title: "New message received",
     subtitle: "Salma sent you new message",
   },
   {
-    avatar: "/images/profile/user-3.jpg",
+    avatar: createAssetUrl("/images/profile/user-3.jpg"),
     title: "New Payment received",
     subtitle: "Check your earnings",
   },
   {
-    avatar: "/images/profile/user-4.jpg",
+    avatar: createAssetUrl("/images/profile/user-4.jpg"),
     title: "Jolly completed tasks",
     subtitle: "Assign her new tasks",
   },
   {
-    avatar: "/images/profile/user-5.jpg",
+    avatar: createAssetUrl("/images/profile/user-5.jpg"),
     title: "Roman Joined the Team!",
     subtitle: "Congratulate him",
   },
   {
-    avatar: "/images/profile/user-6.jpg",
+    avatar: createAssetUrl("/images/profile/user-6.jpg"),
     title: "New message received",
     subtitle: "Salma sent you new message",
   },
   {
-    avatar: "/images/profile/user-7.jpg",
+    avatar: createAssetUrl("/images/profile/user-7.jpg"),
     title: "New Payment received",
     subtitle: "Check your earnings",
   },
   {
-    avatar: "/images/profile/user-8.jpg",
+    avatar: createAssetUrl("/images/profile/user-8.jpg"),
     title: "Jolly completed tasks",
     subtitle: "Assign her new tasks",
   },
@@ -60,22 +62,22 @@ interface ProfileType {
 }
 const profile: ProfileType[] = [
   {
-    href: "/",
+    href: createUrl("/"),
     title: "My Profile",
     subtitle: "Account Settings",
-    icon: "/images/svgs/icon-account.svg",
+    icon: createAssetUrl("/images/svgs/icon-account.svg"),
   },
   {
-    href: "/",
+    href: createUrl("/"),
     title: "My Inbox",
     subtitle: "Messages & Emails",
-    icon: "/images/svgs/icon-inbox.svg",
+    icon: createAssetUrl("/images/svgs/icon-inbox.svg"),
   },
   {
-    href: "/",
+    href: createUrl("/"),
     title: "My Tasks",
     subtitle: "To-do and Daily Tasks",
-    icon: "/images/svgs/icon-tasks.svg",
+    icon: createAssetUrl("/images/svgs/icon-tasks.svg"),
   },
 ];
 
@@ -90,52 +92,52 @@ interface appsLinkType {
 
 const appsLink: appsLinkType[] = [
   {
-    href: "/",
+    href: createUrl("/"),
     title: "Chat Application",
     subtext: "New messages arrived",
-    avatar: "/images/svgs/icon-dd-chat.svg",
+    avatar: createAssetUrl("/images/svgs/icon-dd-chat.svg"),
   },
   {
-    href: "/",
+    href: createUrl("/"),
     title: "eCommerce App",
     subtext: "New stock available",
-    avatar: "/images/svgs/icon-dd-cart.svg",
+    avatar: createAssetUrl("/images/svgs/icon-dd-cart.svg"),
   },
   {
-    href: "/",
+    href: createUrl("/"),
     title: "Notes App",
     subtext: "To-do and Daily tasks",
-    avatar: "/images/svgs/icon-dd-invoice.svg",
+    avatar: createAssetUrl("/images/svgs/icon-dd-invoice.svg"),
   },
   {
-    href: "/",
+    href: createUrl("/"),
     title: "Calendar App",
     subtext: "Get dates",
-    avatar: "/images/svgs/icon-dd-date.svg",
+    avatar: createAssetUrl("/images/svgs/icon-dd-date.svg"),
   },
   {
-    href: "/",
+    href: createUrl("/"),
     title: "Contact Application",
     subtext: "2 Unsaved Contacts",
-    avatar: "/images/svgs/icon-dd-mobile.svg",
+    avatar: createAssetUrl("/images/svgs/icon-dd-mobile.svg"),
   },
   {
-    href: "/",
+    href: createUrl("/"),
     title: "Tickets App",
     subtext: "Submit tickets",
-    avatar: "/images/svgs/icon-dd-lifebuoy.svg",
+    avatar: createAssetUrl("/images/svgs/icon-dd-lifebuoy.svg"),
   },
   {
-    href: "/",
+    href: createUrl("/"),
     title: "Email App",
     subtext: "Get new emails",
-    avatar: "/images/svgs/icon-dd-message-box.svg",
+    avatar: createAssetUrl("/images/svgs/icon-dd-message-box.svg"),
   },
   {
-    href: "/",
+    href: createUrl("/"),
     title: "Blog App",
     subtext: "added new blog",
-    avatar: "/images/svgs/icon-dd-application.svg",
+    avatar: createAssetUrl("/images/svgs/icon-dd-application.svg"),
   },
 ];
 
@@ -146,37 +148,38 @@ interface LinkType {
 
 const pageLinks: LinkType[] = [
   {
-    href: "/",
+    href: createUrl("/"),
     title: "Pricing Page",
   },
   {
-    href: "/auth/auth1/login",
+    href: createUrl("/auth/auth1/login"),
     title: "Authentication Design",
   },
   {
-    href: "/auth/auth1/register",
+    href: createUrl("/auth/auth1/register"),
     title: "Register Now",
   },
   {
-    href: "/404",
+    href: createUrl("/404"),
     title: "404 Error Page",
   },
   {
-    href: "/",
+    href: createUrl("/"),
     title: "Notes App",
   },
   {
-    href: "/",
+    href: createUrl("/"),
     title: "User Application",
   },
   {
-    href: "/",
+    href: createUrl("/"),
     title: "Blog Design",
   },
   {
-    href: "/",
+    href: createUrl("/"),
     title: "Shopping Cart",
   },
 ];
 
-export { notifications, profile, pageLinks, appsLink };
+export { appsLink, notifications, pageLinks, profile };
+

@@ -1,6 +1,9 @@
 import {
   IconAperture,
-  IconCash
+  IconCalendarDollar,
+  IconDashboard,
+  IconGraph,
+  IconUserCancel
 } from "@tabler/icons-react";
 import { uniqueId } from "lodash";
 
@@ -33,13 +36,43 @@ const Menuitems: MenuitemsType[] = [
     // chip: "New",
     // chipColor: "secondary",
   },
+  // {
+  //   id: uniqueId(),
+  //   title: "Kasbon",
+  //   icon: IconCash,
+  //   chip: "New",
+  //   href: "/kasbon",
+  //   chipColor: "secondary"
+  // },
   {
     id: uniqueId(),
     title: "Kasbon",
-    icon: IconCash,
-    chip: "New",
+    icon: IconCalendarDollar,
     href: "/kasbon",
-    chipColor: "secondary"
+    
+    children: [
+      {
+        id: uniqueId(),
+        title: "Overview",
+        icon: IconDashboard,
+        href: "/kasbon/overview",
+        chip: "New",
+        chipColor: "secondary",
+      },
+      {
+        id: uniqueId(),
+        title: "Client Performance",
+        icon: IconGraph,
+        href: "/kasbon/client-performance",
+      },
+      {
+        id: uniqueId(),
+        title: "Non-Performing List",
+        icon: IconUserCancel,
+        href: "/kasbon/non-performing-list",
+      },
+      
+    ],
   },
 
   // {

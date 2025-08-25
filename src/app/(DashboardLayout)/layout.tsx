@@ -1,24 +1,25 @@
 "use client";
-import Box from "@mui/material/Box";
-import Container from "@mui/material/Container";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
-import Grid from "@mui/material/Grid";
-import CircularProgress from "@mui/material/CircularProgress";
-import { styled, useTheme } from "@mui/material/styles";
-import React, { useState, useContext, useEffect } from "react";
-import { useRouter } from 'next/navigation';
+import Logo from '@/app/(DashboardLayout)/layout/shared/logo/Logo';
+import PageContainer from '@/app/components/container/PageContainer';
 import { useAuth } from '@/app/context/AuthContext';
+import config from "@/app/context/config";
+import { CustomizerContext } from "@/app/context/customizerContext";
+import { createUrl } from '@/utils/basePath';
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Container from "@mui/material/Container";
+import Grid from "@mui/material/Grid";
+import { styled, useTheme } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import React, { useContext, useEffect } from "react";
+import HorizontalHeader from "./layout/horizontal/header/Header";
+import Navigation from "./layout/horizontal/navbar/Navigation";
+import Customizer from "./layout/shared/customizer/Customizer";
 import Header from "./layout/vertical/header/Header";
 import Sidebar from "./layout/vertical/sidebar/Sidebar";
-import Customizer from "./layout/shared/customizer/Customizer";
-import Navigation from "./layout/horizontal/navbar/Navigation";
-import HorizontalHeader from "./layout/horizontal/header/Header";
-import { CustomizerContext } from "@/app/context/customizerContext";
-import config from "@/app/context/config";
-import PageContainer from '@/app/components/container/PageContainer';
-import Logo from '@/app/(DashboardLayout)/layout/shared/logo/Logo';
-import Image from 'next/image';
 
 const MainWrapper = styled("div")(() => ({
   display: "flex",
@@ -55,8 +56,8 @@ export default function RootLayout({
   // Handle authentication redirect
   useEffect(() => {
     if (!loading && !user) {
-      // User is not authenticated, redirect to login
-      router.push('/auth/login');
+      // User is not authenticated, redirect to login with correct base path
+      router.push(createUrl('/auth/login'));
     }
   }, [user, loading, router]);
 

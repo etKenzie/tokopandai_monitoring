@@ -9,17 +9,16 @@ import Collapse from '@mui/material/Collapse';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
-import { Theme } from '@mui/material/styles';
+import { styled, Theme, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { styled, useTheme } from '@mui/material/styles';
 
 // custom imports
 import NavItem from '../NavItem';
 
 // plugins
+import { CustomizerContext } from "@/app/context/customizerContext";
 import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import { CustomizerContext } from "@/app/context/customizerContext";
 
 import { isNull } from "lodash";
 
@@ -92,8 +91,12 @@ export default function NavCollapse({
         ? 'white'
         : level > 1 && open
           ? theme.palette.primary.main
-          : theme.palette.text.secondary,
+          : '#000000 !important',
     borderRadius: `${isBorderRadius}px`,
+    '&.Mui-selected': {
+      color: '#000000 !important',
+      backgroundColor: 'transparent !important',
+    },
   }));
 
   // If Menu has Children
@@ -128,7 +131,7 @@ export default function NavCollapse({
     <>
       <ListItemStyled
         onClick={handleClick}
-        selected={pathWithoutLastPart === menu.href}
+        selected={false}
         key={menu?.id}
       >
         <ListItemIcon

@@ -1,6 +1,7 @@
 'use client';
 
 import { supabase } from '@/lib/supabaseClient';
+import { createUrl } from '@/utils/basePath';
 import { Session, User } from '@supabase/supabase-js';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
@@ -219,8 +220,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       console.log('Sign out completed');
       
-      // Force redirect to login page
-      window.location.href = '/auth/login';
+      // Force redirect to login page with correct base path
+      window.location.href = createUrl('/auth/login');
       
     } catch (error) {
       console.error('Unexpected error during sign out:', error);
@@ -230,7 +231,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setRoles([]);
       setAuthLoading(false);
       setRolesLoading(false);
-      window.location.href = '/auth/login';
+      window.location.href = createUrl('/auth/login');
     }
   };
 
