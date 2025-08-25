@@ -1,18 +1,21 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
+import { Session, User } from '@supabase/supabase-js';
+import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   roles: string[];
-  loading: boolean;
+  authLoading: boolean;
+  rolesLoading: boolean;
+  loading: boolean; // Computed property for backward compatibility
+  isAuthenticated: boolean; // Helper to check if user is fully authenticated
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  getUserRoles: (userId: string, retryCount?: number) => Promise<string[]>;
+  getUserRoles: (userId: string) => Promise<string[]>;
   refreshRoles: () => Promise<string[]>;
 }
 
@@ -34,32 +37,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // Fallback timeout to prevent infinite loading
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (loading) {
-        console.warn('Auth loading timeout - forcing completion');
-        setLoading(false);
-      }
-    }, 15000); // 15 seconds - longer timeout to allow for role fetching
-
-    return () => clearTimeout(timeoutId);
-  }, [loading]);
-
-  // Add page refresh mechanism for role fetching
-  useEffect(() => {
-    if (user && (!roles || roles.length === 0) && !loading) {
-      console.log('User exists but no roles, refreshing page in 3 seconds...');
-      const refreshTimeout = setTimeout(() => {
-        console.log('Refreshing page to reload roles...');
-        window.location.reload();
-      }, 3000); // Refresh after 3 seconds
-
-      return () => clearTimeout(refreshTimeout);
-    }
-  }, [user, roles, loading]);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [rolesLoading, setRolesLoading] = useState(true);
 
   useEffect(() => {
     // Get initial session
@@ -70,7 +49,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         
         if (error) {
           console.error('Error getting session:', error);
-          setLoading(false);
+          setAuthLoading(false);
+          setRolesLoading(false);
           return;
         }
         
@@ -79,36 +59,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setSession(session);
         setUser(session?.user ?? null);
         
+        // Always end auth loading after session fetch - don't wait for roles
+        setAuthLoading(false);
+        
         if (session?.user) {
-          console.log('User found, fetching roles...');
-          // Fetch roles immediately and await them
-          try {
-            const userRoles = await getUserRoles(session.user.id);
-            console.log('Roles fetched successfully:', userRoles);
-            
-            // Ensure roles are actually set before ending loading
-            if (userRoles && userRoles.length > 0) {
-              console.log('Initial roles confirmed, ending loading state');
-              setLoading(false);
-            } else {
-              console.log('No initial roles returned, setting default and ending loading');
-              setRoles(['user']);
-              setLoading(false);
-            }
-          } catch (error) {
-            console.error('Error fetching roles:', error);
-            // Set default role instead of empty array
-            setRoles(['user']);
-            setLoading(false);
-          }
+          console.log('User found, fetching roles in background...');
+          // Fetch roles in background - don't block auth loading
+          setRolesLoading(true);
+          getUserRoles(session.user.id).catch(error => {
+            console.error('Error fetching roles in background:', error);
+            setRoles(['user']); // Safe default
+            setRolesLoading(false);
+          });
         } else {
-          console.log('No user found, setting empty roles and ending loading');
+          console.log('No user found, setting empty roles');
           setRoles([]);
-          setLoading(false);
+          setRolesLoading(false);
         }
       } catch (error) {
         console.error('Error in getInitialSession:', error);
-        setLoading(false);
+        setAuthLoading(false);
+        setRolesLoading(false);
         setUser(null);
         setSession(null);
         setRoles([]);
@@ -125,30 +96,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          console.log('User in auth change, fetching roles...');
-          try {
-            const userRoles = await getUserRoles(session.user.id);
-            console.log('Roles fetched in auth change:', userRoles);
-            
-            // Ensure roles are actually set before ending loading
-            if (userRoles && userRoles.length > 0) {
-              console.log('Roles confirmed, ending loading state');
-              setLoading(false);
-            } else {
-              console.log('No roles returned, setting default and ending loading');
-              setRoles(['user']);
-              setLoading(false);
-            }
-          } catch (error) {
+          console.log('User in auth change, fetching roles in background...');
+          // Fetch roles in background - don't block auth state
+          setRolesLoading(true);
+          getUserRoles(session.user.id).catch(error => {
             console.error('Error fetching roles in auth change:', error);
-            // Set default role instead of empty array
-            setRoles(['user']);
-            setLoading(false);
-          }
+            setRoles(['user']); // Safe default
+            setRolesLoading(false);
+          });
         } else {
-          console.log('No user in auth change, clearing roles and ending loading');
+          console.log('No user in auth change, clearing roles');
           setRoles([]);
-          setLoading(false);
+          setRolesLoading(false);
         }
       }
     );
@@ -156,12 +115,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const getUserRoles = async (userId: string, retryCount = 0): Promise<string[]> => {
-    const maxRetries = 3;
-    const retryDelay = 1000; // 1 second
-
+  const getUserRoles = async (userId: string): Promise<string[]> => {
     try {
-      console.log(`Fetching roles for user: ${userId} (attempt ${retryCount + 1})`);
+      console.log(`Fetching roles for user: ${userId}`);
       
       const { data: profile, error } = await supabase
         .from("profiles")
@@ -174,20 +130,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         
         // If profile doesn't exist, return default role without creating profile
         if (error.code === 'PGRST116') {
-          console.log('Profile not found, using default role without creating profile');
-          setRoles(['user']); // Default role without creating profile
+          console.log('Profile not found, using default role');
+          setRoles(['user']);
+          setRolesLoading(false);
           return ['user'];
         }
         
-        // For other errors, retry if we haven't exceeded max retries
-        if (retryCount < maxRetries) {
-          console.log(`Retrying role fetch in ${retryDelay}ms... (attempt ${retryCount + 1}/${maxRetries})`);
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
-          return getUserRoles(userId, retryCount + 1);
-        }
-        
-        console.error('Max retries reached, using fallback role');
-        setRoles(['user']); // Fallback to default role
+        // For other errors, use default role
+        console.error('Using fallback role due to error');
+        setRoles(['user']);
+        setRolesLoading(false);
         return ['user'];
       }
       
@@ -195,27 +147,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const userRoles = profile?.roles || [];
       console.log('User roles:', userRoles);
       
-      // If roles array is empty, use default role without updating database
+      // If roles array is empty, use default role
       if (userRoles.length === 0) {
-        console.log('Profile exists but has no roles, using default role without updating database');
+        console.log('Profile exists but has no roles, using default role');
         setRoles(['user']);
+        setRolesLoading(false);
         return ['user'];
       }
       
       setRoles(userRoles);
+      setRolesLoading(false);
       return userRoles;
     } catch (error) {
       console.error('Error fetching user roles:', error);
       
-      // Retry on unexpected errors
-      if (retryCount < maxRetries) {
-        console.log(`Retrying due to unexpected error in ${retryDelay}ms... (attempt ${retryCount + 1}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, retryDelay));
-        return getUserRoles(userId, retryCount + 1);
-      }
-      
-      console.error('Max retries reached, using fallback role');
-      setRoles(['user']); // Fallback to default role
+      // Use default role on any error
+      console.error('Using fallback role due to unexpected error');
+      setRoles(['user']);
+      setRolesLoading(false);
       return ['user'];
     }
   };
@@ -256,6 +205,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(null);
       setSession(null);
       setRoles([]);
+      setAuthLoading(false);
+      setRolesLoading(false);
       
       // Sign out from Supabase
       const { error } = await supabase.auth.signOut();
@@ -277,6 +228,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(null);
       setSession(null);
       setRoles([]);
+      setAuthLoading(false);
+      setRolesLoading(false);
       window.location.href = '/auth/login';
     }
   };
@@ -284,6 +237,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const refreshRoles = async () => {
     if (user) {
       console.log('Manually refreshing roles for user:', user.id);
+      setRolesLoading(true);
       try {
         const userRoles = await getUserRoles(user.id);
         console.log('Roles refreshed successfully:', userRoles);
@@ -291,6 +245,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       } catch (error) {
         console.error('Error refreshing roles:', error);
         setRoles(['user']); // Set default role on error
+        setRolesLoading(false);
         return ['user'];
       }
     }
@@ -303,7 +258,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     user,
     session,
     roles,
-    loading,
+    authLoading,
+    rolesLoading,
+    loading: authLoading || rolesLoading, // Computed property for backward compatibility
+    isAuthenticated: !authLoading && !!user && !rolesLoading, // Helper to check if user is fully authenticated
     signIn,
     signUp,
     signOut,
