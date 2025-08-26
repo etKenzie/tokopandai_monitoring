@@ -18,6 +18,7 @@ import { Visibility, VisibilityOff, Email, LockOutlined } from '@mui/icons-mater
 import PageContainer from '@/app/components/container/PageContainer';
 import Logo from '@/app/(DashboardLayout)/layout/shared/logo/Logo';
 import Image from 'next/image';
+import { createAssetUrl } from '@/utils/basePath';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -117,7 +118,7 @@ export default function LoginPage() {
               }}
             >
               <Image
-                src={"/images/backgrounds/login-bg.svg"}
+                src={createAssetUrl("/images/backgrounds/login-bg.svg")}
                 alt="bg" width={500} height={500}
                 style={{
                   width: '100%',

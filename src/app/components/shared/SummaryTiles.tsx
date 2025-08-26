@@ -10,6 +10,7 @@ interface TileDef {
   isCurrency?: boolean;
   color?: string;
   fontWeight?: number;
+  mdSize?: number; // Individual tile column size
 }
 
 interface SummaryTilesProps {
@@ -47,19 +48,30 @@ const SummaryTiles: React.FC<SummaryTilesProps> = ({ tiles, md = 4 }) => {
   return (
     <Grid container spacing={3} alignItems="stretch">
       {tiles.map((tile, idx) => (
-        <Grid size={{ xs: 12, sm: 6, md: md }} key={tile.title + idx}>
+        <Grid size={{ xs: 12, sm: 6, md: tile.mdSize || md }} key={tile.title + idx}>
           <Box sx={{ color: tile.color, fontWeight: tile.fontWeight, height: '100%' }}>
             <DashboardCard>
-              <Box p={2} sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <Box p={2} sx={{ 
+                height: '120px', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                justifyContent: 'space-between',
+                minHeight: '120px'
+              }}>
                 <Box
                   sx={{
                     fontSize: '0.875rem',
                     color: 'text.secondary',
                     mb: 1,
                     fontWeight: 500,
-                    minHeight: '1.5rem', // Ensure consistent title height
-                    display: 'flex',
-                    alignItems: 'center',
+                    minHeight: '1.5rem',
+                    alignItems: 'flex-start',
+                    lineHeight: '1.2',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
                   }}
                 >
                   {tile.title}
@@ -69,9 +81,14 @@ const SummaryTiles: React.FC<SummaryTilesProps> = ({ tiles, md = 4 }) => {
                     fontSize: '1.5rem',
                     fontWeight: 'bold',
                     color: tile.color || 'text.primary',
-                    minHeight: '2.5rem', // Ensure consistent value height
-                    display: 'flex',
-                    alignItems: 'center',
+                    minHeight: '2.5rem',
+                    alignItems: 'flex-end',
+                    lineHeight: '1.2',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
                   }}
                 >
                   {formatValue(tile.value, tile.isCurrency)}
