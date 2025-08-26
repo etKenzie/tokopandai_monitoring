@@ -5,7 +5,7 @@ import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { getPageRoles } from '@/config/roles';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
-import { fetchKaryawan, fetchKasbonLoanFees, fetchKasbonSummary, fetchLoanDisbursement, fetchLoanPurpose, fetchLoanRequests, fetchLoanRisk, fetchUserCoverage, Karyawan, KasbonLoanFeesResponse, KasbonSummaryResponse, LoanDisbursementResponse, LoanPurposeResponse, LoanRequestsResponse, LoanRiskResponse, UserCoverageResponse } from '../../../api/kasbon/KasbonSlice';
+import { fetchKaryawan, fetchKasbonLoanFees, fetchKasbonSummary, fetchLoanDisbursement, fetchLoanPurpose, fetchLoanRequests, fetchLoanRisk, fetchUserCoverage, fetchCoverageUtilization, fetchRepaymentRisk, Karyawan, KasbonLoanFeesResponse, KasbonSummaryResponse, LoanDisbursementResponse, LoanPurposeResponse, LoanRequestsResponse, LoanRiskResponse, UserCoverageResponse, CoverageUtilizationResponse, RepaymentRiskResponse } from '../../../api/kasbon/KasbonSlice';
 import ProtectedRoute from '../../../components/auth/ProtectedRoute';
 import PageContainer from '../../../components/container/PageContainer';
 import KasbonFilters, { KasbonFilterValues } from '../../../components/kasbon/KasbonFilters';
@@ -14,6 +14,9 @@ import LoanPurposeChart from '../../../components/kasbon/LoanPurposeChart';
 import LoanRiskChart from '../../../components/kasbon/LoanRiskChart';
 import UserCoverageChart from '../../../components/kasbon/UserCoverageChart';
 import UserCoverageUtilizationSummary from '../../../components/kasbon/UserCoverageUtilizationSummary';
+import CoverageUtilizationChart from '../../../components/kasbon/CoverageUtilizationChart';
+import RepaymentRiskSummary from '../../../components/kasbon/RepaymentRiskSummary';
+import RepaymentRiskChart from '../../../components/kasbon/RepaymentRiskChart';
 import SummaryTiles from '../../../components/shared/SummaryTiles';
 
 const KasbonDashboard = () => {
@@ -41,6 +44,10 @@ const KasbonDashboard = () => {
   const [loanRequestsLoading, setLoanRequestsLoading] = useState(false);
   const [loanDisbursementData, setLoanDisbursementData] = useState<LoanDisbursementResponse | null>(null);
   const [loanDisbursementLoading, setLoanDisbursementLoading] = useState(false);
+  const [coverageUtilizationData, setCoverageUtilizationData] = useState<CoverageUtilizationResponse | null>(null);
+  const [coverageUtilizationLoading, setCoverageUtilizationLoading] = useState(false);
+  const [repaymentRiskData, setRepaymentRiskData] = useState<RepaymentRiskResponse | null>(null);
+  const [repaymentRiskLoading, setRepaymentRiskLoading] = useState(false);
   const [loanPurposeData, setLoanPurposeData] = useState<LoanPurposeResponse | null>(null);
   const [loanPurposeLoading, setLoanPurposeLoading] = useState(false);
   
@@ -248,205 +255,83 @@ const KasbonDashboard = () => {
     }
   }, []);
 
+  const fetchCoverageUtilizationData = useCallback(async (currentFilters: KasbonFilterValues) => {
+    setCoverageUtilizationLoading(true);
+    try {
+      // Only fetch coverage utilization if we have month and year (required)
+      if (currentFilters.month && currentFilters.year) {
+        const response = await fetchCoverageUtilization({
+          employer: currentFilters.employer || undefined,
+          sourced_to: currentFilters.placement || undefined,
+          project: currentFilters.project || undefined,
+          month: currentFilters.month,
+          year: currentFilters.year,
+        });
+        setCoverageUtilizationData(response);
+      } else {
+        setCoverageUtilizationData(null);
+      }
+    } catch (err) {
+      console.error('Failed to fetch coverage utilization data:', err);
+      setCoverageUtilizationData(null);
+    } finally {
+      setCoverageUtilizationLoading(false);
+    }
+  }, []);
+
+  const fetchRepaymentRiskData = useCallback(async (currentFilters: KasbonFilterValues) => {
+    setRepaymentRiskLoading(true);
+    try {
+      // Only fetch repayment risk if we have month and year (required)
+      if (currentFilters.month && currentFilters.year) {
+        const response = await fetchRepaymentRisk({
+          employer: currentFilters.employer || undefined,
+          sourced_to: currentFilters.placement || undefined,
+          project: currentFilters.project || undefined,
+          month: currentFilters.month,
+          year: currentFilters.year,
+        });
+        setRepaymentRiskData(response);
+      } else {
+        setRepaymentRiskData(null);
+      }
+    } catch (err) {
+      console.error('Failed to fetch repayment risk data:', err);
+      setRepaymentRiskData(null);
+    } finally {
+      setRepaymentRiskLoading(false);
+    }
+  }, []);
+
   const handleFiltersChange = useCallback((newFilters: KasbonFilterValues) => {
     console.log('Filters changed:', newFilters);
     setFilters(newFilters);
     // fetchSummaryData(newFilters);
-    fetchLoanFeesData(newFilters);
-    fetchLoanRiskData(newFilters);
-    fetchUserCoverageData(newFilters);
-    fetchLoanRequestsData(newFilters);
-    fetchLoanDisbursementData(newFilters);
+    // fetchLoanFeesData(newFilters);
+    // fetchLoanRiskData(newFilters);
+    // fetchUserCoverageData(newFilters);
+    // fetchLoanRequestsData(newFilters);
+    // fetchLoanDisbursementData(newFilters);
     fetchLoanPurposeData(newFilters);
-  }, [fetchSummaryData, fetchLoanFeesData, fetchLoanRiskData, fetchUserCoverageData, fetchLoanRequestsData, fetchLoanDisbursementData, fetchLoanPurposeData]);
+    fetchCoverageUtilizationData(newFilters);
+    fetchRepaymentRiskData(newFilters);
+  }, [fetchCoverageUtilizationData, fetchRepaymentRiskData]);
 
-  useEffect(() => {
-    fetchData();
-  }, []); // Only run once on mount
 
   useEffect(() => {
     // Only fetch data if month and year are set (after initialization)
     if (filters.month && filters.year) {
       // fetchSummaryData(filters);
-      fetchLoanFeesData(filters);
-      fetchLoanRiskData(filters);
-      fetchUserCoverageData(filters);
-      fetchLoanRequestsData(filters);
-      fetchLoanDisbursementData(filters);
+      // fetchLoanFeesData(filters);
+      // fetchLoanRiskData(filters);
+      // fetchUserCoverageData(filters);
+      // fetchLoanRequestsData(filters);
+      // fetchLoanDisbursementData(filters);
       fetchLoanPurposeData(filters);
+      fetchCoverageUtilizationData(filters);
+      fetchRepaymentRiskData(filters);
     }
   }, [filters.month, filters.year, filters.employer, filters.placement, filters.project]); // Run when any filter changes
-
-  // Create summary tiles from the data
-  const createSummaryTiles = () => {
-    if (!summaryData) return [];
-
-    return [
-      { 
-        title: "Total Eligible Employees", 
-        value: summaryData.total_eligible_employees 
-      },
-      { 
-        title: "Total Processed Requests", 
-        value: summaryData.total_processed_kasbon_requests 
-      },
-      { 
-        title: "Total Pending Requests", 
-        value: summaryData.total_pending_kasbon_requests 
-      },
-      { 
-        title: "Total First Borrow", 
-        value: summaryData.total_first_borrow 
-      },
-      { 
-        title: "Total Approved Requests", 
-        value: summaryData.total_approved_requests 
-      },
-      { 
-        title: "Total Rejected Requests", 
-        value: summaryData.total_rejected_requests 
-      },
-      { 
-        title: "Total Disbursed Amount", 
-        value: summaryData.total_disbursed_amount, 
-        isCurrency: true 
-      },
-      { 
-        title: "Total Unique Requests", 
-        value: summaryData.total_unique_requests 
-      },
-      { 
-        title: "Average Disbursed Amount", 
-        value: summaryData.average_disbursed_amount, 
-        isCurrency: true 
-      },
-      { 
-        title: "Approval Rate", 
-        value: summaryData.approval_rate, 
-        isCurrency: false 
-      },
-      { 
-        title: "Average Approval Time", 
-        value: summaryData.average_approval_time 
-      },
-      { 
-        title: "Penetration Rate", 
-        value: summaryData.penetration_rate, 
-        isCurrency: false 
-      },
-    ];
-  };
-
-  // Create loan fees tiles from the data
-  const createLoanFeesTiles = () => {
-    if (!loanFeesData) return [];
-
-    return [
-      { 
-        title: "Admin Fee Profit", 
-        value: loanFeesData.admin_fee_profit,
-        isCurrency: true 
-      },
-      { 
-        title: "Total Expected Admin Fee", 
-        value: loanFeesData.total_expected_admin_fee,
-        isCurrency: true 
-      },
-      { 
-        title: "Total Collected Admin Fee", 
-        value: loanFeesData.total_collected_admin_fee,
-        isCurrency: true 
-      },
-      { 
-        title: "Total Unrecovered Kasbon", 
-        value: loanFeesData.total_failed_payment,
-        isCurrency: true 
-      },
-      { 
-        title: "Expected Loans Count", 
-        value: loanFeesData.expected_loans_count,
-        isCurrency: false
-      },
-      
-      { 
-        title: "Collected Loans Count", 
-        value: loanFeesData.collected_loans_count,
-        isCurrency: false
-      },
-      
-      
-    ];
-  };
-
-  // Create loan disbursement tiles from the data
-  const createLoanDisbursementTiles = () => {
-    if (!loanDisbursementData) return [];
-
-    return [
-      { 
-        title: "Total Disbursed Amount", 
-        value: loanDisbursementData.total_disbursed_amount,
-        isCurrency: true
-      },
-      { 
-        title: "Average Disbursed Amount", 
-        value: loanDisbursementData.average_disbursed_amount,
-        isCurrency: true
-      },
-    ];
-  };
-
-  // Create kasbon repayment & risk tiles from the data
-  const createKasbonRepaymentRiskTiles = () => {
-    return [
-      { 
-        title: "Total Expected Repayment", 
-        value: loanRiskData?.total_expected_repayment || 0,
-        isCurrency: true
-      },
-      { 
-        title: "Total Kasbon Principal Collected", 
-        value: 0, // Not implemented yet
-        isCurrency: true
-      },
-      { 
-        title: "Total Admin Fee Collected", 
-        value: loanFeesData?.total_collected_admin_fee || 0,
-        isCurrency: true
-      },
-      { 
-        title: "Total Unrecovered Repayment", 
-        value: loanRiskData?.total_unrecovered_kasbon || 0,
-        isCurrency: true
-      },
-      { 
-        title: "Total Unrecovered Kasbon Principal", 
-        value: 0, // Not implemented yet
-        isCurrency: true
-      },
-      { 
-        title: "Total Unrecovered Admin Fee", 
-        value: 0, // Not implemented yet
-        isCurrency: true
-      },
-      { 
-        title: "Repayment Recovery Rate", 
-        value: loanRiskData?.kasbon_principal_recovery_rate || 0,
-        isCurrency: false
-      },
-      { 
-        title: "Delinquencies Rate", 
-        value: 0, // Not implemented yet
-        isCurrency: false
-      },
-      { 
-        title: "Admin Fee Profit", 
-        value: loanFeesData?.admin_fee_profit || 0,
-        isCurrency: true
-      },
-    ];
-  };
-
 
 
   return (
@@ -471,95 +356,25 @@ const KasbonDashboard = () => {
         {/* User Coverage and Utilization Summary */}
         <Box mb={3}>
           <UserCoverageUtilizationSummary
-            userCoverageData={userCoverageData}
-            loanRequestsData={loanRequestsData}
-            loanDisbursementData={loanDisbursementData}
-            isLoading={userCoverageLoading || loanRequestsLoading || loanDisbursementLoading}
+            coverageUtilizationData={coverageUtilizationData}
+            isLoading={coverageUtilizationLoading}
           />
         </Box>
 
-                 {/* User Coverage Chart */}
-         <Box mb={3}>
-           {/* <Typography variant="h5" fontWeight="bold" mb={2}>
-             User Coverage Chart
-           </Typography> */}
-           {userCoverageLoading ? (
-             <Box display="flex" justifyContent="center" alignItems="center" height="300px">
-               <CircularProgress />
-             </Box>
-           ) : userCoverageData ? (
-             <UserCoverageChart 
-               filters={{
-                 employer: filters.employer,
-                 placement: filters.placement,
-                 project: filters.project,
-                 month: filters.month,
-                 year: filters.year
-               }}
-             />
-           ) : (
-             <Box display="flex" justifyContent="center" alignItems="center" height="300px">
-               <Typography variant="body1" color="textSecondary">
-                 No data available
-               </Typography>
-             </Box>
-           )}
-         </Box>
-
-        {/* Loan Fees Tiles */}
-        {/* <Box mb={3}>
-          <Typography variant="h5" fontWeight="bold" mb={2}>
-            Loan Fees Summary
-          </Typography>
-          {loanFeesLoading ? (
-            <Box display="flex" justifyContent="center" alignItems="center" height="200px">
-              <CircularProgress />
-            </Box>
-          ) : loanFeesData ? (
-            <SummaryTiles 
-              tiles={createLoanFeesTiles()} 
-              md={4} 
-            />
-          ) : (
-            <Box display="flex" justifyContent="center" alignItems="center" height="200px">
-              <Typography variant="body1" color="textSecondary">
-                No data available
-              </Typography>
-            </Box>
-          )}
-        </Box> */}
+        {/* Coverage Utilization Chart */}
+        <Box mb={3}>
+          <CoverageUtilizationChart 
+            filters={{
+              employer: filters.employer,
+              placement: filters.placement,
+              project: filters.project,
+              month: filters.month,
+              year: filters.year
+            }}
+          />
+        </Box>
 
         
-
-        {/* Loan Disbursement Chart */}
-        <Box mb={3}>
-          {/* <Typography variant="h5" fontWeight="bold" mb={2}>
-            Loan Disbursement Chart
-          </Typography> */}
-          {loanDisbursementLoading ? (
-            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
-              <CircularProgress />
-            </Box>
-          ) : loanDisbursementData ? (
-                         <LoanDisbursementChart 
-              filters={{
-                employer: filters.employer,
-                placement: filters.placement,
-                project: filters.project,
-                month: filters.month,
-                year: filters.year
-              }}
-            />
-           ) : (
-             <Box display="flex" justifyContent="center" alignItems="center" height="300px">
-               <Typography variant="body1" color="textSecondary">
-                 No data available
-               </Typography>
-             </Box>
-           )}
-         </Box>
-
-
 
           {/* Loan Purpose Chart */}
         <Box mb={3}>
@@ -589,130 +404,26 @@ const KasbonDashboard = () => {
            )}
          </Box>
 
-         {/* Kasbon Repayment & Risk Summary */}
+         {/* Repayment Risk Summary */}
          <Box mb={3}>
-           <Typography variant="h5" fontWeight="bold" mb={2}>
-             Kasbon Repayment & Risk Summary
-           </Typography>
-           {loanFeesLoading || loanRiskLoading ? (
-             <Box display="flex" justifyContent="center" alignItems="center" height="200px">
-               <CircularProgress />
-             </Box>
-           ) : loanFeesData && loanRiskData ? (
-             <SummaryTiles 
-               tiles={createKasbonRepaymentRiskTiles()} 
-               md={4} 
-             />
-           ) : (
-             <Box display="flex" justifyContent="center" alignItems="center" height="200px">
-               <Typography variant="body1" color="textSecondary">
-                 No data available
-               </Typography>
-             </Box>
-           )}
+           <RepaymentRiskSummary
+             repaymentRiskData={repaymentRiskData}
+             isLoading={repaymentRiskLoading}
+           />
          </Box>
 
-         
-
-         
-        {/* Summary Tiles
-        {summaryData && (
-          <Box mb={3}>
-            <Typography variant="h5" fontWeight="bold" mb={2}>
-              Kasbon Summary
-            </Typography>
-            <SummaryTiles 
-              tiles={createSummaryTiles()} 
-              md={4} 
-            />
-          </Box>
-        )} */}
-
-        {/* Karyawan Table Component */}
-        {/* <KaryawanTable
-          karyawan={karyawan}
-          title="Employee Data"
-          loading={loading}
-          onRefresh={fetchData}
-        /> */}
-
-        {/* Loan Risk Tiles */}
-        {/* <Box mb={3}>
-          <Typography variant="h5" fontWeight="bold" mb={2}>
-            Loan Risk Summary
-          </Typography>
-          {loanRiskLoading ? (
-            <Box display="flex" justifyContent="center" alignItems="center" height="200px">
-              <CircularProgress />
-            </Box>
-          ) : loanRiskData ? (
-            <SummaryTiles 
-              tiles={[
-                { 
-                  title: "Total Unrecovered Kasbon", 
-                  value: loanRiskData.total_unrecovered_kasbon,
-                  isCurrency: true
-                },
-                { 
-                  title: "Total Expected Repayment", 
-                  value: loanRiskData.total_expected_repayment,
-                  isCurrency: true
-                },
-                { 
-                  title: "Unrecovered Kasbon Count", 
-                  value: loanRiskData.unrecovered_kasbon_count,
-                  isCurrency: false
-                },
-                { 
-                  title: "Principal Recovery Rate", 
-                  value: loanRiskData.kasbon_principal_recovery_rate,
-                  isCurrency: false
-                },
-              ]}
-              md={6}
-            />
-          ) : (
-            <Box display="flex" justifyContent="center" alignItems="center" height="200px">
-              <Typography variant="body1" color="textSecondary">
-                No data available
-              </Typography>
-            </Box>
-          )}
-        </Box> */}
-
-        {/* Loan Risk Chart */}
-        <Box mb={3}>
-          {/* <Typography variant="h5" fontWeight="bold" mb={2}>
-            Loan Risk Chart
-          </Typography> */}
-          {loanRiskLoading ? (
-            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
-              <CircularProgress />
-            </Box>
-          ) : loanRiskData ? (
-            <LoanRiskChart
-              filters={{
-                employer: filters.employer,
-                placement: filters.placement,
-                project: filters.project,
-                month: filters.month,
-                year: filters.year
-              }}
-            />
-          ) : (
-            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
-              <Typography variant="body1" color="textSecondary">
-                No data available
-              </Typography>
-            </Box>
-          )}
-        </Box>
-       
-
-    
-
-       
-        
+         {/* Repayment Risk Chart */}
+         <Box mb={3}>
+           <RepaymentRiskChart 
+             filters={{
+               employer: filters.employer,
+               placement: filters.placement,
+               project: filters.project,
+               month: filters.month,
+               year: filters.year
+             }}
+           />
+         </Box>
       </Box>
     </PageContainer>
   );

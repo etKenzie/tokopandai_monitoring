@@ -40,14 +40,14 @@ interface HeadCell {
 
 const headCells: HeadCell[] = [
   { id: 'id_karyawan', label: 'Employee ID', numeric: true },
-  { id: 'nik', label: 'NIK', numeric: false },
   { id: 'ktp', label: 'KTP', numeric: false },
   { id: 'name', label: 'Name', numeric: false },
   { id: 'company', label: 'Company', numeric: false },
   { id: 'sourced_to', label: 'Sourced To', numeric: false },
   { id: 'project', label: 'Project', numeric: false },
-  { id: 'rec_status', label: 'Status', numeric: false },
   { id: 'total_amount_owed', label: 'Amount Owed', numeric: true },
+  { id: 'repayment_date', label: 'Repayment Date', numeric: false },
+  { id: 'days_overdue', label: 'Days Overdue', numeric: true },
 ];
 
 interface KaryawanOverdueTableProps {
@@ -75,7 +75,6 @@ const KaryawanOverdueTable = ({
   const [companyFilter, setCompanyFilter] = useState<string>('');
   const [sourcedToFilter, setSourcedToFilter] = useState<string>('');
   const [projectFilter, setProjectFilter] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   // Use month and year from filters prop
   const selectedMonth = filters.month || '';
@@ -111,8 +110,6 @@ const KaryawanOverdueTable = ({
     }
   }, [selectedMonth, selectedYear, filters.employer, filters.placement, filters.project]);
 
-
-
   const handleRequestSort = (property: SortableField) => {
     const isAsc = orderBy === property && order === 'asc';
     setOrder(isAsc ? 'desc' : 'asc');
@@ -128,14 +125,10 @@ const KaryawanOverdueTable = ({
     setPage(0);
   };
 
-  const getStatusColor = (status: string | null) => {
-    if (!status) return 'default';
-    switch (status.toLowerCase()) {
-      case 'new hire': return 'info';
-      case 'active': return 'success';
-      case 'inactive': return 'error';
-      default: return 'default';
-    }
+  const getDaysOverdueColor = (days: number) => {
+    if (days <= 7) return 'success';
+    if (days <= 30) return 'warning';
+    return 'error';
   };
 
   const searchFields = (karyawan: KaryawanOverdue, query: string): boolean => {
@@ -143,13 +136,13 @@ const KaryawanOverdueTable = ({
 
     const searchableFields = [
       karyawan.id_karyawan.toString(),
-      karyawan.nik.toLowerCase(),
       karyawan.ktp.toLowerCase(),
       karyawan.name.toLowerCase(),
       karyawan.company.toLowerCase(),
       karyawan.sourced_to.toLowerCase(),
       karyawan.project.toLowerCase(),
-      karyawan.rec_status?.toLowerCase() || '',
+      karyawan.repayment_date.toLowerCase(),
+      karyawan.days_overdue.toString(),
     ];
 
     return searchableFields.some((field) =>
@@ -162,7 +155,6 @@ const KaryawanOverdueTable = ({
     if (companyFilter && k.company !== companyFilter) return false;
     if (sourcedToFilter && k.sourced_to !== sourcedToFilter) return false;
     if (projectFilter && k.project !== projectFilter) return false;
-    if (statusFilter && k.rec_status !== statusFilter) return false;
 
     // Search functionality
     if (searchQuery) {
@@ -175,13 +167,12 @@ const KaryawanOverdueTable = ({
   const uniqueCompanies = Array.from(new Set(karyawan.map((k) => k.company)));
   const uniqueSourcedTo = Array.from(new Set(karyawan.map((k) => k.sourced_to)));
   const uniqueProjects = Array.from(new Set(karyawan.map((k) => k.project)));
-  const uniqueStatuses = Array.from(new Set(karyawan.map((k) => k.rec_status).filter(Boolean)));
 
   const sortedKaryawan = [...filteredKaryawan].sort((a, b) => {
     let aValue: any = a[orderBy];
     let bValue: any = b[orderBy];
 
-    if (orderBy === 'id_karyawan' || orderBy === 'total_amount_owed') {
+    if (orderBy === 'id_karyawan' || orderBy === 'total_amount_owed' || orderBy === 'days_overdue') {
       aValue = Number(aValue);
       bValue = Number(bValue);
     }
@@ -194,18 +185,19 @@ const KaryawanOverdueTable = ({
   });
 
   const totalAmountOwed = filteredKaryawan.reduce((sum, k) => sum + k.total_amount_owed, 0);
+  const totalDaysOverdue = filteredKaryawan.reduce((sum, k) => sum + k.days_overdue, 0);
 
   const prepareDataForExport = (karyawan: KaryawanOverdue[]) => {
     return karyawan.map((k) => ({
       'Employee ID': k.id_karyawan,
-      'NIK': k.nik,
       'KTP': k.ktp,
       'Name': k.name,
       'Company': k.company,
       'Sourced To': k.sourced_to,
       'Project': k.project,
-      'Status': k.rec_status || 'N/A',
       'Amount Owed': k.total_amount_owed,
+      'Repayment Date': k.repayment_date,
+      'Days Overdue': k.days_overdue,
     }));
   };
 
@@ -224,14 +216,14 @@ const KaryawanOverdueTable = ({
     // Set column widths
     const colWidths = [
       { wch: 12 }, // Employee ID
-      { wch: 15 }, // NIK
       { wch: 20 }, // KTP
       { wch: 25 }, // Name
       { wch: 25 }, // Company
       { wch: 25 }, // Sourced To
       { wch: 20 }, // Project
-      { wch: 15 }, // Status
-      { wch: 15 }  // Amount Owed
+      { wch: 15 }, // Amount Owed
+      { wch: 15 }, // Repayment Date
+      { wch: 15 }  // Days Overdue
     ];
     ws['!cols'] = colWidths;
 
@@ -258,6 +250,15 @@ const KaryawanOverdueTable = ({
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   return (
@@ -311,6 +312,14 @@ const KaryawanOverdueTable = ({
               Total Overdue Employees
             </Typography>
           </Box>
+          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
+            <Typography variant="h3" color="warning.main" fontWeight="bold" mb={1}>
+              {Math.round(totalDaysOverdue / filteredKaryawan.length || 0)}
+            </Typography>
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              Avg Days Overdue
+            </Typography>
+          </Box>
         </Box>
 
         {/* Search and Filters */}
@@ -332,7 +341,7 @@ const KaryawanOverdueTable = ({
                 }}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            {/* <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <FormControl fullWidth>
                 <InputLabel>Company</InputLabel>
                 <Select
@@ -349,7 +358,7 @@ const KaryawanOverdueTable = ({
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <FormControl fullWidth>
                 <InputLabel>Sourced To</InputLabel>
                 <Select
@@ -366,7 +375,7 @@ const KaryawanOverdueTable = ({
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <FormControl fullWidth>
                 <InputLabel>Project</InputLabel>
                 <Select
@@ -382,24 +391,7 @@ const KaryawanOverdueTable = ({
                   ))}
                 </Select>
               </FormControl>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={statusFilter}
-                  label="Status"
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <MenuItem value="">All</MenuItem>
-                  {uniqueStatuses.map((status) => (
-                    <MenuItem key={status} value={status || ''}>
-                      {status || 'N/A'}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+            </Grid> */}
           </Grid>
         </Box>
 
@@ -456,21 +448,21 @@ const KaryawanOverdueTable = ({
                   .map((row) => (
                     <TableRow key={row.id_karyawan} hover>
                       <TableCell align="right">{row.id_karyawan}</TableCell>
-                      <TableCell>{row.nik}</TableCell>
                       <TableCell>{row.ktp}</TableCell>
                       <TableCell>{row.name}</TableCell>
                       <TableCell>{row.company}</TableCell>
                       <TableCell>{row.sourced_to}</TableCell>
                       <TableCell>{row.project}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={row.rec_status || 'N/A'}
-                          color={getStatusColor(row.rec_status) as any}
-                          size="small"
-                        />
-                      </TableCell>
                       <TableCell align="right" sx={{ fontWeight: 'bold', color: 'error.main' }}>
                         {formatCurrency(row.total_amount_owed)}
+                      </TableCell>
+                      <TableCell>{formatDate(row.repayment_date)}</TableCell>
+                      <TableCell align="right">
+                        <Chip
+                          label={`${row.days_overdue} days`}
+                          color={getDaysOverdueColor(row.days_overdue) as any}
+                          size="small"
+                        />
                       </TableCell>
                     </TableRow>
                   ))

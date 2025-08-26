@@ -128,14 +128,14 @@ export interface KasbonLoanFeesMonthlyParams {
 // Types for Karyawan Overdue API
 export interface KaryawanOverdue {
   id_karyawan: number;
-  nik: string;
   ktp: string;
   name: string;
   company: string;
   sourced_to: string;
   project: string;
-  rec_status: string | null;
   total_amount_owed: number;
+  repayment_date: string;
+  days_overdue: number;
 }
 
 export interface KaryawanOverdueResponse {
@@ -249,6 +249,131 @@ export interface UserCoverageMonthlyParams {
   end_date?: string;
 }
 
+// Types for Coverage Utilization API
+export interface CoverageUtilization {
+  total_eligible_employees: number;
+  total_loan_requests: number;
+  penetration_rate: number;
+  total_approved_requests: number;
+  total_rejected_requests: number;
+  approval_rate: number;
+  total_new_borrowers: number;
+  average_approval_time: number;
+  total_disbursed_amount: number;
+  average_disbursed_amount: number;
+  message: string | null;
+}
+
+export interface CoverageUtilizationResponse {
+  status: string;
+  total_eligible_employees: number;
+  total_loan_requests: number;
+  penetration_rate: number;
+  total_approved_requests: number;
+  total_rejected_requests: number;
+  approval_rate: number;
+  total_new_borrowers: number;
+  average_approval_time: number;
+  total_disbursed_amount: number;
+  average_disbursed_amount: number;
+  message: string | null;
+}
+
+// Types for Coverage Utilization Query Parameters
+export interface CoverageUtilizationParams {
+  employer?: string;
+  sourced_to?: string;
+  project?: string;
+  month?: string;
+  year?: string;
+}
+
+// Types for Coverage Utilization Monthly API
+export interface CoverageUtilizationMonthlyData {
+  total_first_borrow: number;
+  total_loan_requests: number;
+  total_approved_requests: number;
+  total_rejected_requests: number;
+  penetration_rate: number;
+  total_disbursed_amount: number;
+}
+
+export interface CoverageUtilizationMonthlyResponse {
+  status: string;
+  monthly_data: Record<string, CoverageUtilizationMonthlyData>;
+  message: string | null;
+}
+
+// Types for Coverage Utilization Monthly Query Parameters
+export interface CoverageUtilizationMonthlyParams {
+  employer?: string;
+  sourced_to?: string;
+  project?: string;
+  start_date?: string;
+  end_date?: string;
+}
+
+// Types for Repayment Risk API
+export interface RepaymentRisk {
+  total_expected_repayment: number;
+  total_kasbon_principal_collected: number;
+  total_admin_fee_collected: number;
+  total_unrecovered_repayment: number;
+  total_unrecovered_kasbon_principal: number;
+  total_unrecovered_admin_fee: number;
+  repayment_recovery_rate: number;
+  delinquencies_rate: number;
+  admin_fee_profit: number;
+  message: string | null;
+}
+
+export interface RepaymentRiskResponse {
+  status: string;
+  total_expected_repayment: number;
+  total_kasbon_principal_collected: number;
+  total_admin_fee_collected: number;
+  total_unrecovered_repayment: number;
+  total_unrecovered_kasbon_principal: number;
+  total_unrecovered_admin_fee: number;
+  repayment_recovery_rate: number;
+  delinquencies_rate: number;
+  admin_fee_profit: number;
+  message: string | null;
+}
+
+// Types for Repayment Risk Query Parameters
+export interface RepaymentRiskParams {
+  employer?: string;
+  sourced_to?: string;
+  project?: string;
+  month?: string;
+  year?: string;
+}
+
+// Types for Repayment Risk Monthly API
+export interface RepaymentRiskMonthlyData {
+  repayment_recovery_rate: number;
+  total_expected_repayment: number;
+  total_kasbon_principal_collected: number;
+  total_unrecovered_repayment: number;
+  admin_fee_profit: number;
+}
+
+export interface RepaymentRiskMonthlyResponse {
+  status: string;
+  monthly_data: Record<string, RepaymentRiskMonthlyData>;
+  message: string | null;
+}
+
+// Types for Repayment Risk Monthly Query Parameters
+export interface RepaymentRiskMonthlyParams {
+  employer?: string;
+  sourced_to?: string;
+  project?: string;
+  start_date?: string;
+  end_date?: string;
+}
+
 // Types for Loan Requests API
 export interface LoanRequests {
   total_approved_requests: number;
@@ -342,6 +467,34 @@ export interface LoanPurposeParams {
   sourced_to?: string;
   project?: string;
   id_karyawan?: string;
+  month?: string;
+  year?: string;
+}
+
+// Types for Client Summary API
+export interface ClientSummary {
+  sourced_to: string;
+  project: string;
+  total_disbursement: number;
+  total_requests: number;
+  approved_requests: number;
+  eligible_employees: number;
+  active_employees: number;
+  eligible_rate: number;
+  penetration_rate: number;
+  total_admin_fee_collected: number;
+  total_unrecovered_payment: number;
+  admin_fee_profit: number;
+  delinquency_rate: number;
+}
+
+export interface ClientSummaryResponse {
+  status: string;
+  count: number;
+  results: ClientSummary[];
+}
+
+export interface ClientSummaryParams {
   month?: string;
   year?: string;
 }
@@ -663,6 +816,130 @@ export const fetchUserCoverageMonthly = async (params: UserCoverageMonthlyParams
   return response.json();
 };
 
+// Fetch Coverage Utilization
+export const fetchCoverageUtilization = async (params: CoverageUtilizationParams): Promise<CoverageUtilizationResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.employer) queryParams.append('employer', params.employer);
+  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
+  if (params.project) queryParams.append('project', params.project);
+  if (params.month) queryParams.append('month', params.month);
+  if (params.year) queryParams.append('year', params.year);
+  
+  const url = `${baseUrl}/kasbon/coverage-utilization?${queryParams.toString()}`;
+  
+  console.log('Fetching coverage utilization from:', url);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch coverage utilization: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Fetch Coverage Utilization Monthly
+export const fetchCoverageUtilizationMonthly = async (params: CoverageUtilizationMonthlyParams): Promise<CoverageUtilizationMonthlyResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.employer) queryParams.append('employer', params.employer);
+  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
+  if (params.project) queryParams.append('project', params.project);
+  if (params.start_date) queryParams.append('start_date', params.start_date);
+  if (params.end_date) queryParams.append('end_date', params.end_date);
+  
+  const url = `${baseUrl}/kasbon/coverage-utilization-monthly?${queryParams.toString()}`;
+  
+  console.log('Fetching coverage utilization monthly from:', url);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch coverage utilization monthly: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Fetch Repayment Risk
+export const fetchRepaymentRisk = async (params: RepaymentRiskParams): Promise<RepaymentRiskResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.employer) queryParams.append('employer', params.employer);
+  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
+  if (params.project) queryParams.append('project', params.project);
+  if (params.month) queryParams.append('month', params.month);
+  if (params.year) queryParams.append('year', params.year);
+  
+  const url = `${baseUrl}/kasbon/repayment-risk?${queryParams.toString()}`;
+  
+  console.log('Fetching repayment risk from:', url);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch repayment risk: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Fetch Repayment Risk Monthly
+export const fetchRepaymentRiskMonthly = async (params: RepaymentRiskMonthlyParams): Promise<RepaymentRiskMonthlyResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.employer) queryParams.append('employer', params.employer);
+  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
+  if (params.project) queryParams.append('project', params.project);
+  if (params.start_date) queryParams.append('start_date', params.start_date);
+  if (params.end_date) queryParams.append('end_date', params.end_date);
+  
+  const url = `${baseUrl}/kasbon/repayment-risk-monthly?${queryParams.toString()}`;
+  
+  console.log('Fetching repayment risk monthly from:', url);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch repayment risk monthly: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
 // Fetch Loan Requests
 export const fetchLoanRequests = async (params: LoanRequestsParams): Promise<LoanRequestsResponse> => {
   const baseUrl = AM_API_URL;
@@ -783,6 +1060,34 @@ export const fetchLoanPurpose = async (params: LoanPurposeParams): Promise<LoanP
   
   if (!response.ok) {
     throw new Error(`Failed to fetch loan purpose: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Fetch Client Summary
+export const fetchClientSummary = async (params: ClientSummaryParams): Promise<ClientSummaryResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.month) queryParams.append('month', params.month);
+  if (params.year) queryParams.append('year', params.year);
+  
+  const url = `${baseUrl}/kasbon/client-summary?${queryParams.toString()}`;
+  
+  console.log('Fetching client summary from:', url);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch client summary: ${response.status} ${response.statusText}`);
   }
   
   return response.json();
