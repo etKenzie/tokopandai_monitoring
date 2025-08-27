@@ -2,23 +2,21 @@
 
 import { Download as DownloadIcon } from '@mui/icons-material';
 import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    Typography,
+  Box,
+  Button,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  Typography
 } from '@mui/material';
 import React, { useState } from 'react';
-import { ClientSummary } from '../../api/kasbon/KasbonSlice';
 import * as XLSX from 'xlsx';
+import { ClientSummary } from '../../api/kasbon/KasbonSlice';
 
 interface ClientDelinquencyTableProps {
   data: ClientSummary[];
@@ -34,10 +32,12 @@ const ClientDelinquencyTable = ({
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  // Sort data by total_unrecovered_payment in descending order
-  const sortedData = [...data].sort((a, b) => {
-    return b.total_unrecovered_payment - a.total_unrecovered_payment;
-  });
+  // Filter out clients with 0 delinquency rate and 0 unrecovered payment, then sort by total_unrecovered_payment in descending order
+  const sortedData = [...data]
+    .filter(client => client.delinquency_rate > 0 || client.total_unrecovered_payment > 0)
+    .sort((a, b) => {
+      return b.total_unrecovered_payment - a.total_unrecovered_payment;
+    });
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);

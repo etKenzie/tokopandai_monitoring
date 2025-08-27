@@ -1,8 +1,8 @@
 import {
-  IconAperture,
   IconCalendarDollar,
   IconDashboard,
   IconGraph,
+  IconHome,
   IconUserCancel
 } from "@tabler/icons-react";
 import { uniqueId } from "lodash";
@@ -25,13 +25,13 @@ interface MenuitemsType {
 const Menuitems: MenuitemsType[] = [
   {
     navlabel: true,
-    subheader: "Home",
+    subheader: "Main",
   },
 
   {
     id: uniqueId(),
-    title: "Dashboard",
-    icon: IconAperture,
+    title: "Home",
+    icon: IconHome,
     href: "/",
     // chip: "New",
     // chipColor: "secondary",
@@ -44,6 +44,10 @@ const Menuitems: MenuitemsType[] = [
   //   href: "/kasbon",
   //   chipColor: "secondary"
   // },
+  {
+    navlabel: true,
+    subheader: "Analytics",
+  },
   {
     id: uniqueId(),
     title: "Kasbon",

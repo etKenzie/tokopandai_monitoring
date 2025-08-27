@@ -34,12 +34,12 @@ const SummaryTiles: React.FC<SummaryTilesProps> = ({ tiles, md = 4 }) => {
     if (typeof value === 'number') {
       // Only format as percentage if explicitly marked as currency: false AND value is a decimal between 0 and 1
       if (isCurrency === false && value <= 1 && value > 0 && value % 1 !== 0) {
-        return `${(value * 100).toFixed(2)}%`;
+        return `${(value * 100).toFixed(1)}%`;
       }
-      // Format numbers with commas as thousand separators, preserving actual decimal places
+      // Format numbers with commas as thousand separators, showing decimals only when they exist
       return value.toLocaleString('en-US', {
         minimumFractionDigits: 0,
-        maximumFractionDigits: 3, // Allow up to 3 decimal places if they exist
+        maximumFractionDigits: 1, // Show up to 1 decimal place only if it exists
       });
     }
     

@@ -69,10 +69,10 @@ const UserCoverageUtilizationSummary: React.FC<UserCoverageUtilizationSummaryPro
         isCurrency: false
       },
       { 
-        title: "Average Approval Time", 
+        title: "Average Approval Days", 
         value: coverageUtilizationData.average_approval_time || 0,
         isCurrency: false,
-        unit: "Days"
+        // unit: "Days"
       },
       { 
         title: "Total Disbursed Amount", 

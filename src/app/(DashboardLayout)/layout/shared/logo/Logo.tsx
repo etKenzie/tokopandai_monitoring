@@ -25,7 +25,7 @@ const Logo = () => {
       <LinkStyled href="/">
         {activeMode === "dark" ? (
           <Image
-            src={createAssetUrl("/images/logos/light-logo.svg")}
+            src={createAssetUrl("/images/logos/valdo_white.png")}
             alt="logo"
             height={TopbarHeight}
             width={174}
@@ -33,7 +33,7 @@ const Logo = () => {
           />
         ) : (
           <Image
-            src={createAssetUrl("/images/logos/dark-logo.svg")}
+            src={createAssetUrl("/images/logos/valdo_black.png")}
             alt="logo"
             height={TopbarHeight}
             width={174}
