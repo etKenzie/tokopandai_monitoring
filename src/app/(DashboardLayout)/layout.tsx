@@ -4,7 +4,7 @@ import PageContainer from '@/app/components/container/PageContainer';
 import { useAuth } from '@/app/context/AuthContext';
 import config from "@/app/context/config";
 import { CustomizerContext } from "@/app/context/customizerContext";
-import { createAssetUrl, createUrl } from '@/utils/basePath';
+import { createAssetUrl } from '@/utils/basePath';
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -57,7 +57,7 @@ export default function RootLayout({
   useEffect(() => {
     if (!loading && !user) {
       // User is not authenticated, redirect to login with correct base path
-      router.push(createUrl('/auth/login'));
+      router.push('/auth/login');
     }
   }, [user, loading, router]);
 
