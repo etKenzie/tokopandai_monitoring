@@ -1,7 +1,7 @@
 import { Box, CircularProgress, Typography } from '@mui/material';
 import React from 'react';
-import SummaryTiles from '../shared/SummaryTiles';
 import { CoverageUtilizationResponse } from '../../api/kasbon/KasbonSlice';
+import SummaryTiles from '../shared/SummaryTiles';
 
 interface UserCoverageUtilizationSummaryProps {
   coverageUtilizationData: CoverageUtilizationResponse | null;
@@ -71,7 +71,8 @@ const UserCoverageUtilizationSummary: React.FC<UserCoverageUtilizationSummaryPro
       { 
         title: "Average Approval Time", 
         value: coverageUtilizationData.average_approval_time || 0,
-        isCurrency: false
+        isCurrency: false,
+        unit: "Days"
       },
       { 
         title: "Total Disbursed Amount", 

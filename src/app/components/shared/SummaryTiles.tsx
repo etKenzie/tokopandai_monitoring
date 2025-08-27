@@ -11,6 +11,7 @@ interface TileDef {
   color?: string;
   fontWeight?: number;
   mdSize?: number; // Individual tile column size
+  unit?: string; // Optional unit suffix (e.g., "Days", "%", etc.)
 }
 
 interface SummaryTilesProps {
@@ -91,7 +92,7 @@ const SummaryTiles: React.FC<SummaryTilesProps> = ({ tiles, md = 4 }) => {
                     WebkitBoxOrient: 'vertical',
                   }}
                 >
-                  {formatValue(tile.value, tile.isCurrency)}
+                  {formatValue(tile.value, tile.isCurrency)} {tile.unit}
                 </Box>
               </Box>
             </DashboardCard>
