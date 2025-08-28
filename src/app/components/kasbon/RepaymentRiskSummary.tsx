@@ -20,15 +20,15 @@ const RepaymentRiskSummary: React.FC<RepaymentRiskSummaryProps> = ({
   //   );
   // }
 
-  if (!repaymentRiskData) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="200px">
-        <Typography variant="body1" color="textSecondary">
-          No data available
-        </Typography>
-      </Box>
-    );
-  }
+  // if (!repaymentRiskData) {
+  //   return (
+  //     <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+  //       <Typography variant="body1" color="textSecondary">
+  //         No data available
+  //       </Typography>
+  //     </Box>
+  //   );
+  // }
 
   // Create tiles data structure for SummaryTiles component
   const createTiles = () => {
