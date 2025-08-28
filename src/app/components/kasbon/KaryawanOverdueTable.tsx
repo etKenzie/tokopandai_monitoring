@@ -2,32 +2,29 @@
 
 import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    Chip,
-    FormControl,
-    Grid,
-    InputAdornment,
-    InputLabel,
-    MenuItem,
-    Paper,
-    Select,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    TableSortLabel,
-    TextField,
-    Typography,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Grid,
+  InputAdornment,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TableSortLabel,
+  TextField,
+  Typography
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import { fetchKaryawanOverdue, KaryawanOverdue } from '../../api/kasbon/KasbonSlice';
 import * as XLSX from 'xlsx';
+import { fetchKaryawanOverdue, KaryawanOverdue } from '../../api/kasbon/KasbonSlice';
 
 type Order = 'asc' | 'desc';
 type SortableField = keyof KaryawanOverdue;
@@ -421,9 +418,7 @@ const KaryawanOverdueTable = ({
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={headCells.length} align="center">
-                    <Typography variant="body2" color="textSecondary">
-                      Loading...
-                    </Typography>
+                    <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : error ? (

@@ -1,22 +1,23 @@
 'use client';
 
 import {
-  Box,
-  Card,
-  CardContent,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
-  Typography
+    Box,
+    Card,
+    CardContent,
+    CircularProgress,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
+    SelectChangeEvent,
+    Typography
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import dynamic from "next/dynamic";
 import { useEffect, useState } from 'react';
-import { fetchCoverageUtilizationMonthly, CoverageUtilizationMonthlyResponse } from '../../api/kasbon/KasbonSlice';
+import { CoverageUtilizationMonthlyResponse, fetchCoverageUtilizationMonthly } from '../../api/kasbon/KasbonSlice';
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 interface CoverageUtilizationChartProps {
@@ -311,7 +312,7 @@ const CoverageUtilizationChart = ({ filters }: CoverageUtilizationChartProps) =>
                 height: '100%' 
               }}
             >
-              <Typography>Loading chart data...</Typography>
+              <CircularProgress size={24} />
             </Box>
           ) : chartData?.monthly_data && Object.keys(chartData.monthly_data).length > 0 ? (
             <ReactApexChart

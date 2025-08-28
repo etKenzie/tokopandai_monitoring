@@ -4,6 +4,7 @@ import {
   Box,
   Card,
   CardContent,
+  CircularProgress,
   FormControl,
   InputLabel,
   MenuItem,
@@ -307,7 +308,7 @@ const RepaymentRiskChart = ({ filters }: RepaymentRiskChartProps) => {
                 height: '100%' 
               }}
             >
-              <Typography>Loading chart data...</Typography>
+              <CircularProgress />
             </Box>
           ) : chartData?.monthly_data && Object.keys(chartData.monthly_data).length > 0 ? (
             <ReactApexChart

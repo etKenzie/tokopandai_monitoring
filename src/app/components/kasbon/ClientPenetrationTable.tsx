@@ -4,8 +4,7 @@ import { Download as DownloadIcon } from '@mui/icons-material';
 import {
     Box,
     Button,
-    Card,
-    CardContent,
+    CircularProgress,
     Paper,
     Table,
     TableBody,
@@ -14,11 +13,11 @@ import {
     TableHead,
     TablePagination,
     TableRow,
-    Typography,
+    Typography
 } from '@mui/material';
 import React, { useState } from 'react';
-import { ClientSummary } from '../../api/kasbon/KasbonSlice';
 import * as XLSX from 'xlsx';
+import { ClientSummary } from '../../api/kasbon/KasbonSlice';
 
 interface ClientPenetrationTableProps {
   data: ClientSummary[];
@@ -149,9 +148,7 @@ const ClientPenetrationTable = ({
             {loading ? (
               <TableRow>
                 <TableCell colSpan={8} align="center">
-                  <Typography variant="body2" color="textSecondary">
-                    Loading...
-                  </Typography>
+                  <CircularProgress size={20} />
                 </TableCell>
               </TableRow>
             ) : error ? (

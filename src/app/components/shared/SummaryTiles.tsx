@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Grid } from '@mui/material';
+import { Box, CircularProgress, Grid } from '@mui/material';
 import React from 'react';
 import DashboardCard from './DashboardCard';
 
@@ -12,6 +12,7 @@ interface TileDef {
   fontWeight?: number;
   mdSize?: number; // Individual tile column size
   unit?: string; // Optional unit suffix (e.g., "Days", "%", etc.)
+  isLoading?: boolean; // Optional loading state for individual tiles
 }
 
 interface SummaryTilesProps {
@@ -92,7 +93,11 @@ const SummaryTiles: React.FC<SummaryTilesProps> = ({ tiles, md = 4 }) => {
                     WebkitBoxOrient: 'vertical',
                   }}
                 >
-                  {formatValue(tile.value, tile.isCurrency)} {tile.unit}
+                  {tile.isLoading ? (
+                    <CircularProgress size={20} />
+                  ) : (
+                    formatValue(tile.value, tile.isCurrency) + (tile.unit || '')
+                  )}
                 </Box>
               </Box>
             </DashboardCard>

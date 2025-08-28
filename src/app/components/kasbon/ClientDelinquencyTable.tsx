@@ -2,17 +2,18 @@
 
 import { Download as DownloadIcon } from '@mui/icons-material';
 import {
-  Box,
-  Button,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  Typography
+    Box,
+    Button,
+    CircularProgress,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TablePagination,
+    TableRow,
+    Typography
 } from '@mui/material';
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
@@ -149,9 +150,7 @@ const ClientDelinquencyTable = ({
             {loading ? (
               <TableRow>
                 <TableCell colSpan={5} align="center">
-                  <Typography variant="body2" color="textSecondary">
-                    Loading...
-                  </Typography>
+                  <CircularProgress size={20} />
                 </TableCell>
               </TableRow>
             ) : error ? (

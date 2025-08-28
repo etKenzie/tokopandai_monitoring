@@ -1,10 +1,11 @@
 'use client';
 
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography
+    Box,
+    Card,
+    CardContent,
+    CircularProgress,
+    Typography
 } from '@mui/material';
 import dynamic from "next/dynamic";
 import { useEffect, useState } from 'react';
@@ -194,7 +195,7 @@ const LoanPurposeChart = ({ filters }: LoanPurposeChartProps) => {
             Loan Purpose Distribution
           </Typography>
           <Box display="flex" justifyContent="center" alignItems="center" height="400px">
-            <Typography>Loading...</Typography>
+            <CircularProgress />
           </Box>
         </CardContent>
       </Card>

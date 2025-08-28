@@ -2,23 +2,22 @@
 
 import { Download as DownloadIcon } from '@mui/icons-material';
 import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    Typography,
+  Box,
+  Button,
+  CircularProgress,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  Typography
 } from '@mui/material';
 import React, { useState } from 'react';
-import { ClientSummary } from '../../api/kasbon/KasbonSlice';
 import * as XLSX from 'xlsx';
+import { ClientSummary } from '../../api/kasbon/KasbonSlice';
 
 interface ClientSummaryTableProps {
   data: ClientSummary[];
@@ -145,9 +144,7 @@ const ClientSummaryTable = ({
             {loading ? (
               <TableRow>
                 <TableCell colSpan={4} align="center">
-                  <Typography variant="body2" color="textSecondary">
-                    Loading...
-                  </Typography>
+                  <CircularProgress size={24} />
                 </TableCell>
               </TableRow>
             ) : error ? (
