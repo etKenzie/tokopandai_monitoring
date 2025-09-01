@@ -8,6 +8,20 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     storageKey: 'am-dashboard-auth',
     autoRefreshToken: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: false, // Changed to false to prevent URL-based session detection
+    flowType: 'pkce', // Use PKCE flow for better session handling
+    debug: true, // Set to true temporarily if you need to debug auth issues
+
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'am-dashboard'
+    }
+  },
+  // Add realtime configuration to prevent unnecessary connections
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
   }
 })

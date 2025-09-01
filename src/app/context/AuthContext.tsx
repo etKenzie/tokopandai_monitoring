@@ -3,7 +3,7 @@
 import { supabase } from '@/lib/supabaseClient';
 import { createUrl } from '@/utils/basePath';
 import { Session, User } from '@supabase/supabase-js';
-import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 interface AuthContextType {
   user: User | null;
@@ -40,6 +40,38 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [roles, setRoles] = useState<string[]>([]);
   const [authLoading, setAuthLoading] = useState(true);
   const [rolesLoading, setRolesLoading] = useState(true);
+  
+  // Refs to prevent unnecessary state updates
+  const userRef = useRef<User | null>(null);
+  const sessionRef = useRef<Session | null>(null);
+  const isInitialized = useRef(false);
+
+  // Sticky state for user and session to prevent loading states during tab switches
+  const stickyUser = useRef<User | null>(null);
+  const stickySession = useRef<Session | null>(null);
+  const stickyRoles = useRef<string[]>([]);
+  const isTabSwitch = useRef(false);
+
+  // Simple function to update auth state
+  const updateAuth = useCallback((newSession: Session | null, newUser: User | null) => {
+    // Only update if the values actually changed
+    if (newSession !== sessionRef.current || newUser !== userRef.current) {
+      setSession(newSession);
+      setUser(newUser);
+      sessionRef.current = newSession;
+      userRef.current = newUser;
+      
+      // Update sticky state when auth actually changes
+      if (newUser) {
+        stickyUser.current = newUser;
+        stickySession.current = newSession;
+        // Also update sticky roles if we have them
+        if (roles.length > 0) {
+          stickyRoles.current = roles;
+        }
+      }
+    }
+  }, []); // Remove roles dependency to prevent infinite loop
 
   useEffect(() => {
     // Get initial session
@@ -57,8 +89,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         
         console.log('Session found:', !!session, 'User:', session?.user?.email);
         
-        setSession(session);
-        setUser(session?.user ?? null);
+        // Set initial state
+        updateAuth(session, session?.user ?? null);
         
         // Always end auth loading after session fetch - don't wait for roles
         setAuthLoading(false);
@@ -77,6 +109,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setRoles([]);
           setRolesLoading(false);
         }
+        
+        isInitialized.current = true;
       } catch (error) {
         console.error('Error in getInitialSession:', error);
         setAuthLoading(false);
@@ -84,27 +118,47 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(null);
         setSession(null);
         setRoles([]);
+        isInitialized.current = true;
       }
     };
 
     getInitialSession();
 
-    // Listen for auth changes
+    // Listen for auth changes with debouncing
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        // Skip if not initialized yet to prevent race conditions
+        if (!isInitialized.current) return;
+        
+        // Skip if this is a tab switch and we have valid sticky state
+        if (isTabSwitch.current && stickyUser.current && stickyRoles.current.length > 0) {
+          console.log('Tab switch detected - skipping auth state change processing');
+          return;
+        }
+        
+
+        
         console.log('Auth state change:', event, 'User:', session?.user?.email);
-        setSession(session);
-        setUser(session?.user ?? null);
+        
+        // Update auth state
+        updateAuth(session, session?.user ?? null);
         
         if (session?.user) {
-          console.log('User in auth change, fetching roles in background...');
-          // Fetch roles in background - don't block auth state
-          setRolesLoading(true);
-          getUserRoles(session.user.id).catch(error => {
-            console.error('Error fetching roles in auth change:', error);
-            setRoles(['user']); // Safe default
+          // Check if this is a tab switch and we have sticky roles
+          if (isTabSwitch.current && stickyRoles.current.length > 0) {
+            console.log('Tab switch detected - using sticky roles, skipping fetch');
+            setRoles(stickyRoles.current);
             setRolesLoading(false);
-          });
+          } else {
+            console.log('User in auth change, fetching roles in background...');
+            // Fetch roles in background - don't block auth state
+            setRolesLoading(true);
+            getUserRoles(session.user.id).catch(error => {
+              console.error('Error fetching roles in auth change:', error);
+              setRoles(['user']); // Safe default
+              setRolesLoading(false);
+            });
+          }
         } else {
           console.log('No user in auth change, clearing roles');
           setRoles([]);
@@ -113,8 +167,38 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     );
 
-    return () => subscription.unsubscribe();
-  }, []);
+    // Handle browser visibility changes to prevent unnecessary auth reloads
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('Tab became visible - setting tab switch flag');
+        isTabSwitch.current = true;
+        // Reset the flag after a delay to prevent rapid auth changes
+        setTimeout(() => {
+          isTabSwitch.current = false;
+          console.log('Tab switch quiet period ended');
+        }, 2000); // 2 second quiet period
+      }
+    };
+
+    // Handle window focus events
+    const handleFocus = () => {
+      console.log('Window focused - maintaining sticky auth state');
+      // Don't trigger any auth checks, just maintain current state
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('focus', handleFocus);
+    }
+
+    return () => {
+      subscription.unsubscribe();
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('focus', handleFocus);
+      }
+    };
+  }, []); // Empty dependency array to prevent unnecessary re-runs
 
   const getUserRoles = async (userId: string): Promise<string[]> => {
     try {
@@ -158,6 +242,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       setRoles(userRoles);
       setRolesLoading(false);
+      // Update sticky roles
+      stickyRoles.current = userRoles;
       return userRoles;
     } catch (error) {
       console.error('Error fetching user roles:', error);
@@ -256,13 +342,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 
   const value = {
-    user,
-    session,
-    roles,
-    authLoading,
-    rolesLoading,
-    loading: authLoading || rolesLoading, // Computed property for backward compatibility
-    isAuthenticated: !authLoading && !!user && !rolesLoading, // Helper to check if user is fully authenticated
+    user: user || stickyUser.current, // Use sticky user if current user is null
+    session: session || stickySession.current, // Use sticky session if current session is null
+    roles: roles.length > 0 ? roles : stickyRoles.current, // Use sticky roles if current roles are empty
+    authLoading: authLoading && !stickyUser.current, // Don't show loading if we have sticky auth
+    rolesLoading: rolesLoading && !stickyRoles.current.length, // Don't show loading if we have sticky roles
+    loading: (authLoading && !stickyUser.current) || (rolesLoading && !stickyRoles.current.length), // Computed property for backward compatibility
+    isAuthenticated: Boolean((!authLoading || stickyUser.current) && !!(user || stickyUser.current) && (!rolesLoading || stickyRoles.current.length)), // Helper to check if user is fully authenticated
     signIn,
     signUp,
     signOut,

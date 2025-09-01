@@ -14,7 +14,8 @@ import { styled, useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useRef } from "react";
+import { useSessionPersistence } from '../../hooks/useSessionPersistence';
 import HorizontalHeader from "./layout/horizontal/header/Header";
 import Navigation from "./layout/horizontal/navbar/Navigation";
 import Customizer from "./layout/shared/customizer/Customizer";
@@ -52,17 +53,46 @@ export default function RootLayout({
   const MiniSidebarWidth = config.miniSidebarWidth;
 
   const theme = useTheme();
+  
+  // Ref to track if we've already redirected
+  const hasRedirected = useRef(false);
+  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Use session persistence hook to prevent unnecessary auth reloads
+  useSessionPersistence();
 
-  // Handle authentication redirect
+  // Handle authentication redirect with debouncing
   useEffect(() => {
-    if (!loading && !user) {
-      // User is not authenticated, redirect to login with correct base path
-      router.push('/auth/login');
+    // Clear any existing timeout
+    if (redirectTimeoutRef.current) {
+      clearTimeout(redirectTimeoutRef.current);
     }
+
+    // Only redirect if we're not loading and have no user, and haven't redirected yet
+    if (!loading && !user && !hasRedirected.current) {
+      // Add a longer delay to prevent rapid redirects during tab switches
+      redirectTimeoutRef.current = setTimeout(() => {
+        if (!loading && !user && !hasRedirected.current) {
+          hasRedirected.current = true;
+          router.push('/auth/login');
+        }
+      }, 3000); // 3 second delay to prevent tab switch issues
+    }
+
+    // Reset redirect flag if user is authenticated
+    if (user) {
+      hasRedirected.current = false;
+    }
+
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+      }
+    };
   }, [user, loading, router]);
 
-  // Show loading while checking authentication OR while roles are not loaded
-  if (loading || (user && (!roles || roles.length === 0))) {
+  // Show loading only during initial auth check, not during tab switches
+  if (loading && !user) {
     return (
       <PageContainer title="Loading" description="Loading user data">
         <Grid container spacing={0} justifyContent="center" sx={{ height: '100vh' }}>
@@ -162,6 +192,17 @@ export default function RootLayout({
   // Don't render layout if user is not authenticated
   if (!user) {
     return null;
+  }
+
+  // If user is authenticated but roles are still loading, show a minimal loading state
+  if (user && (!roles || roles.length === 0)) {
+    return (
+      <PageContainer title="Loading" description="Loading user roles">
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <CircularProgress size={40} />
+        </Box>
+      </PageContainer>
+    );
   }
 
   return (
