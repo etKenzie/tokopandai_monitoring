@@ -130,3 +130,251 @@ export const fetchOrdersByArea = async (area: string): Promise<OrdersResponse> =
     area: area
   });
 };
+
+// Types for Cash-In API
+export interface CashInData {
+  paid: {
+    paid_total_invoice: number;
+    paid_invoice_count: number;
+    paid_total_profit: number;
+    paid_avg_payment_days: number;
+  };
+  unpaid: {
+    unpaid_total_invoice: number;
+    unpaid_invoice_count: number;
+    unpaid_total_profit: number;
+    unpaid_avg_payment_days: number;
+  };
+}
+
+export interface CashInResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: CashInData;
+}
+
+// Types for Cash-In Query Parameters
+export interface CashInQueryParams {
+  month?: string;
+  year?: string;
+  agent?: string;
+  area?: string;
+}
+
+// Fetch Cash-In Data
+export const fetchCashInData = async (params: CashInQueryParams): Promise<CashInResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.month) queryParams.append('month', params.month);
+  if (params.year) queryParams.append('year', params.year);
+  if (params.agent) queryParams.append('agent', params.agent);
+  if (params.area) queryParams.append('area', params.area);
+  
+  const url = `${baseUrl}/api/order/cash-in?${queryParams.toString()}`;
+  
+  console.log('Fetching cash-in data from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch cash-in data: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Types for Order Filters API
+export interface OrderFiltersData {
+  agents: string[];
+  areas: string[];
+}
+
+export interface OrderFiltersResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: OrderFiltersData;
+}
+
+// Types for Order Filters Query Parameters
+export interface OrderFiltersQueryParams {
+  month?: string;
+  year?: string;
+}
+
+// Fetch Order Filters (Agents and Areas)
+export const fetchOrderFilters = async (params: OrderFiltersQueryParams): Promise<OrderFiltersResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.month) queryParams.append('month', params.month);
+  if (params.year) queryParams.append('year', params.year);
+  
+  const url = `${baseUrl}/api/order/filters?${queryParams.toString()}`;
+  
+  console.log('Fetching order filters from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch order filters: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Types for Cash-In Monthly API
+export interface CashInMonthlyDataItem {
+  month: string;
+  paid: {
+    paid_total_invoice: number;
+    paid_invoice_count: number;
+    paid_total_profit: number;
+    paid_avg_payment_days: number;
+  };
+  unpaid: {
+    unpaid_total_invoice: number;
+    unpaid_invoice_count: number;
+    unpaid_total_profit: number;
+    unpaid_avg_payment_days: number;
+  };
+}
+
+export interface CashInMonthlyData extends Array<CashInMonthlyDataItem> {}
+
+export interface CashInMonthlyResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: CashInMonthlyData;
+}
+
+// Types for Cash-In Monthly Query Parameters
+export interface CashInMonthlyQueryParams {
+  start_month?: string;
+  end_month?: string;
+  agent?: string;
+  area?: string;
+}
+
+// Types for Unpaid Overview API
+export interface UnpaidOverviewData {
+  current: {
+    count: number;
+    total_invoice: number;
+  };
+  B2W: {
+    count: number;
+    total_invoice: number;
+  };
+  "14DPD": {
+    count: number;
+    total_invoice: number;
+  };
+  "30DPD": {
+    count: number;
+    total_invoice: number;
+  };
+  "60DPD": {
+    count: number;
+    total_invoice: number;
+  };
+  "90DPD": {
+    count: number;
+    total_invoice: number;
+  };
+}
+
+export interface UnpaidOverviewResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: UnpaidOverviewData;
+}
+
+// Types for Unpaid Overview Query Parameters
+export interface UnpaidOverviewQueryParams {
+  agent?: string;
+  area?: string;
+}
+
+// Fetch Unpaid Overview Data
+export const fetchUnpaidOverview = async (params: UnpaidOverviewQueryParams): Promise<UnpaidOverviewResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  if (params.agent) queryParams.append('agent', params.agent);
+  if (params.area) queryParams.append('area', params.area);
+  
+  const url = `${baseUrl}/api/order/unpaid-overview?${queryParams.toString()}`;
+  
+  console.log('Fetching unpaid overview data from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch unpaid overview data: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Fetch Cash-In Monthly Data
+export const fetchCashInMonthlyData = async (params: CashInMonthlyQueryParams): Promise<CashInMonthlyResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.start_month) queryParams.append('start_month', params.start_month);
+  if (params.end_month) queryParams.append('end_month', params.end_month);
+  if (params.agent) queryParams.append('agent', params.agent);
+  if (params.area) queryParams.append('area', params.area);
+  
+  const url = `${baseUrl}/api/order/cash-in-monthly?${queryParams.toString()}`;
+  
+  console.log('Fetching cash-in monthly data from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch cash-in monthly data: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};

@@ -5,29 +5,29 @@ import { useAuth } from '@/app/context/AuthContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { getPageRoles } from '@/config/roles';
 import {
-  Avatar,
-  Box,
-  Card,
-  CardContent,
-  Chip,
-  Divider,
-  Grid,
-  InputAdornment,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Paper,
-  TextField,
-  Typography
+    Avatar,
+    Box,
+    Card,
+    CardContent,
+    Chip,
+    Divider,
+    Grid,
+    InputAdornment,
+    List,
+    ListItem,
+    ListItemIcon,
+    ListItemText,
+    Paper,
+    TextField,
+    Typography
 } from "@mui/material";
 import {
-  IconArrowRight,
-  IconCalendarDollar,
-  IconMail,
-  IconSearch,
-  IconShield,
-  IconUser
+    IconArrowRight,
+    IconCalendarDollar,
+    IconMail,
+    IconSearch,
+    IconShield,
+    IconUser
 } from "@tabler/icons-react";
 import { useMemo, useState } from 'react';
 
@@ -40,26 +40,26 @@ export default function Dashboard() {
 
   const allPages = [
     {
-      title: "Kasbon Overview",
-      description: "View kasbon performance overview and analytics",
+      title: "Cash-In Overview",
+      description: "Monitor cash-in performance, invoice status, and payment metrics",
       icon: IconCalendarDollar,
-      href: "/kasbon/overview",
+      href: "/distribusi/cash-in/overview",
       color: "primary",
       chip: "New"
     },
     {
-      title: "Client Performance",
-      description: "Analyze client performance metrics and trends",
+      title: "Cash-In Sales",
+      description: "View and analyze cash-in sales data and trends",
       icon: IconCalendarDollar,
-      href: "/kasbon/client-performance",
+      href: "/distribusi/sales",
       color: "secondary",
       chip: "Analytics"
     },
     {
-      title: "Non-Performing List",
-      description: "View and manage non-performing kasbon accounts",
+      title: "Cash-In Overdue",
+      description: "Monitor and manage overdue cash-in invoices",
       icon: IconCalendarDollar,
-      href: "/kasbon/non-performing-list",
+      href: "/distribusi/cash-in/overdue",
       color: "warning",
       chip: "Management"
     }

@@ -1,6 +1,7 @@
 import {
   IconCashBanknote,
   IconClockCancel,
+  IconDashboard,
   IconHome
 } from "@tabler/icons-react";
 import { uniqueId } from "lodash";
@@ -56,10 +57,19 @@ const Menuitems: MenuitemsType[] = [
     children: [
       {
         id: uniqueId(),
+        title: "Overview",
+        icon: IconDashboard,
+        href: "/distribusi/cash-in/overview",
+        chip: "New",
+        chipColor: "secondary",
+      },
+      {
+        id: uniqueId(),
         title: "Overdue List",
         icon: IconClockCancel,
         href: "/distribusi/cash-in/overdue",
       },
+      
       
     ],
   },

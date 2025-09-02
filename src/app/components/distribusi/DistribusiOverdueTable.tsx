@@ -2,29 +2,29 @@
 
 import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    Chip,
-    CircularProgress,
-    FormControl,
-    Grid,
-    InputAdornment,
-    InputLabel,
-    MenuItem,
-    Paper,
-    Select,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    TableSortLabel,
-    TextField,
-    Typography
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  FormControl,
+  Grid,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TableSortLabel,
+  TextField,
+  Typography
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
@@ -140,7 +140,8 @@ const DistribusiOverdueTable = ({
     }
   };
 
-  const getOverdueStatusColor = (status: string) => {
+  const getOverdueStatusColor = (status: string | null) => {
+    if (!status) return 'default';
     if (status.includes('Current')) return 'success';
     if (status.includes('B2W') || status.includes('14DPD')) return 'warning';
     if (status.includes('40DPD') || status.includes('60DPD')) return 'error';
@@ -152,15 +153,15 @@ const DistribusiOverdueTable = ({
     if (!query) return true;
 
     const searchableFields = [
-      order.order_code.toLowerCase(),
-      order.reseller_name.toLowerCase(),
-      order.store_name.toLowerCase(),
-      order.segment.toLowerCase(),
-      order.area.toLowerCase(),
-      order.agent_name.toLowerCase(),
-      order.overdue_status.toLowerCase(),
-      order.status_payment.toLowerCase(),
-      order.payment_type.toLowerCase(),
+      order.order_code?.toLowerCase() || '',
+      order.reseller_name?.toLowerCase() || '',
+      order.store_name?.toLowerCase() || '',
+      order.segment?.toLowerCase() || '',
+      order.area?.toLowerCase() || '',
+      order.agent_name?.toLowerCase() || '',
+      order.overdue_status?.toLowerCase() || '',
+      order.status_payment?.toLowerCase() || '',
+      order.payment_type?.toLowerCase() || '',
     ];
 
     return searchableFields.some((field) =>
@@ -222,7 +223,8 @@ const DistribusiOverdueTable = ({
 
          // Special handling for overdue_status field
      if (orderBy === 'overdue_status') {
-       const getOverduePriority = (status: string) => {
+       const getOverduePriority = (status: string | null) => {
+         if (!status) return 6; // null status gets lowest priority
          if (status.includes('CURRENT')) return 0;
          if (status.includes('B2W')) return 1;
          if (status.includes('14DPD')) return 2;
@@ -363,44 +365,43 @@ const DistribusiOverdueTable = ({
   return (
     <Card>
       <CardContent>
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mb: 3,
-          }}
-        >
-          <Typography variant="h6">{title}</Typography>
-          <Box>
-            <Button
-              variant="outlined"
-              startIcon={<RefreshIcon />}
-              onClick={fetchOverdueData}
-              disabled={loading}
-              sx={{ mr: 1 }}
-            >
-              Refresh
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<DownloadIcon />}
-              onClick={handleExcelExport}
-              disabled={filteredOrders.length === 0}
-              sx={{ mr: 1 }}
-            >
-              Export Excel
-            </Button>
-            <Button
-              variant="outlined"
-              color="secondary"
-              onClick={clearAllFilters}
-              disabled={!segmentFilter && !areaFilter && !agentFilter && !overdueStatusFilter && !searchQuery}
-            >
-              Clear Filters
-            </Button>
-          </Box>
-        </Box>
+                 <Box
+           sx={{
+             display: 'flex',
+             justifyContent: 'flex-end',
+             alignItems: 'center',
+             mb: 3,
+           }}
+         >
+           <Box>
+             <Button
+               variant="outlined"
+               startIcon={<RefreshIcon />}
+               onClick={fetchOverdueData}
+               disabled={loading}
+               sx={{ mr: 1 }}
+             >
+               Refresh
+             </Button>
+             <Button
+               variant="outlined"
+               startIcon={<DownloadIcon />}
+               onClick={handleExcelExport}
+               disabled={filteredOrders.length === 0}
+               sx={{ mr: 1 }}
+             >
+               Export Excel
+             </Button>
+             <Button
+               variant="outlined"
+               color="secondary"
+               onClick={clearAllFilters}
+               disabled={!segmentFilter && !areaFilter && !agentFilter && !overdueStatusFilter && !searchQuery}
+             >
+               Clear Filters
+             </Button>
+           </Box>
+         </Box>
 
         {/* Summary Stats */}
         <Box mb={3} sx={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
