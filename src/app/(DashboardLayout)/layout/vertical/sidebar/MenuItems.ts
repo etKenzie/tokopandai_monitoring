@@ -1,9 +1,7 @@
 import {
-  IconCalendarDollar,
-  IconDashboard,
-  IconGraph,
-  IconHome,
-  IconUserCancel
+  IconCashBanknote,
+  IconClockCancel,
+  IconHome
 } from "@tabler/icons-react";
 import { uniqueId } from "lodash";
 
@@ -46,38 +44,77 @@ const Menuitems: MenuitemsType[] = [
   // },
   {
     navlabel: true,
-    subheader: "Analytics",
+    subheader: "Distribusi",
   },
+   
   {
     id: uniqueId(),
-    title: "Kasbon",
-    icon: IconCalendarDollar,
-    href: "/kasbon",
+    title: "Cash In",
+    icon: IconCashBanknote,
+    href: "/cash-in",
     
     children: [
       {
         id: uniqueId(),
-        title: "Overview",
-        icon: IconDashboard,
-        href: "/kasbon/overview",
-        chip: "New",
-        chipColor: "secondary",
-      },
-      {
-        id: uniqueId(),
-        title: "Client Performance",
-        icon: IconGraph,
-        href: "/kasbon/client-performance",
-      },
-      {
-        id: uniqueId(),
-        title: "Non-Performing List",
-        icon: IconUserCancel,
-        href: "/kasbon/non-performing-list",
+        title: "Overdue List",
+        icon: IconClockCancel,
+        href: "/distribusi/cash-in/overdue",
       },
       
     ],
   },
+  // {
+  //   id: uniqueId(),
+  //   title: "Sales",
+  //   icon: IconCashBanknote,
+  //   href: "/sales",
+    
+  //   children: [
+  //     {
+  //       id: uniqueId(),
+  //       title: "Overdue List",
+  //       icon: IconClock24,
+  //       href: "/distribusi/cash-in/overdue",
+  //     },
+      
+  //   ],
+  // },
+
+
+  // {
+  //   navlabel: true,
+  //   subheader: "Analytics",
+  // },
+  // {
+  //   id: uniqueId(),
+  //   title: "Kasbon",
+  //   icon: IconCalendarDollar,
+  //   href: "/kasbon",
+    
+  //   children: [
+  //     {
+  //       id: uniqueId(),
+  //       title: "Overview",
+  //       icon: IconDashboard,
+  //       href: "/kasbon/overview",
+  //       chip: "New",
+  //       chipColor: "secondary",
+  //     },
+  //     {
+  //       id: uniqueId(),
+  //       title: "Client Performance",
+  //       icon: IconGraph,
+  //       href: "/kasbon/client-performance",
+  //     },
+  //     {
+  //       id: uniqueId(),
+  //       title: "Non-Performing List",
+  //       icon: IconUserCancel,
+  //       href: "/kasbon/non-performing-list",
+  //     },
+      
+  //   ],
+  // },
 
   // {
   //   navlabel: true,

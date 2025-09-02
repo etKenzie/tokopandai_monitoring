@@ -500,7 +500,7 @@ export interface ClientSummaryParams {
 }
 
 // Get API URL from environment variable with fallback
-const AM_API_URL = process.env.NEXT_PUBLIC_AM_API_URL;
+const AM_API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
 // API service functions
