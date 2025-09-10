@@ -5,29 +5,29 @@ import { useAuth } from '@/app/context/AuthContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { getPageRoles } from '@/config/roles';
 import {
-    Avatar,
-    Box,
-    Card,
-    CardContent,
-    Chip,
-    Divider,
-    Grid,
-    InputAdornment,
-    List,
-    ListItem,
-    ListItemIcon,
-    ListItemText,
-    Paper,
-    TextField,
-    Typography
+  Avatar,
+  Box,
+  Card,
+  CardContent,
+  Chip,
+  Divider,
+  Grid,
+  InputAdornment,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Paper,
+  TextField,
+  Typography
 } from "@mui/material";
 import {
-    IconArrowRight,
-    IconCalendarDollar,
-    IconMail,
-    IconSearch,
-    IconShield,
-    IconUser
+  IconArrowRight,
+  IconCalendarDollar,
+  IconMail,
+  IconSearch,
+  IconShield,
+  IconUser
 } from "@tabler/icons-react";
 import { useMemo, useState } from 'react';
 
@@ -62,6 +62,22 @@ export default function Dashboard() {
       href: "/distribusi/cash-in/overdue",
       color: "warning",
       chip: "Management"
+    },
+    {
+      title: "Sales Visits",
+      description: "View and manage sales visit records with photos and details",
+      icon: IconUser,
+      href: "/distribusi/visit",
+      color: "info",
+      chip: "Monitoring"
+    },
+    {
+      title: "Product Complaints",
+      description: "View and manage product complaints with attachments",
+      icon: IconShield,
+      href: "/distribusi/complaint",
+      color: "error",
+      chip: "Quality"
     }
   ];
 

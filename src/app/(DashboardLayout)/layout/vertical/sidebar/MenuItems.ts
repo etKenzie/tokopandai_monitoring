@@ -2,7 +2,9 @@ import {
   IconCashBanknote,
   IconClockCancel,
   IconDashboard,
-  IconHome
+  IconFlag,
+  IconHome,
+  IconMailCancel
 } from "@tabler/icons-react";
 import { uniqueId } from "lodash";
 
@@ -72,6 +74,18 @@ const Menuitems: MenuitemsType[] = [
       
       
     ],
+  },
+  {
+    id: uniqueId(),
+    title: "Visits",
+    icon: IconFlag,
+    href: "/distribusi/visit",
+  },
+  {
+    id: uniqueId(),
+    title: "Complaints",
+    icon: IconMailCancel,
+    href: "/distribusi/complaint",
   },
   // {
   //   id: uniqueId(),
