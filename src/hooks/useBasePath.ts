@@ -1,25 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 
 /**
  * React hook to get the current base path
  * Updates automatically when the component mounts
  */
 export const useBasePath = (): string => {
-  const [basePath, setBasePath] = useState<string>('');
-
-  useEffect(() => {
-    // Check if we're in production by looking at the current path
-    const pathname = window.location.pathname;
-    if (pathname.startsWith('/executive_dashboard')) {
-      setBasePath('/executive_dashboard');
-    } else {
-      setBasePath('');
-    }
-  }, []);
-
-  return basePath;
+  // Always return empty string for root deployment
+  return '';
 };
 
 /**

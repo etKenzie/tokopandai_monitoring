@@ -1,10 +1,10 @@
 const nextConfig = { 
   reactStrictMode: false, 
   images: { unoptimized: true },
-  // Dynamic base path configuration
-  basePath: process.env.NODE_ENV === 'production' ? '/executive_dashboard' : '',
-  // Asset prefix for production
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/executive_dashboard' : '',
+  // No base path needed for root deployment
+  basePath: '',
+  // No asset prefix needed for root deployment
+  assetPrefix: '',
   // Trailing slash for consistency
   trailingSlash: false,
 };

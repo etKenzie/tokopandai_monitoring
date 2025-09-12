@@ -4,16 +4,8 @@
 
 // Get the base path for the current environment
 export const getBasePath = (): string => {
-  if (typeof window !== 'undefined') {
-    // Client-side: check if we're in production by looking at the current path
-    const pathname = window.location.pathname;
-    if (pathname.startsWith('/executive_dashboard')) {
-      return '/executive_dashboard';
-    }
-  }
-  
-  // Server-side or development: use environment check
-  return process.env.NODE_ENV === 'production' ? '/executive_dashboard' : '';
+  // Always return empty string for root deployment
+  return '';
 };
 
 // Create a full URL with the correct base path
@@ -37,12 +29,6 @@ export const isProduction = (): boolean => {
 
 // Get the current base path for use in components
 export const useBasePath = (): string => {
-  if (typeof window !== 'undefined') {
-    // Client-side: check current path
-    const pathname = window.location.pathname;
-    if (pathname.startsWith('/executive_dashboard')) {
-      return '/executive_dashboard';
-    }
-  }
+  // Always return empty string for root deployment
   return '';
 };
