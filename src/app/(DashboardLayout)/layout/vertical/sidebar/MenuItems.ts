@@ -4,7 +4,9 @@ import {
   IconDashboard,
   IconFlag,
   IconHome,
-  IconMailCancel
+  IconMailCancel,
+  IconMenuOrder,
+  IconTrendingUp
 } from "@tabler/icons-react";
 import { uniqueId } from "lodash";
 
@@ -48,6 +50,31 @@ const Menuitems: MenuitemsType[] = [
   {
     navlabel: true,
     subheader: "Distribusi",
+  },
+  {
+    id: uniqueId(),
+    title: "Sales",
+    icon: IconTrendingUp,
+    href: "/sales",
+    
+    children: [
+      {
+        id: uniqueId(),
+        title: "Overview",
+        icon: IconDashboard,
+        href: "/distribusi/sales/overview",
+        chip: "New",
+        chipColor: "secondary",
+      },
+      {
+        id: uniqueId(),
+        title: "Orders",
+        icon: IconMenuOrder,
+        href: "/distribusi/sales/orders",
+      },
+      
+      
+    ],
   },
    
   {

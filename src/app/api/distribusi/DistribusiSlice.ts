@@ -378,3 +378,328 @@ export const fetchCashInMonthlyData = async (params: CashInMonthlyQueryParams): 
   
   return response.json();
 };
+
+// Types for Sales Summary API
+export interface SalesSummaryData {
+  total_invoice: number;
+  invoice_count: number;
+  avg_payment_days: number;
+  total_profit: number;
+  margin: number;
+}
+
+export interface SalesSummaryResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: SalesSummaryData;
+}
+
+// Types for Sales Summary Query Parameters
+export interface SalesSummaryQueryParams {
+  month?: string;
+  agent_name?: string;
+  area?: string;
+  status_payment?: string;
+}
+
+// Fetch Sales Summary Data
+export const fetchSalesSummary = async (params: SalesSummaryQueryParams): Promise<SalesSummaryResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.month) queryParams.append('month', params.month);
+  if (params.agent_name) queryParams.append('agent_name', params.agent_name);
+  if (params.area) queryParams.append('area', params.area);
+  if (params.status_payment) queryParams.append('status_payment', params.status_payment);
+  
+  const url = `${baseUrl}/api/order/summary?${queryParams.toString()}`;
+  
+  console.log('Fetching sales summary data from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch sales summary data: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Types for Sales Summary Monthly API
+export interface SalesSummaryMonthlyDataItem {
+  month: string;
+  total_invoice: number;
+  invoice_count: number;
+  avg_payment_days: number;
+  total_profit: number;
+  margin: number;
+}
+
+export interface SalesSummaryMonthlyData extends Array<SalesSummaryMonthlyDataItem> {}
+
+export interface SalesSummaryMonthlyResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: SalesSummaryMonthlyData;
+}
+
+// Types for Sales Summary Monthly Query Parameters
+export interface SalesSummaryMonthlyQueryParams {
+  start_month?: string;
+  end_month?: string;
+  agent_name?: string;
+  area?: string;
+  status_payment?: string;
+}
+
+// Fetch Sales Summary Monthly Data
+export const fetchSalesSummaryMonthly = async (params: SalesSummaryMonthlyQueryParams): Promise<SalesSummaryMonthlyResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.start_month) queryParams.append('start_month', params.start_month);
+  if (params.end_month) queryParams.append('end_month', params.end_month);
+  if (params.agent_name) queryParams.append('agent_name', params.agent_name);
+  if (params.area) queryParams.append('area', params.area);
+  if (params.status_payment) queryParams.append('status_payment', params.status_payment);
+  
+  const url = `${baseUrl}/api/order/summary-monthly?${queryParams.toString()}`;
+  
+  console.log('Fetching sales summary monthly data from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch sales summary monthly data: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Types for Total Stores API
+export interface TotalStoresData {
+  total_stores: number;
+  active_stores: number;
+  activation_rate: number;
+}
+
+export interface TotalStoresResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: TotalStoresData;
+}
+
+// Types for Total Stores Query Parameters
+export interface TotalStoresQueryParams {
+  month?: string;
+  agent_name?: string;
+  area?: string;
+  status_payment?: string;
+}
+
+// Fetch Total Stores Data
+export const fetchTotalStores = async (params: TotalStoresQueryParams): Promise<TotalStoresResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.month) queryParams.append('month', params.month);
+  if (params.agent_name) queryParams.append('agent_name', params.agent_name);
+  if (params.area) queryParams.append('area', params.area);
+  if (params.status_payment) queryParams.append('status_payment', params.status_payment);
+  
+  const url = `${baseUrl}/api/order/total-stores?${queryParams.toString()}`;
+  
+  console.log('Fetching total stores data from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch total stores data: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Types for Total Stores Monthly API
+export interface TotalStoresMonthlyDataItem {
+  month: string;
+  total_stores: number;
+  active_stores: number;
+  activation_rate: number;
+}
+
+export interface TotalStoresMonthlyData extends Array<TotalStoresMonthlyDataItem> {}
+
+export interface TotalStoresMonthlyResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: TotalStoresMonthlyData;
+}
+
+// Types for Total Stores Monthly Query Parameters
+export interface TotalStoresMonthlyQueryParams {
+  start_month?: string;
+  end_month?: string;
+  agent_name?: string;
+  area?: string;
+  status_payment?: string;
+}
+
+// Fetch Total Stores Monthly Data
+export const fetchTotalStoresMonthly = async (params: TotalStoresMonthlyQueryParams): Promise<TotalStoresMonthlyResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.start_month) queryParams.append('start_month', params.start_month);
+  if (params.end_month) queryParams.append('end_month', params.end_month);
+  if (params.agent_name) queryParams.append('agent_name', params.agent_name);
+  if (params.area) queryParams.append('area', params.area);
+  if (params.status_payment) queryParams.append('status_payment', params.status_payment);
+  
+  const url = `${baseUrl}/api/order/total-stores-monthly?${queryParams.toString()}`;
+  
+  console.log('Fetching total stores monthly data from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch total stores monthly data: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Orders Pagination API
+export interface OrderPaginationData {
+  order_id: string;
+  order_code: string;
+  user_id: string;
+  reseller_name: string;
+  store_name: string;
+  segment: string;
+  area: string;
+  reseller_code: string;
+  phone_number: string;
+  status_order: string;
+  status_payment: string;
+  payment_type: string;
+  order_date: string;
+  faktur_date: string | null;
+  payment_due_date: string;
+  process_hub: string;
+  is_cross: number;
+  order_type: string;
+  month: string;
+  payment_date: string | null;
+  total_invoice: number;
+  agent_name: string;
+  admin_name: string;
+  business_type: string;
+  sub_business_type: string;
+  profit: number;
+  overdue_status: string;
+}
+
+export interface OrderPaginationMetadata {
+  total_orders: number;
+  total_invoice: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+export interface OrderPaginationResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: {
+    data: OrderPaginationData[];
+    metadata: OrderPaginationMetadata;
+  };
+}
+
+export interface OrderPaginationQueryParams {
+  payment?: string;
+  sortTime?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+  month?: string;
+  agent_name?: string;
+  area?: string;
+  status_payment?: string;
+}
+
+// Fetch Orders Data (without pagination)
+export const fetchOrdersData = async (params: OrderPaginationQueryParams): Promise<{ data: OrderPaginationData[] }> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.payment) queryParams.append('payment', params.payment);
+  if (params.sortTime) queryParams.append('sortTime', params.sortTime);
+  if (params.month) queryParams.append('month', params.month);
+  if (params.agent_name) queryParams.append('agent_name', params.agent_name);
+  if (params.area) queryParams.append('area', params.area);
+  if (params.status_payment) queryParams.append('status_payment', params.status_payment);
+  
+  const url = `${baseUrl}/api/order?${queryParams.toString()}`;
+  
+  console.log('Fetching orders data from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch orders data: ${response.status} ${response.statusText}`);
+  }
+  
+  const result = await response.json();
+  return { data: result.data || result };
+};
