@@ -15,8 +15,12 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
+    FormControl,
     Grid,
     IconButton,
+    InputLabel,
+    MenuItem,
+    Select,
     TextField,
     Tooltip,
     Typography
@@ -44,6 +48,28 @@ const SettingsManager = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Available agents from static data
+  const availableAgents = Object.keys(goalProfit).sort();
+
+  // Available months/years
+  const availableMonths = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const availableYears = ['2024', '2025', '2026'];
+
+  const getMonthYearOptions = () => {
+    const options: string[] = [];
+    availableYears.forEach(year => {
+      availableMonths.forEach(month => {
+        options.push(`${month} ${year}`);
+      });
+    });
+    return options;
+  };
 
   // Initialize form data when settings load
   useEffect(() => {
@@ -95,6 +121,7 @@ const SettingsManager = () => {
       monthYear: '',
       value: 0
     });
+    setIsEditing(false);
     setDialogOpen(true);
   };
 
@@ -104,6 +131,7 @@ const SettingsManager = () => {
       monthYear,
       value
     });
+    setIsEditing(true);
     setDialogOpen(true);
   };
 
@@ -408,25 +436,45 @@ const SettingsManager = () => {
       {/* Goal Profit Dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {editingEntry?.agent && editingEntry?.monthYear ? 'Edit' : 'Add'} Goal Profit Target
+          {isEditing ? 'Edit' : 'Add'} Goal Profit Target
         </DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} pt={1}>
-            <TextField
-              label="Agent Name"
-              value={editingEntry?.agent || ''}
-              onChange={(e) => setEditingEntry(prev => prev ? { ...prev, agent: e.target.value } : null)}
-              fullWidth
-              size="small"
-            />
-            <TextField
-              label="Month Year (e.g., january 2025)"
-              value={editingEntry?.monthYear || ''}
-              onChange={(e) => setEditingEntry(prev => prev ? { ...prev, monthYear: e.target.value } : null)}
-              fullWidth
-              size="small"
-              placeholder="january 2025"
-            />
+            {/* Agent Selection */}
+            <FormControl fullWidth size="small">
+              <InputLabel>Agent Name</InputLabel>
+              <Select
+                value={editingEntry?.agent || ''}
+                label="Agent Name"
+                onChange={(e: any) => setEditingEntry(prev => prev ? { ...prev, agent: e.target.value } : null)}
+                disabled={isEditing}
+              >
+                {availableAgents.map((agent) => (
+                  <MenuItem key={agent} value={agent}>
+                    {agent}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Month Year Selection */}
+            <FormControl fullWidth size="small">
+              <InputLabel>Month Year</InputLabel>
+              <Select
+                value={editingEntry?.monthYear || ''}
+                label="Month Year"
+                onChange={(e: any) => setEditingEntry(prev => prev ? { ...prev, monthYear: e.target.value } : null)}
+                disabled={isEditing}
+              >
+                {getMonthYearOptions().map((monthYear) => (
+                  <MenuItem key={monthYear} value={monthYear}>
+                    {monthYear}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Target Amount */}
             <TextField
               label="Target Amount"
               type="number"

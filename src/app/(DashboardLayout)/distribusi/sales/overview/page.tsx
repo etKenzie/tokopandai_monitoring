@@ -277,7 +277,7 @@ const SalesOverview = () => {
       'January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
-    const monthName = monthNames[parseInt(filters.month) - 1].toLowerCase();
+    const monthName = monthNames[parseInt(filters.month) - 1];
     const monthYear = `${monthName} ${filters.year}`;
     
     // Use selected agent or default to NATIONAL if no agent selected
@@ -298,18 +298,20 @@ const SalesOverview = () => {
     }
     
     // Fallback to static goalProfit data if settings not available
-    console.log('Goal Profit Lookup (fallback to static):', { agentKey, monthYear, availableAgents: Object.keys(goalProfit) });
+    // Convert to lowercase for static data lookup
+    const staticMonthYear = `${monthName.toLowerCase()} ${filters.year}`;
+    console.log('Goal Profit Lookup (fallback to static):', { agentKey, monthYear: staticMonthYear, availableAgents: Object.keys(goalProfit) });
     
     // Check if agent exists in goalProfit data
-    if (goalProfit[agentKey] && goalProfit[agentKey][monthYear]) {
-      console.log('Found goal profit for agent (static):', { agentKey, monthYear, value: goalProfit[agentKey][monthYear] });
-      return goalProfit[agentKey][monthYear];
+    if (goalProfit[agentKey] && goalProfit[agentKey][staticMonthYear]) {
+      console.log('Found goal profit for agent (static):', { agentKey, monthYear: staticMonthYear, value: goalProfit[agentKey][staticMonthYear] });
+      return goalProfit[agentKey][staticMonthYear];
     }
     
     // Fallback to NATIONAL if agent not found
-    if (goalProfit['NATIONAL'] && goalProfit['NATIONAL'][monthYear]) {
-      console.log('Using NATIONAL goal profit (static):', { monthYear, value: goalProfit['NATIONAL'][monthYear] });
-      return goalProfit['NATIONAL'][monthYear];
+    if (goalProfit['NATIONAL'] && goalProfit['NATIONAL'][staticMonthYear]) {
+      console.log('Using NATIONAL goal profit (static):', { monthYear: staticMonthYear, value: goalProfit['NATIONAL'][staticMonthYear] });
+      return goalProfit['NATIONAL'][staticMonthYear];
     }
     
     console.log('No goal profit found for:', { agentKey, monthYear });
