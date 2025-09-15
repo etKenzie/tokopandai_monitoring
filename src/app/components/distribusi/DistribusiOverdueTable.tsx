@@ -29,6 +29,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { fetchOrders, Order } from '../../api/distribusi/DistribusiSlice';
+import OrderDetailModal from '../shared/OrderDetailModal';
 
 type OrderDirection = 'asc' | 'desc';
 type SortableField = keyof Order;
@@ -80,6 +81,8 @@ const DistribusiOverdueTable = ({
   const [agentFilter, setAgentFilter] = useState<string>('');
   const [overdueStatusFilter, setOverdueStatusFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedOrderCode, setSelectedOrderCode] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const fetchOverdueData = async () => {
     setLoading(true);
@@ -314,6 +317,16 @@ const DistribusiOverdueTable = ({
     a.download = `distribusi-overdue-orders.xlsx`;
     a.click();
     window.URL.revokeObjectURL(url);
+  };
+
+  const handleRowClick = (orderCode: string) => {
+    setSelectedOrderCode(orderCode);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedOrderCode(null);
   };
 
   const clearAllFilters = () => {
@@ -570,7 +583,17 @@ const DistribusiOverdueTable = ({
                 sortedOrders
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((row) => (
-                    <TableRow key={row.order_id} hover>
+                    <TableRow 
+                      key={row.order_id} 
+                      hover
+                      onClick={() => handleRowClick(row.order_code)}
+                      sx={{ 
+                        cursor: 'pointer',
+                        '&:hover': {
+                          backgroundColor: 'action.hover',
+                        }
+                      }}
+                    >
                       <TableCell>{row.order_code}</TableCell>
                       <TableCell>{row.reseller_name}</TableCell>
                       <TableCell>{row.store_name}</TableCell>
@@ -636,6 +659,13 @@ const DistribusiOverdueTable = ({
            />
         </TableContainer>
       </CardContent>
+
+      {/* Order Detail Modal */}
+      <OrderDetailModal
+        open={modalOpen}
+        onClose={handleCloseModal}
+        orderCode={selectedOrderCode}
+      />
     </Card>
   );
 };

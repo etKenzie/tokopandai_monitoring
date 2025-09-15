@@ -2,34 +2,34 @@
 
 import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon, Visibility as VisibilityIcon } from '@mui/icons-material';
 import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    Chip,
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    FormControl,
-    Grid,
-    IconButton,
-    InputAdornment,
-    InputLabel,
-    MenuItem,
-    Paper,
-    Select,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    TableSortLabel,
-    TextField,
-    Tooltip,
-    Typography
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  Grid,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TableSortLabel,
+  TextField,
+  Tooltip,
+  Typography
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
@@ -47,6 +47,7 @@ interface HeadCell {
 const headCells: HeadCell[] = [
   { id: 'created_at', label: 'Date', numeric: false },
   { id: 'order_code', label: 'Order Code', numeric: false },
+  { id: 'store_name', label: 'Store Name', numeric: false },
   { id: 'product_name', label: 'Product Name', numeric: false },
   { id: 'product_sku', label: 'SKU', numeric: false },
   { id: 'alasan', label: 'Reason', numeric: false },
@@ -133,6 +134,7 @@ const DistribusiComplaintTable = ({
 
     const searchableFields = [
       complaint.order_code?.toLowerCase() || '',
+      complaint.store_name?.toLowerCase() || '',
       complaint.product_name?.toLowerCase() || '',
       complaint.product_sku?.toLowerCase() || '',
       complaint.alasan?.toLowerCase() || '',
@@ -186,6 +188,7 @@ const DistribusiComplaintTable = ({
     return complaints.map((c) => ({
       'Date': formatDate(c.created_at),
       'Order Code': c.order_code,
+      'Store Name': c.store_name,
       'Product Name': c.product_name,
       'SKU': c.product_sku,
       'Reason': c.alasan,
@@ -207,6 +210,7 @@ const DistribusiComplaintTable = ({
     const colWidths = [
       { wch: 15 }, // Date
       { wch: 15 }, // Order Code
+      { wch: 30 }, // Store Name
       { wch: 40 }, // Product Name
       { wch: 20 }, // SKU
       { wch: 25 }, // Reason
@@ -436,6 +440,11 @@ const DistribusiComplaintTable = ({
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {row.store_name}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {row.product_name}
                         </Typography>
                       </TableCell>
@@ -534,6 +543,10 @@ const DistribusiComplaintTable = ({
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="body2" color="textSecondary">Order Code:</Typography>
                     <Typography variant="body1" fontWeight="bold">{selectedComplaint.order_code}</Typography>
+                  </Box>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" color="textSecondary">Store Name:</Typography>
+                    <Typography variant="body1" fontWeight="bold">{selectedComplaint.store_name}</Typography>
                   </Box>
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="body2" color="textSecondary">Reason:</Typography>

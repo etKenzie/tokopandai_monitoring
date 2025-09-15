@@ -36,6 +36,65 @@ export interface OrdersResponse {
   data: Order[];
 }
 
+// Types for Order Detail API
+export interface OrderDetailItem {
+  order_id: string;
+  order_item_id: string;
+  order_code: string;
+  product_id: string;
+  sku: string;
+  price: string;
+  order_quantity: number;
+  total_invoice: string;
+  stock_product: number;
+  variant_name: string;
+  product_variant_id: string;
+  variant: string;
+  variant_value: number;
+  order_date: string;
+  status: string;
+  nama_lengkap: string;
+  nama_toko: string;
+  reseller_code: string;
+  alamat: string;
+  product_name: string;
+  brands: string;
+  type_category: string;
+  sub_category: string;
+  dt_code: string;
+  hub: string;
+  principle_id: string;
+  principle: string;
+  serve_price: number | null;
+  buy_price: number;
+}
+
+export interface OrderDetailResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: {
+    order_code: string;
+    details: OrderDetailItem[];
+  };
+}
+
+// Types for Order Item Update API
+export interface OrderItemUpdate {
+  order_item_id: string;
+  new_buy_price: number;
+}
+
+export interface OrderItemUpdateRequest {
+  details: OrderItemUpdate[];
+}
+
+export interface OrderItemUpdateResponse {
+  code: number;
+  status: string;
+  message: string;
+}
+
 // Types for Order Query Parameters
 export interface OrderQueryParams {
   sortTime?: 'asc' | 'desc';
@@ -129,6 +188,53 @@ export const fetchOrdersByArea = async (area: string): Promise<OrdersResponse> =
     sortTime: 'desc',
     area: area
   });
+};
+
+// Fetch order details by order code
+export const fetchOrderDetail = async (orderCode: string): Promise<OrderDetailResponse> => {
+  if (!AM_API_URL) {
+    throw new Error('API URL is not configured');
+  }
+
+  const url = `${AM_API_URL}/api/order/detail?order_code=${encodeURIComponent(orderCode)}`;
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const data: OrderDetailResponse = await response.json();
+  return data;
+};
+
+// Update order item buy prices
+export const updateOrderItemBuyPrices = async (updateData: OrderItemUpdateRequest): Promise<OrderItemUpdateResponse> => {
+  if (!AM_API_URL) {
+    throw new Error('API URL is not configured');
+  }
+
+  const url = `${AM_API_URL}/api/order/order-items`;
+  
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(updateData),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const data: OrderItemUpdateResponse = await response.json();
+  return data;
 };
 
 // Types for Cash-In API
@@ -386,6 +492,8 @@ export interface SalesSummaryData {
   avg_payment_days: number;
   total_profit: number;
   margin: number;
+  average_profit_day: number;
+  average_profit_week: number;
 }
 
 export interface SalesSummaryResponse {
@@ -393,6 +501,25 @@ export interface SalesSummaryResponse {
   status: string;
   message: string;
   data: SalesSummaryData;
+}
+
+// Types for Monthly Summary API
+export interface MonthlySummaryData {
+  month: string;
+  total_invoice: number;
+  invoice_count: number;
+  avg_payment_days: number;
+  total_profit: number;
+  margin: number;
+  average_profit_day: number;
+  average_profit_week: number;
+}
+
+export interface MonthlySummaryResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: MonthlySummaryData[];
 }
 
 // Types for Sales Summary Query Parameters
@@ -702,4 +829,149 @@ export const fetchOrdersData = async (params: OrderPaginationQueryParams): Promi
   
   const result = await response.json();
   return { data: result.data || result };
+};
+
+// Fetch Updated Sales Summary (with new fields)
+export const fetchUpdatedSalesSummary = async (params: SalesSummaryQueryParams): Promise<SalesSummaryResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.month) queryParams.append('month', params.month);
+  if (params.agent_name) queryParams.append('agent_name', params.agent_name);
+  if (params.area) queryParams.append('area', params.area);
+  if (params.status_payment) queryParams.append('status_payment', params.status_payment);
+  
+  const url = `${baseUrl}/api/order/summary?${queryParams.toString()}`;
+  
+  console.log('Fetching updated sales summary data from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch updated sales summary data: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Fetch Updated Monthly Summary (with new fields)
+export const fetchUpdatedSalesSummaryMonthly = async (params: SalesSummaryMonthlyQueryParams): Promise<MonthlySummaryResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.start_month) queryParams.append('start_month', params.start_month);
+  if (params.end_month) queryParams.append('end_month', params.end_month);
+  if (params.agent_name) queryParams.append('agent_name', params.agent_name);
+  if (params.area) queryParams.append('area', params.area);
+  if (params.status_payment) queryParams.append('status_payment', params.status_payment);
+  
+  const url = `${baseUrl}/api/order/summary-monthly?${queryParams.toString()}`;
+  
+  console.log('Fetching updated sales summary monthly data from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch updated sales summary monthly data: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Types for NOO (Number of Orders) API
+export interface NOOOrder {
+  order_id: string;
+  order_code: string;
+  user_id: string;
+  reseller_name: string;
+  store_name: string;
+  segment: string;
+  area: string;
+  reseller_code: string;
+  phone_number: string;
+  status_order: string;
+  status_payment: string;
+  payment_type: string;
+  order_date: string;
+  faktur_date: string | null;
+  process_hub: string;
+  is_cross: number;
+  month: string;
+  order_type: string;
+  payment_date: string | null;
+  total_invoice: number;
+  total_pembayaran: number;
+  business_type: string;
+  sub_business_type: string;
+  agent_name: string;
+  admin_name: string;
+  profit: number;
+}
+
+export interface NOOResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: NOOOrder[];
+}
+
+// Types for NOO Query Parameters
+export interface NOOQueryParams {
+  month?: string;
+  sortTime?: 'asc' | 'desc';
+  agent_name?: string;
+  area?: string;
+  status_payment?: string;
+}
+
+// Fetch NOO Data
+export const fetchNOOData = async (params: NOOQueryParams): Promise<NOOResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.month) queryParams.append('month', params.month);
+  if (params.sortTime) queryParams.append('sortTime', "desc");
+  if (params.agent_name) queryParams.append('agent_name', params.agent_name);
+  if (params.area) queryParams.append('area', params.area);
+  if (params.status_payment) queryParams.append('status_payment', params.status_payment);
+  
+  const url = `${baseUrl}/api/order/stores-order-once?${queryParams.toString()}`;
+  
+  console.log('Fetching NOO data from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+  console.log('Month parameter being sent:', params.month);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch NOO data: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
 };

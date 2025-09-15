@@ -1,20 +1,24 @@
 'use client';
 
-import { OrderFiltersData, SalesSummaryData, TotalStoresData, fetchOrderFilters, fetchSalesSummary, fetchTotalStores } from '@/app/api/distribusi/DistribusiSlice';
+import { fetchNOOData, fetchOrderFilters, fetchTotalStores, fetchUpdatedSalesSummary, fetchUpdatedSalesSummaryMonthly, MonthlySummaryData, NOOOrder, OrderFiltersData, SalesSummaryData, TotalStoresData } from '@/app/api/distribusi/DistribusiSlice';
 import ProtectedRoute from '@/app/components/auth/ProtectedRoute';
 import PageContainer from '@/app/components/container/PageContainer';
 import { DistribusiFilterValues } from '@/app/components/distribusi/DistribusiFilters';
+import NOOTable from '@/app/components/distribusi/NOOTable';
 import SalesMonthlyChart from '@/app/components/distribusi/SalesMonthlyChart';
 import StoresMonthlyChart from '@/app/components/distribusi/StoresMonthlyChart';
 import SummaryTiles from '@/app/components/shared/SummaryTiles';
 import { useAuth } from '@/app/context/AuthContext';
+import { useSettings } from '@/app/context/SettingsContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { getPageRoles } from '@/config/roles';
 import { Box, FormControl, Grid, InputLabel, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
+import { goalProfit } from '../../goalProfit';
 
 const SalesOverview = () => {
   const { user, roles, refreshRoles } = useAuth();
+  const { settings } = useSettings();
   
   // Check access for allowed roles (configurable via roles config)
   const accessCheck = useCheckRoles(getPageRoles('DISTRIBUSI_DASHBOARD'));
@@ -23,9 +27,13 @@ const SalesOverview = () => {
   console.log('Sales Overview Access Check:', accessCheck);
   
   const [salesData, setSalesData] = useState<SalesSummaryData | null>(null);
+  const [monthlySummaryData, setMonthlySummaryData] = useState<MonthlySummaryData[]>([]);
   const [totalStoresData, setTotalStoresData] = useState<TotalStoresData | null>(null);
+  const [nooData, setNOOData] = useState<NOOOrder[]>([]);
   const [loading, setLoading] = useState(false);
+  const [monthlyLoading, setMonthlyLoading] = useState(false);
   const [totalStoresLoading, setTotalStoresLoading] = useState(false);
+  const [nooLoading, setNOOLoading] = useState(false);
   const [availableFilters, setAvailableFilters] = useState<OrderFiltersData | null>(null);
   const [filtersLoading, setFiltersLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +76,7 @@ const SalesOverview = () => {
         const monthName = monthNames[parseInt(currentFilters.month) - 1];
         const formattedMonth = `${monthName} ${currentFilters.year}`;
         
-        const response = await fetchSalesSummary({
+        const response = await fetchUpdatedSalesSummary({
           month: formattedMonth,
           agent_name: currentFilters.agent || undefined,
           area: currentFilters.area || undefined,
@@ -121,6 +129,91 @@ const SalesOverview = () => {
     }
   }, []);
 
+  const fetchMonthlySummaryCallback = useCallback(async (currentFilters: DistribusiFilterValues, paymentStatus: string) => {
+    console.log('Fetching monthly summary data with filters:', currentFilters, 'payment status:', paymentStatus);
+    setMonthlyLoading(true);
+    try {
+      // Only fetch data if we have month and year (required)
+      if (currentFilters.month && currentFilters.year) {
+        // Format month for API (e.g., "08" -> "August 2025")
+        const monthNames = [
+          'January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        const monthName = monthNames[parseInt(currentFilters.month) - 1];
+        const formattedMonth = `${monthName} ${currentFilters.year}`;
+        
+        // Get the last 3 months for the monthly trend
+        const currentDate = new Date(parseInt(currentFilters.year), parseInt(currentFilters.month) - 1);
+        const startDate = new Date(currentDate);
+        startDate.setMonth(startDate.getMonth() - 2);
+        
+        const startMonth = `${monthNames[startDate.getMonth()]} ${startDate.getFullYear()}`;
+        
+        const response = await fetchUpdatedSalesSummaryMonthly({
+          start_month: startMonth,
+          end_month: formattedMonth,
+          agent_name: currentFilters.agent || undefined,
+          area: currentFilters.area || undefined,
+          status_payment: paymentStatus || undefined,
+        });
+        console.log('Monthly summary data response:', response);
+        setMonthlySummaryData(response.data);
+      } else {
+        setMonthlySummaryData([]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch monthly summary data:', err);
+      setMonthlySummaryData([]);
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setMonthlyLoading(false);
+    }
+  }, []);
+
+  const fetchNOOCallback = useCallback(async (currentFilters: DistribusiFilterValues, paymentStatus: string) => {
+    console.log('=== fetchNOOCallback called ===');
+    console.log('Fetching NOO data with filters:', currentFilters, 'payment status:', paymentStatus);
+    setNOOLoading(true);
+    try {
+      // Only fetch data if we have month and year (required)
+      if (currentFilters.month && currentFilters.year) {
+        // Format month for API (e.g., "08" -> "August 2025")
+        const monthNames = [
+          'January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        const monthIndex = parseInt(currentFilters.month, 10) - 1;
+        const monthName = monthNames[monthIndex];
+        const formattedMonth = `${monthName} ${currentFilters.year}`;
+        
+        console.log('NOO Month formatting:', {
+          originalMonth: currentFilters.month,
+          monthIndex: monthIndex,
+          monthName: monthName,
+          formattedMonth: formattedMonth,
+          year: currentFilters.year
+        });
+        
+        const response = await fetchNOOData({
+          month: formattedMonth,
+          agent_name: currentFilters.agent || undefined,
+          area: currentFilters.area || undefined,
+          status_payment: paymentStatus || undefined,
+        });
+        console.log('NOO data response:', response);
+        setNOOData(response.data);
+      } else {
+        setNOOData([]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch NOO data:', err);
+      setNOOData([]);
+    } finally {
+      setNOOLoading(false);
+    }
+  }, []);
+
   const fetchFiltersCallback = useCallback(async (month: string, year: string) => {
     setFiltersLoading(true);
     try {
@@ -170,24 +263,84 @@ const SalesOverview = () => {
     if (filters.month && filters.year) {
       fetchSalesDataCallback(filters, statusPayment);
       fetchTotalStoresCallback(filters, statusPayment);
+      fetchMonthlySummaryCallback(filters, statusPayment);
+      fetchNOOCallback(filters, statusPayment);
       fetchFiltersCallback(filters.month, filters.year);
     }
-  }, [filters.month, filters.year, filters.agent, filters.area, statusPayment, fetchSalesDataCallback, fetchTotalStoresCallback, fetchFiltersCallback]);
+  }, [filters.month, filters.year, filters.agent, filters.area, statusPayment, fetchSalesDataCallback, fetchTotalStoresCallback, fetchMonthlySummaryCallback, fetchNOOCallback, fetchFiltersCallback]);
 
-  // Prepare summary tiles data with individual loading states
-  const getSummaryTiles = () => {
+  // Get goal profit based on selected agent and month
+  const getGoalProfit = () => {
+    if (!filters.month || !filters.year) return 0;
+    
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const monthName = monthNames[parseInt(filters.month) - 1].toLowerCase();
+    const monthYear = `${monthName} ${filters.year}`;
+    
+    // Use selected agent or default to NATIONAL if no agent selected
+    const agentKey = filters.agent || 'NATIONAL';
+    
+    // First try to get from configurable settings
+    if (settings?.goal_profit) {
+      if (settings.goal_profit[agentKey] && settings.goal_profit[agentKey][monthYear]) {
+        console.log('Found goal profit in settings for agent:', { agentKey, monthYear, value: settings.goal_profit[agentKey][monthYear] });
+        return settings.goal_profit[agentKey][monthYear];
+      }
+      
+      // Fallback to NATIONAL if agent not found in settings
+      if (settings.goal_profit['NATIONAL'] && settings.goal_profit['NATIONAL'][monthYear]) {
+        console.log('Using NATIONAL goal profit from settings:', { monthYear, value: settings.goal_profit['NATIONAL'][monthYear] });
+        return settings.goal_profit['NATIONAL'][monthYear];
+      }
+    }
+    
+    // Fallback to static goalProfit data if settings not available
+    console.log('Goal Profit Lookup (fallback to static):', { agentKey, monthYear, availableAgents: Object.keys(goalProfit) });
+    
+    // Check if agent exists in goalProfit data
+    if (goalProfit[agentKey] && goalProfit[agentKey][monthYear]) {
+      console.log('Found goal profit for agent (static):', { agentKey, monthYear, value: goalProfit[agentKey][monthYear] });
+      return goalProfit[agentKey][monthYear];
+    }
+    
+    // Fallback to NATIONAL if agent not found
+    if (goalProfit['NATIONAL'] && goalProfit['NATIONAL'][monthYear]) {
+      console.log('Using NATIONAL goal profit (static):', { monthYear, value: goalProfit['NATIONAL'][monthYear] });
+      return goalProfit['NATIONAL'][monthYear];
+    }
+    
+    console.log('No goal profit found for:', { agentKey, monthYear });
+    return 0;
+  };
+
+  // Calculate days remaining until target date
+  const getDaysRemaining = () => {
+    // Use configurable target date from settings, fallback to default
+    const targetDateStr = settings?.target_date || '2025-10-03';
+    const targetDate = new Date(targetDateStr);
+    const today = new Date();
+    
+    // Reset time to start of day for accurate day calculation
+    today.setHours(0, 0, 0, 0);
+    targetDate.setHours(0, 0, 0, 0);
+    
+    const timeDiff = targetDate.getTime() - today.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    
+    return Math.max(0, daysDiff); // Return 0 if target date has passed
+  };
+
+  // Prepare currency summary tiles data
+  const getCurrencySummaryTiles = () => {
     return [
+      // First row - 4 tiles
       {
         title: 'Total Invoice',
         value: salesData?.total_invoice || 0,
         isCurrency: true,
-        mdSize: 3,
-        isLoading: loading && !salesData
-      },
-      {
-        title: 'Invoice Count',
-        value: salesData?.invoice_count || 0,
-        isCurrency: false,
         mdSize: 3,
         isLoading: loading && !salesData
       },
@@ -199,25 +352,78 @@ const SalesOverview = () => {
         isLoading: loading && !salesData
       },
       {
-        title: 'Average Payment Days',
-        value: salesData?.avg_payment_days || 0,
-        isCurrency: false,
-        unit: ' Days',
+        title: 'Goal Profit',
+        value: getGoalProfit(),
+        isCurrency: true,
         mdSize: 3,
+        isLoading: false
+      },
+      {
+        title: 'Profit Remaining',
+        value:  (salesData?.total_profit || 0) - getGoalProfit(),
+        isCurrency: true,
+        mdSize: 3,
+        isLoading: loading && !salesData,
+        color: ( (salesData?.total_profit || 0) - getGoalProfit()) >= 0 ? 'success.main' : 'error.main'
+      },
+      // Second row - 4 tiles
+      {
+        title: 'Average Daily Profit',
+        value: salesData?.average_profit_day || 0,
+        isCurrency: true,
+        mdSize: 3,
+        isLoading: loading && !salesData
+      },
+      {
+        title: 'Average Weekly Profit',
+        value: salesData?.average_profit_week || 0,
+        isCurrency: true,
+        mdSize: 3,
+        isLoading: loading && !salesData
+      },
+      {
+        title: 'Days Remaining',
+        value: getDaysRemaining(),
+        isCurrency: false,
+        unit: ' days',
+        mdSize: 3,
+        isLoading: false,
+        color: getDaysRemaining() <= 30 ? 'error.main' : getDaysRemaining() <= 90 ? 'warning.main' : 'success.main'
+      },
+      {
+        title: 'Profit Progress',
+        value: getGoalProfit() > 0 ? ((salesData?.total_profit || 0) / getGoalProfit()) * 100 : 0,
+        isCurrency: false,
+        unit: '%',
+        mdSize: 3,
+        isLoading: loading && !salesData,
+        color: getGoalProfit() > 0 ? ((salesData?.total_profit || 0) / getGoalProfit()) >= 1 ? 'success.main' : 'warning.main' : 'text.primary'
+      }
+    ];
+  };
+
+  // Prepare non-currency summary tiles data
+  const getNonCurrencySummaryTiles = () => {
+    return [
+      {
+        title: 'Invoice Count',
+        value: salesData?.invoice_count || 0,
+        isCurrency: false,
+        mdSize: 2.4,
         isLoading: loading && !salesData
       },
       {
         title: 'Active Stores',
         value: totalStoresData?.active_stores || 0,
         isCurrency: false,
-        mdSize: 3,
+        mdSize: 2.4,
         isLoading: totalStoresLoading && !totalStoresData
       },
       {
         title: 'Total Stores',
         value: totalStoresData?.total_stores || 0,
         isCurrency: false,
-        mdSize: 3,
+        mdSize: 2.4,
         isLoading: totalStoresLoading && !totalStoresData
       },
       {
@@ -225,17 +431,17 @@ const SalesOverview = () => {
         value: totalStoresData?.activation_rate || 0,
         isCurrency: false,
         unit: '%',
-        mdSize: 3,
+        mdSize: 2.4,
         isLoading: totalStoresLoading && !totalStoresData
       },
       {
         title: 'Margin',
         value: salesData?.margin || 0,
-        isCurrency: true,
+        isCurrency: false,
         unit: '%',
-        mdSize: 3,
+        mdSize: 2.4,
         isLoading: loading && !salesData
-      }
+      },
     ];
   };
 
@@ -356,7 +562,7 @@ const SalesOverview = () => {
           </Grid>
         </Box>
 
-        {/* Summary Tiles */}
+        {/* Currency Summary Tiles */}
         <Box mb={3}>
           {error ? (
             <Box display="flex" justifyContent="center" alignItems="center" height="200px">
@@ -365,7 +571,7 @@ const SalesOverview = () => {
               </Typography>
             </Box>
           ) : (
-            <SummaryTiles tiles={getSummaryTiles()} />
+            <SummaryTiles tiles={getCurrencySummaryTiles()} />
           )}
         </Box>
 
@@ -379,7 +585,24 @@ const SalesOverview = () => {
               year: filters.year,
               status_payment: statusPayment
             }}
+            monthlyData={monthlySummaryData}
           />
+        </Box>
+
+        {/* Non-Currency Metrics */}
+        <Box mb={3}>
+          {/* <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+            Performance Metrics
+          </Typography> */}
+          {error ? (
+            <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+              <Typography variant="body1" color="error">
+                {error}
+              </Typography>
+            </Box>
+          ) : (
+            <SummaryTiles tiles={getNonCurrencySummaryTiles()} />
+          )}
         </Box>
 
         {/* Monthly Stores Chart */}
@@ -392,6 +615,20 @@ const SalesOverview = () => {
               year: filters.year,
               status_payment: statusPayment
             }}
+          />
+        </Box>
+
+        {/* NOO Table */}
+        <Box mb={3}>
+          <NOOTable 
+            filters={{
+              agent: filters.agent,
+              area: filters.area,
+              month: filters.month,
+              year: filters.year,
+              statusPayment: statusPayment
+            }}
+            title="Number of Orders (NOO)"
           />
         </Box>
       </Box>

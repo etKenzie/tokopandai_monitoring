@@ -2,15 +2,15 @@
 
 import { SalesSummaryMonthlyResponse, fetchSalesSummaryMonthly } from '@/app/api/distribusi/DistribusiSlice';
 import {
-    Box,
-    Card,
-    CardContent,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
-    SelectChangeEvent,
-    Typography
+  Box,
+  Card,
+  CardContent,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  Typography
 } from '@mui/material';
 import dynamic from "next/dynamic";
 import { useEffect, useState } from 'react';
@@ -25,11 +25,12 @@ interface SalesMonthlyChartProps {
     year?: string;
     status_payment?: string;
   };
+  monthlyData?: any[];
 }
 
-type ChartType = 'amounts' | 'counts' | 'days' | 'margin';
+type ChartType = 'amounts' | 'counts' | 'days' | 'margin' | 'avg_profit';
 
-const SalesMonthlyChart = ({ filters }: SalesMonthlyChartProps) => {
+const SalesMonthlyChart = ({ filters, monthlyData }: SalesMonthlyChartProps) => {
   const [chartData, setChartData] = useState<SalesSummaryMonthlyResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [chartType, setChartType] = useState<ChartType>('amounts');
@@ -201,15 +202,18 @@ const SalesMonthlyChart = ({ filters }: SalesMonthlyChartProps) => {
 
   // Prepare chart data with proper validation
   const prepareChartData = () => {
-    if (!chartData?.data || !Array.isArray(chartData.data) || chartData.data.length === 0) {
-      console.log('No chart data available:', chartData);
+    // Use passed monthlyData if available, otherwise fall back to chartData
+    const dataToUse = monthlyData && monthlyData.length > 0 ? monthlyData : chartData?.data;
+    
+    if (!dataToUse || !Array.isArray(dataToUse) || dataToUse.length === 0) {
+      console.log('No chart data available:', { monthlyData, chartData });
       return { categories: [], series: [] };
     }
 
-    console.log('Processing chart data:', chartData.data);
+    console.log('Processing chart data:', dataToUse);
 
     // Sort months chronologically (Month Year format like "June 2025")
-    const sortedData = chartData.data.sort((a, b) => {
+    const sortedData = dataToUse.sort((a, b) => {
       const monthNames = [
         'January', 'February', 'March', 'April', 'May', 'June',
         'July', 'August', 'September', 'October', 'November', 'December'
@@ -263,6 +267,17 @@ const SalesMonthlyChart = ({ filters }: SalesMonthlyChartProps) => {
         {
           name: 'Margin',
           data: sortedData.map(item => item.margin || 0)
+        }
+      ];
+    } else if (chartType === 'avg_profit') {
+      series = [
+        {
+          name: 'Average Daily Profit',
+          data: sortedData.map(item => item.average_profit_day || 0)
+        },
+        {
+          name: 'Average Weekly Profit',
+          data: sortedData.map(item => item.average_profit_week || 0)
         }
       ];
     }
@@ -352,6 +367,7 @@ const SalesMonthlyChart = ({ filters }: SalesMonthlyChartProps) => {
                 <MenuItem value="counts">Invoice Count</MenuItem>
                 <MenuItem value="days">Payment Days</MenuItem>
                 <MenuItem value="margin">Margin</MenuItem>
+                <MenuItem value="avg_profit">Average Profit Trends</MenuItem>
               </Select>
             </FormControl>
             

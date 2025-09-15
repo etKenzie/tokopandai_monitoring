@@ -231,6 +231,7 @@ export interface Complaint {
   order_code: string;
   product_name: string;
   product_sku: string;
+  store_name: string;
 }
 
 export interface ComplaintsResponse {

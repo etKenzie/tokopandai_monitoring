@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/app/context/AuthContext';
+import { useSettings } from '@/app/context/SettingsContext';
 import { createUrl } from '@/utils/basePath';
 import {
   AccountCircle,
@@ -28,10 +29,12 @@ import {
   Paper,
   Typography,
 } from '@mui/material';
+import Link from 'next/link';
 import { useState } from 'react';
 
 export default function UserProfile() {
   const { user, roles, signOut, loading } = useAuth();
+  const { isAdmin } = useSettings();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -131,12 +134,14 @@ export default function UserProfile() {
           <ListItemText>Profile</ListItemText>
         </MenuItem>
         
-        <MenuItem onClick={handleMenuClose}>
-          <ListItemIcon>
-            <Settings fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Settings</ListItemText>
-        </MenuItem>
+        {isAdmin && (
+          <MenuItem component={Link} href="/admin/settings" onClick={handleMenuClose}>
+            <ListItemIcon>
+              <Settings fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Admin Settings</ListItemText>
+          </MenuItem>
+        )}
         
         <Divider />
         

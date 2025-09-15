@@ -1,38 +1,45 @@
 'use client';
 
-import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
+import { Download as DownloadIcon, Info as InfoIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  FormControl,
-  Grid,
-  InputAdornment,
-  InputLabel,
-  MenuItem,
-  Paper,
-  Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TableSortLabel,
-  TextField,
-  Typography
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    FormControl,
+    Grid,
+    InputAdornment,
+    InputLabel,
+    MenuItem,
+    Paper,
+    Select,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TablePagination,
+    TableRow,
+    TableSortLabel,
+    TextField,
+    Typography
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
-import { Order, fetchOrders } from '../../api/distribusi/DistribusiSlice';
+import { NOOOrder, fetchNOOData } from '../../api/distribusi/DistribusiSlice';
 import OrderDetailModal from '../shared/OrderDetailModal';
 
 type OrderDirection = 'asc' | 'desc';
-type SortableField = keyof Order;
+type SortableField = keyof NOOOrder;
 
 interface HeadCell {
   id: SortableField;
@@ -52,27 +59,28 @@ const headCells: HeadCell[] = [
   { id: 'status_payment', label: 'Payment Status', numeric: false },
   { id: 'payment_type', label: 'Payment Type', numeric: false },
   { id: 'order_date', label: 'Order Date', numeric: false },
-  { id: 'payment_due_date', label: 'Payment Due Date', numeric: false },
   { id: 'total_invoice', label: 'Total Invoice', numeric: true },
   { id: 'profit', label: 'Profit', numeric: true },
+  { id: 'business_type', label: 'Business Type', numeric: false },
+  { id: 'sub_business_type', label: 'Sub Business Type', numeric: false },
 ];
 
-interface SalesOrdersTableProps {
+interface NOOTableProps {
   filters: {
     month?: string;
+    year?: string;
     agent?: string;
-    segment?: string;
     area?: string;
     statusPayment?: string;
   };
   title?: string;
 }
 
-const SalesOrdersTable = ({ 
+const NOOTable = ({ 
   filters,
-  title = 'Sales Orders' 
-}: SalesOrdersTableProps) => {
-  const [orders, setOrders] = useState<Order[]>([]);
+  title = 'Number of Orders (NOO)' 
+}: NOOTableProps) => {
+  const [orders, setOrders] = useState<NOOOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orderBy, setOrderBy] = useState<SortableField>('order_date');
@@ -87,48 +95,74 @@ const SalesOrdersTable = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedOrderCode, setSelectedOrderCode] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
-  const fetchOrdersData = async () => {
+  const fetchNOOOrdersData = async () => {
+    // Clear existing data immediately when fetching new data
+    setOrders([]);
+    setError(null);
+    
     // Only fetch data if month is selected
-    if (!filters.month) {
-      setOrders([]);
-      setError('Please select a month to view orders');
+    if (!filters.month || !filters.year) {
+      setError('Please select a month and year to view NOO orders');
       return;
     }
 
     setLoading(true);
-    setError(null);
     try {
-      const response = await fetchOrders({
-        sortTime: 'desc',
-        payment: paymentStatusFilter || undefined,
-        month: filters.month,
-        agent: filters.agent,
-        segment: filters.segment,
-        area: filters.area
+      // Format month for API (e.g., "08" -> "August 2025")
+      const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      const monthIndex = parseInt(filters.month, 10) - 1;
+      const monthName = monthNames[monthIndex];
+      const formattedMonth = `${monthName} ${filters.year}`;
+      
+      console.log('NOOTable Month formatting:', {
+        originalMonth: filters.month,
+        monthIndex: monthIndex,
+        monthName: monthName,
+        formattedMonth: formattedMonth,
+        year: filters.year
       });
       
-      // Check for duplicate order_ids in the source data
-      const orderIds = response.data.map(order => order.order_id);
-      const uniqueOrderIds = new Set(orderIds);
-      if (orderIds.length !== uniqueOrderIds.size) {
-        console.warn(`Found ${orderIds.length - uniqueOrderIds.size} duplicate orders in API response`);
-      }
+      const response = await fetchNOOData({
+        sortTime: 'desc',
+        month: formattedMonth,
+        agent_name: filters.agent,
+        area: filters.area,
+        status_payment: filters.statusPayment
+      });
       
       setOrders(response.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-      console.error('Failed to fetch orders data:', err);
+      console.error('Failed to fetch NOO orders data:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  // Clear data when month or year changes
   useEffect(() => {
-    fetchOrdersData();
+    setOrders([]);
+    setError(null);
+    setPage(0);
+    // Clear local filters when month/year changes
+    setSegmentFilter('');
+    setAreaFilter('');
+    setAgentFilter('');
+    setStatusOrderFilter('');
+    setPaymentStatusFilter('');
+    setSearchQuery('');
+  }, [filters.month, filters.year]);
+
+  useEffect(() => {
+    fetchNOOOrdersData();
     // Reset pagination when filters change
     setPage(0);
-  }, [filters.month, filters.agent, filters.segment, filters.area, filters.statusPayment, paymentStatusFilter]);
+  }, [filters.month, filters.year, filters.agent, filters.area, filters.statusPayment, paymentStatusFilter]);
 
   const handleRequestSort = (property: SortableField) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -165,16 +199,7 @@ const SalesOrdersTable = ({
     }
   };
 
-  const getOverdueStatusColor = (status: string | null) => {
-    if (!status) return 'default';
-    if (status.includes('Current')) return 'success';
-    if (status.includes('B2W') || status.includes('14DPD')) return 'warning';
-    if (status.includes('40DPD') || status.includes('60DPD')) return 'error';
-    if (status.includes('90DPD')) return 'default';
-    return 'default';
-  };
-
-  const searchFields = (order: Order, query: string): boolean => {
+  const searchFields = (order: NOOOrder, query: string): boolean => {
     if (!query) return true;
 
     const searchableFields = [
@@ -187,6 +212,8 @@ const SalesOrdersTable = ({
       order.status_order?.toLowerCase() || '',
       order.status_payment?.toLowerCase() || '',
       order.payment_type?.toLowerCase() || '',
+      order.business_type?.toLowerCase() || '',
+      order.sub_business_type?.toLowerCase() || '',
     ];
 
     return searchableFields.some((field) =>
@@ -225,12 +252,12 @@ const SalesOrdersTable = ({
     let aValue: any = a[orderBy];
     let bValue: any = b[orderBy];
 
-    if (orderBy === 'total_invoice' || orderBy === 'profit') {
+    if (orderBy === 'total_invoice' || orderBy === 'total_pembayaran' || orderBy === 'profit') {
       aValue = Number(aValue);
       bValue = Number(bValue);
     }
 
-    if (orderBy === 'order_date' || orderBy === 'payment_due_date') {
+    if (orderBy === 'order_date') {
       aValue = new Date(aValue).getTime();
       bValue = new Date(bValue).getTime();
     }
@@ -251,9 +278,100 @@ const SalesOrdersTable = ({
   const totalInvoice = filteredOrders.reduce((sum, o) => sum + o.total_invoice, 0);
   const totalProfit = filteredOrders.reduce((sum, o) => sum + o.profit, 0);
   const totalOrders = filteredOrders.length;
+  
+  // Calculate unique stores (NOO) based on user_id
+  const uniqueStores = new Set(filteredOrders.map(o => o.user_id));
+  const nooCount = uniqueStores.size;
 
-  const prepareDataForExport = (orders: Order[]) => {
-    return orders.map((o) => ({
+  // Calculate NOO details by business type
+  const getNOODetails = () => {
+    interface StoreDetail {
+      storeName: string;
+      resellerName: string;
+      businessType: string;
+      subBusinessType: string;
+      totalInvoice: number;
+      totalProfit: number;
+      orderCount: number;
+    }
+
+    interface BusinessTypeGroup {
+      stores: StoreDetail[];
+      totalInvoice: number;
+      totalProfit: number;
+      totalStores: number;
+    }
+
+    const storeDetails = new Map<string, StoreDetail>();
+    
+    filteredOrders.forEach(order => {
+      const storeId = order.user_id;
+      if (!storeDetails.has(storeId)) {
+        storeDetails.set(storeId, {
+          storeName: order.store_name,
+          resellerName: order.reseller_name,
+          businessType: order.business_type,
+          subBusinessType: order.sub_business_type,
+          totalInvoice: 0,
+          totalProfit: 0,
+          orderCount: 0
+        });
+      }
+      
+      const store = storeDetails.get(storeId)!;
+      store.totalInvoice += order.total_invoice;
+      store.totalProfit += order.profit;
+      store.orderCount += 1;
+    });
+
+    // Group by business type
+    const businessTypeGroups = new Map<string, BusinessTypeGroup>();
+    
+    storeDetails.forEach(store => {
+      const businessType = store.businessType;
+      if (!businessTypeGroups.has(businessType)) {
+        businessTypeGroups.set(businessType, {
+          stores: [],
+          totalInvoice: 0,
+          totalProfit: 0,
+          totalStores: 0
+        });
+      }
+      
+      const group = businessTypeGroups.get(businessType)!;
+      group.stores.push(store);
+      group.totalInvoice += store.totalInvoice;
+      group.totalProfit += store.totalProfit;
+      group.totalStores += 1;
+    });
+
+    return Array.from(businessTypeGroups.entries()).map(([businessType, data]) => ({
+      businessType,
+      ...data
+    }));
+  };
+
+  const prepareDataForExport = (orders: NOOOrder[]) => {
+    // Add summary row at the beginning
+    const summaryRow = {
+      'Order Code': 'SUMMARY',
+      'Month': '',
+      'Reseller Name': '',
+      'Store Name': '',
+      'Segment': '',
+      'Area': '',
+      'Agent': '',
+      'Order Status': '',
+      'Payment Status': '',
+      'Payment Type': '',
+      'Order Date': '',
+      'Total Invoice': totalInvoice,
+      'Total Payment': totalProfit,
+      'Business Type': `NOO: ${nooCount} | Total Orders: ${totalOrders}`,
+      'Sub Business Type': '',
+    };
+    
+    const orderData = orders.map((o) => ({
       'Order Code': o.order_code,
       'Month': o.month,
       'Reseller Name': o.reseller_name,
@@ -265,13 +383,13 @@ const SalesOrdersTable = ({
       'Payment Status': o.status_payment,
       'Payment Type': o.payment_type,
       'Order Date': formatDate(o.order_date),
-      'Payment Due Date': getPaymentDueDateDisplay(o.payment_due_date).label,
       'Total Invoice': o.total_invoice,
       'Profit': o.profit,
       'Business Type': o.business_type,
       'Sub Business Type': o.sub_business_type,
-      'Overdue Status': o.overdue_status,
     }));
+    
+    return [summaryRow, ...orderData];
   };
 
   const handleExcelExport = () => {
@@ -299,17 +417,15 @@ const SalesOrdersTable = ({
       { wch: 15 }, // Payment Status
       { wch: 15 }, // Payment Type
       { wch: 15 }, // Order Date
-      { wch: 15 }, // Payment Due Date
       { wch: 15 }, // Total Invoice
       { wch: 15 }, // Profit
       { wch: 20 }, // Business Type
       { wch: 25 }, // Sub Business Type
-      { wch: 15 }, // Overdue Status
     ];
     ws['!cols'] = colWidths;
 
     // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(wb, ws, 'Sales Orders');
+    XLSX.utils.book_append_sheet(wb, ws, 'NOO Orders');
 
     // Generate Excel file
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
@@ -319,7 +435,7 @@ const SalesOrdersTable = ({
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `sales-orders.xlsx`;
+    a.download = `noo-orders.xlsx`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -362,15 +478,6 @@ const SalesOrdersTable = ({
     });
   };
 
-  const getPaymentDueDateDisplay = (dueDate: string | null) => {
-    if (!dueDate) return { label: 'No Due Date', color: 'default' };
-    
-    return { 
-      label: formatDate(dueDate), 
-      color: 'default' 
-    };
-  };
-
   return (
     <Card>
       <CardContent>
@@ -386,11 +493,20 @@ const SalesOrdersTable = ({
             <Button
               variant="outlined"
               startIcon={<RefreshIcon />}
-              onClick={fetchOrdersData}
+              onClick={fetchNOOOrdersData}
               disabled={loading}
               sx={{ mr: 1 }}
             >
               Refresh
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<InfoIcon />}
+              onClick={() => setDetailsModalOpen(true)}
+              disabled={filteredOrders.length === 0}
+              sx={{ mr: 1 }}
+            >
+              Details
             </Button>
             <Button
               variant="outlined"
@@ -416,6 +532,22 @@ const SalesOrdersTable = ({
         <Box mb={3} sx={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
           <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
             <Typography variant="h3" color="primary" fontWeight="bold" mb={1}>
+              {!filters.month ? '--' : nooCount}
+            </Typography>
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              NOO (Unique Stores)
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
+            <Typography variant="h3" color="secondary" fontWeight="bold" mb={1}>
+              {!filters.month ? '--' : totalOrders}
+            </Typography>
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              Total Orders
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
+            <Typography variant="h3" color="info.main" fontWeight="bold" mb={1}>
               {!filters.month ? '--' : formatCurrency(totalInvoice)}
             </Typography>
             <Typography variant="h6" color="textSecondary" fontWeight="500">
@@ -427,23 +559,7 @@ const SalesOrdersTable = ({
               {!filters.month ? '--' : formatCurrency(totalProfit)}
             </Typography>
             <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Total Profit
-            </Typography>
-          </Box>
-          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
-            <Typography variant="h3" color="info.main" fontWeight="bold" mb={1}>
-              {!filters.month ? '--' : totalOrders}
-            </Typography>
-            <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Total Orders
-            </Typography>
-          </Box>
-          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
-            <Typography variant="h3" color="warning.main" fontWeight="bold" mb={1}>
-              {!filters.month ? '--' : (totalOrders > 0 ? formatCurrency(Math.round(totalInvoice / totalOrders)) : formatCurrency(0))}
-            </Typography>
-            <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Avg Order Value
+              Total Profit Amount
             </Typography>
           </Box>
         </Box>
@@ -455,7 +571,7 @@ const SalesOrdersTable = ({
               <TextField
                 fullWidth
                 variant="outlined"
-                placeholder="Search orders..."
+                placeholder="Search NOO orders..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 InputProps={{
@@ -596,7 +712,7 @@ const SalesOrdersTable = ({
                 <TableRow>
                   <TableCell colSpan={headCells.length} align="center">
                     <Typography variant="body2" color="textSecondary">
-                      {!filters.month ? 'Please select a month to view orders' : 'No orders found'}
+                      {!filters.month ? 'Please select a month to view NOO orders' : 'No NOO orders found'}
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -657,24 +773,14 @@ const SalesOrdersTable = ({
                       </TableCell>
                       <TableCell>{row.payment_type}</TableCell>
                       <TableCell>{formatDate(row.order_date)}</TableCell>
-                      <TableCell>
-                        {(() => {
-                          const dueDateDisplay = getPaymentDueDateDisplay(row.payment_due_date);
-                          return (
-                            <Chip
-                              label={dueDateDisplay.label}
-                              color={dueDateDisplay.color as any}
-                              size="small"
-                            />
-                          );
-                        })()}
-                      </TableCell>
                       <TableCell align="right" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                         {formatCurrency(row.total_invoice)}
                       </TableCell>
                       <TableCell align="right" sx={{ fontWeight: 'bold', color: 'success.main' }}>
                         {formatCurrency(row.profit)}
                       </TableCell>
+                      <TableCell>{row.business_type}</TableCell>
+                      <TableCell>{row.sub_business_type}</TableCell>
                     </TableRow>
                   ))
               )}
@@ -698,8 +804,105 @@ const SalesOrdersTable = ({
         onClose={handleCloseModal}
         orderCode={selectedOrderCode}
       />
+
+      {/* NOO Details Modal */}
+      <Dialog
+        open={detailsModalOpen}
+        onClose={() => setDetailsModalOpen(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>
+          NOO Details by Business Type
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            {getNOODetails().map((group, index) => (
+              <Accordion key={index} defaultExpanded>
+                <AccordionSummary>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 2 }}>
+                    <Typography variant="h6" fontWeight="bold">
+                      {group.businessType}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 4 }}>
+                      <Typography variant="body2" color="textSecondary">
+                        Stores: {group.totalStores}
+                      </Typography>
+                      <Typography variant="body2" color="primary.main" fontWeight="bold">
+                        Invoice: {formatCurrency(group.totalInvoice)}
+                      </Typography>
+                      <Typography variant="body2" color="success.main" fontWeight="bold">
+                        Profit: {formatCurrency(group.totalProfit)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <TableContainer component={Paper} variant="outlined">
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Store Name</TableCell>
+                          <TableCell>Reseller Name</TableCell>
+                          <TableCell>Sub Business Type</TableCell>
+                          <TableCell align="right">Orders</TableCell>
+                          <TableCell align="right">Total Invoice</TableCell>
+                          <TableCell align="right">Total Profit</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {group.stores.map((store, storeIndex) => (
+                          <TableRow key={storeIndex}>
+                            <TableCell>
+                              <Typography variant="body2" fontWeight="medium">
+                                {store.storeName}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body2">
+                                {store.resellerName}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={store.subBusinessType}
+                                size="small"
+                                variant="outlined"
+                              />
+                            </TableCell>
+                            <TableCell align="right">
+                              <Typography variant="body2">
+                                {store.orderCount}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              <Typography variant="body2" fontWeight="bold" color="primary.main">
+                                {formatCurrency(store.totalInvoice)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              <Typography variant="body2" fontWeight="bold" color="success.main">
+                                {formatCurrency(store.totalProfit)}
+                              </Typography>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </AccordionDetails>
+              </Accordion>
+            ))}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDetailsModalOpen(false)}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 };
 
-export default SalesOrdersTable;
+export default NOOTable;

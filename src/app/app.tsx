@@ -1,13 +1,14 @@
 "use client";
-import React, { useContext } from "react";
-import { ThemeProvider } from "@mui/material/styles";
-import CssBaseline from "@mui/material/CssBaseline";
 import RTL from "@/app/(DashboardLayout)/layout/shared/customizer/RTL";
+import { AuthProvider } from '@/app/context/AuthContext';
+import { CustomizerContext } from '@/app/context/customizerContext';
+import { SettingsProvider } from '@/app/context/SettingsContext';
+import "@/utils/i18n";
 import { ThemeSettings } from "@/utils/theme/Theme";
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter';
-import "@/utils/i18n";
-import { CustomizerContext } from '@/app/context/customizerContext';
-import { AuthProvider } from '@/app/context/AuthContext';
+import CssBaseline from "@mui/material/CssBaseline";
+import { ThemeProvider } from "@mui/material/styles";
+import React, { useContext } from "react";
 
 
 const MyApp = ({ children }: { children: React.ReactNode }) => {
@@ -21,7 +22,9 @@ const MyApp = ({ children }: { children: React.ReactNode }) => {
                     <RTL direction={activeDir}>
                         <CssBaseline />
                         <AuthProvider>
-                            {children}
+                            <SettingsProvider>
+                                {children}
+                            </SettingsProvider>
                         </AuthProvider>
                     </RTL>
                 </ThemeProvider>
