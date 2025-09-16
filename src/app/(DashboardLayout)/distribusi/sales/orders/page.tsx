@@ -1,13 +1,32 @@
 "use client";
 
+import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import PageContainer from "@/app/components/container/PageContainer";
 import SalesOrdersTable from "@/app/components/distribusi/SalesOrdersTable";
 import { useAuth } from "@/app/context/AuthContext";
+import { useCheckRoles } from "@/app/hooks/useCheckRoles";
+import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from "@/config/roles";
 import { Box, FormControl, Grid, InputLabel, MenuItem, Select, Typography } from "@mui/material";
 import { useState } from "react";
 
 const SalesOrdersPage = () => {
-  const { roles } = useAuth();
+  const { user, roles, refreshRoles } = useAuth();
+  
+  // Check access for allowed roles (configurable via roles config)
+  const accessCheck = useCheckRoles(getPageRoles('DISTRIBUSI_DASHBOARD'));
+  
+  // Get restricted roles from config
+  const restrictedRoles = getRestrictedRoles();
+  
+  // Check if current user has a restricted role
+  const hasRestrictedRole = roles.some(role => restrictedRoles.includes(role));
+  const userRoleForFiltering = roles.find(role => restrictedRoles.includes(role));
+  
+  // Log access check result for debugging
+  console.log('Sales Orders Access Check:', accessCheck);
+  console.log('User roles:', roles);
+  console.log('Has restricted role:', hasRestrictedRole);
+  console.log('User role for filtering:', userRoleForFiltering);
   
   // Get current month and year for default value
   const getCurrentMonthYear = () => {
@@ -51,41 +70,22 @@ const SalesOrdersPage = () => {
 
   const monthOptions = generateMonthOptions();
 
-  const hasAccess = ["distribusi", "admin"].some(r => roles.includes(r));
-
-  if (!hasAccess) {
-    return (
-      <PageContainer title="Sales Orders" description="View sales orders">
-        <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          height="60vh"
-        >
-          <Typography variant="h5" color="error">
-            You don't have access to this page.
-          </Typography>
-        </Box>
-      </PageContainer>
-    );
-  }
-
   return (
     <PageContainer title="Sales Orders" description="View sales orders">
-      <Box sx={{ 
-        height: '100%', 
-        display: 'flex', 
-        flexDirection: 'column',
-        width: '100%',
-        overflow: 'hidden'
-      }}>
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          mb: 3,
-          width: '100%'
-        }}>
-          <Typography variant="h4">Sales Orders</Typography>
+      <Box>
+        {/* Header */}
+        <Box mb={3}>
+          <Typography variant="h3" fontWeight="bold" mb={1}>
+            Sales Orders
+          </Typography>
+          <Typography variant="body1" color="textSecondary">
+            View and manage sales orders
+          </Typography>
+          {hasRestrictedRole && (
+            <Typography variant="body2" color="info.main" sx={{ mt: 1, fontStyle: 'italic' }}>
+              Showing data for {getAgentNameFromRole(userRoleForFiltering!)} only
+            </Typography>
+          )}
         </Box>
 
         {/* Month Filter */}
@@ -128,4 +128,10 @@ const SalesOrdersPage = () => {
   );
 };
 
-export default SalesOrdersPage;
+export default function ProtectedSalesOrdersPage() {
+  return (
+    <ProtectedRoute requiredRoles={getPageRoles('DISTRIBUSI_DASHBOARD')}>
+      <SalesOrdersPage />
+    </ProtectedRoute>
+  );
+}

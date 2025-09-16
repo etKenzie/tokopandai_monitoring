@@ -299,6 +299,7 @@ const NOOTable = ({
     interface StoreDetail {
       storeName: string;
       resellerName: string;
+      agentName: string;
       businessType: string;
       subBusinessType: string;
       totalInvoice: number;
@@ -321,6 +322,7 @@ const NOOTable = ({
         storeDetails.set(storeId, {
           storeName: order.store_name,
           resellerName: order.reseller_name,
+          agentName: order.agent_name,
           businessType: order.business_type,
           subBusinessType: order.sub_business_type,
           totalInvoice: 0,
@@ -855,7 +857,7 @@ const NOOTable = ({
                       <TableHead>
                         <TableRow>
                           <TableCell>Store Name</TableCell>
-                          <TableCell>Reseller Name</TableCell>
+                          <TableCell>Agent</TableCell>
                           <TableCell>Sub Business Type</TableCell>
                           <TableCell align="right">Orders</TableCell>
                           <TableCell align="right">Total Invoice</TableCell>
@@ -872,7 +874,7 @@ const NOOTable = ({
                             </TableCell>
                             <TableCell>
                               <Typography variant="body2">
-                                {store.resellerName}
+                                {store.agentName}
                               </Typography>
                             </TableCell>
                             <TableCell>
