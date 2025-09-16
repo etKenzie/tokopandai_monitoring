@@ -937,7 +937,7 @@ export interface NOOResponse {
 export interface NOOQueryParams {
   month?: string;
   sortTime?: 'asc' | 'desc';
-  agent_name?: string;
+  agent?: string;
   area?: string;
   status_payment?: string;
 }
@@ -951,7 +951,7 @@ export const fetchNOOData = async (params: NOOQueryParams): Promise<NOOResponse>
   
   if (params.month) queryParams.append('month', params.month);
   if (params.sortTime) queryParams.append('sortTime', "desc");
-  if (params.agent_name) queryParams.append('agent_name', params.agent_name);
+  if (params.agent) queryParams.append('agent', params.agent);
   if (params.area) queryParams.append('area', params.area);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   

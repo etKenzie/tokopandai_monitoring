@@ -2,12 +2,12 @@
 
 import { fetchOrderFilters, OrderFiltersData } from '@/app/api/distribusi/DistribusiSlice';
 import {
-    FormControl,
-    Grid,
-    InputLabel,
-    MenuItem,
-    Select,
-    SelectChangeEvent
+  FormControl,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 
@@ -21,9 +21,11 @@ export interface DistribusiFilterValues {
 interface DistribusiFiltersProps {
   filters: DistribusiFilterValues;
   onFiltersChange: (filters: DistribusiFilterValues) => void;
+  // Role-based filtering props
+  hasRestrictedRole?: boolean;
 }
 
-const DistribusiFilters = ({ filters, onFiltersChange }: DistribusiFiltersProps) => {
+const DistribusiFilters = ({ filters, onFiltersChange, hasRestrictedRole = false }: DistribusiFiltersProps) => {
   const [availableFilters, setAvailableFilters] = useState<OrderFiltersData | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -134,7 +136,7 @@ const DistribusiFilters = ({ filters, onFiltersChange }: DistribusiFiltersProps)
             value={filters.agent}
             label="Agent"
             onChange={handleFilterChange('agent')}
-            disabled={loading}
+            disabled={loading || hasRestrictedRole}
           >
             <MenuItem value="">All Agents</MenuItem>
             {availableFilters?.agents.map((agent) => (

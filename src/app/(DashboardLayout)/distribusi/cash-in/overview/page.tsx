@@ -9,7 +9,7 @@ import UnpaidOverviewChart from '@/app/components/distribusi/UnpaidOverviewChart
 import SummaryTiles from '@/app/components/shared/SummaryTiles';
 import { useAuth } from '@/app/context/AuthContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
-import { getPageRoles } from '@/config/roles';
+import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from '@/config/roles';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -19,8 +19,18 @@ const CashInOverview = () => {
   // Check access for allowed roles (configurable via roles config)
   const accessCheck = useCheckRoles(getPageRoles('DISTRIBUSI_DASHBOARD'));
   
+  // Get restricted roles from config
+  const restrictedRoles = getRestrictedRoles();
+  
+  // Check if current user has a restricted role
+  const hasRestrictedRole = roles.some(role => restrictedRoles.includes(role));
+  const userRoleForFiltering = roles.find(role => restrictedRoles.includes(role));
+  
   // Log access check result for debugging
   console.log('Cash-In Overview Access Check:', accessCheck);
+  console.log('User roles:', roles);
+  console.log('Has restricted role:', hasRestrictedRole);
+  console.log('User role for filtering:', userRoleForFiltering);
   
   const [cashInData, setCashInData] = useState<CashInData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -61,9 +71,12 @@ const CashInOverview = () => {
         const monthName = monthNames[parseInt(currentFilters.month) - 1];
         const formattedMonth = `${monthName} ${currentFilters.year}`;
         
+        // For users with restricted roles, use their mapped agent name instead of filter selection
+        const agentName = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (currentFilters.agent || undefined);
+        
         const response = await fetchCashInData({
           month: formattedMonth,
-          agent: currentFilters.agent || undefined,
+          agent: agentName,
           area: currentFilters.area || undefined,
         });
         console.log('Cash-in data response:', response);
@@ -78,7 +91,7 @@ const CashInOverview = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [hasRestrictedRole, userRoleForFiltering]);
 
   const handleFiltersChange = useCallback((newFilters: DistribusiFilterValues) => {
     console.log('Filters changed:', newFilters);
@@ -161,6 +174,11 @@ const CashInOverview = () => {
           <Typography variant="body1" color="textSecondary">
             Monitor cash-in performance, invoice status, and payment metrics
           </Typography>
+          {hasRestrictedRole && (
+            <Typography variant="body2" color="info.main" sx={{ mt: 1, fontStyle: 'italic' }}>
+              Showing data for {getAgentNameFromRole(userRoleForFiltering!)} only
+            </Typography>
+          )}
         </Box>
 
         {/* Filters */}
@@ -168,6 +186,7 @@ const CashInOverview = () => {
           <DistribusiFilters
             filters={filters}
             onFiltersChange={handleFiltersChange}
+            hasRestrictedRole={hasRestrictedRole}
           />
         </Box>
 
@@ -198,7 +217,7 @@ const CashInOverview = () => {
         <Box mb={3}>
           <CashInMonthlyChart 
             filters={{
-              agent: filters.agent,
+              agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent,
               area: filters.area,
               month: filters.month,
               year: filters.year
@@ -220,7 +239,7 @@ const CashInOverview = () => {
         <Box mb={3}>
           <UnpaidOverviewChart 
             filters={{
-              agent: filters.agent,
+              agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent,
               area: filters.area
             }}
           />

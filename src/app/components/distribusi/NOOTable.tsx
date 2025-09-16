@@ -1,37 +1,38 @@
 'use client';
 
+import { getAgentNameFromRole } from '@/config/roles';
 import { Download as DownloadIcon, Info as InfoIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
-    Accordion,
-    AccordionDetails,
-    AccordionSummary,
-    Box,
-    Button,
-    Card,
-    CardContent,
-    Chip,
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    FormControl,
-    Grid,
-    InputAdornment,
-    InputLabel,
-    MenuItem,
-    Paper,
-    Select,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    TableSortLabel,
-    TextField,
-    Typography
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  Grid,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TableSortLabel,
+  TextField,
+  Typography
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
@@ -74,11 +75,16 @@ interface NOOTableProps {
     statusPayment?: string;
   };
   title?: string;
+  // Role-based filtering props
+  hasRestrictedRole?: boolean;
+  userRoleForFiltering?: string;
 }
 
 const NOOTable = ({ 
   filters,
-  title = 'Number of Orders (NOO)' 
+  title = 'Number of Orders (NOO)',
+  hasRestrictedRole = false,
+  userRoleForFiltering
 }: NOOTableProps) => {
   const [orders, setOrders] = useState<NOOOrder[]>([]);
   const [loading, setLoading] = useState(false);
@@ -127,10 +133,15 @@ const NOOTable = ({
         year: filters.year
       });
       
+      // For users with restricted roles, use their mapped agent name instead of filter selection
+      const agentName = hasRestrictedRole && userRoleForFiltering 
+        ? getAgentNameFromRole(userRoleForFiltering) 
+        : filters.agent;
+
       const response = await fetchNOOData({
         sortTime: 'desc',
         month: formattedMonth,
-        agent_name: filters.agent,
+        agent: agentName,
         area: filters.area,
         status_payment: filters.statusPayment
       });
@@ -624,6 +635,7 @@ const NOOTable = ({
                   value={agentFilter}
                   label="Agent"
                   onChange={(e) => setAgentFilter(e.target.value)}
+                  disabled={hasRestrictedRole}
                 >
                   <MenuItem value="">All Agents</MenuItem>
                   {uniqueAgents.map((agent) => (

@@ -16,7 +16,7 @@ export const ROLES = {
 export const PAGE_ROLES = {
   // Dashboard pages
   KASBON_DASHBOARD: [ROLES.ADMIN],
-  DISTRIBUSI_DASHBOARD: [ROLES.ADMIN, ROLES.ANALYST],
+  DISTRIBUSI_DASHBOARD: [ROLES.ADMIN, "rully", "rifqi", "oki", "mardi"],
   ANALYTICS_DASHBOARD: [ROLES.ANALYST, ROLES.ADMIN],
   
   // Admin pages
@@ -41,4 +41,22 @@ export function isValidRole(role: string): boolean {
 // Helper function to get all available roles
 export function getAllRoles(): string[] {
   return Object.values(ROLES);
+}
+
+// Role to agent name mapping for API calls
+const ROLE_TO_AGENT_MAP: Record<string, string> = {
+  'rully': 'Rully juliandi',
+  'oki': 'Oki irawan',
+  'rifqi': 'Rifqi Cassidy',
+  'mardi': 'Mardi'
+};
+
+// Helper function to get agent name from role
+export function getAgentNameFromRole(role: string): string {
+  return ROLE_TO_AGENT_MAP[role] || role;
+}
+
+// Helper function to get all restricted roles that should only see their own data
+export function getRestrictedRoles(): string[] {
+  return Object.keys(ROLE_TO_AGENT_MAP);
 }

@@ -11,7 +11,7 @@ import SummaryTiles from '@/app/components/shared/SummaryTiles';
 import { useAuth } from '@/app/context/AuthContext';
 import { useSettings } from '@/app/context/SettingsContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
-import { getPageRoles } from '@/config/roles';
+import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from '@/config/roles';
 import { Box, FormControl, Grid, InputLabel, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { goalProfit } from '../../goalProfit';
@@ -23,8 +23,18 @@ const SalesOverview = () => {
   // Check access for allowed roles (configurable via roles config)
   const accessCheck = useCheckRoles(getPageRoles('DISTRIBUSI_DASHBOARD'));
   
+  // Get restricted roles from config
+  const restrictedRoles = getRestrictedRoles();
+  
+  // Check if current user has a restricted role
+  const hasRestrictedRole = roles.some(role => restrictedRoles.includes(role));
+  const userRoleForFiltering = roles.find(role => restrictedRoles.includes(role));
+  
   // Log access check result for debugging
   console.log('Sales Overview Access Check:', accessCheck);
+  console.log('User roles:', roles);
+  console.log('Has restricted role:', hasRestrictedRole);
+  console.log('User role for filtering:', userRoleForFiltering);
   
   const [salesData, setSalesData] = useState<SalesSummaryData | null>(null);
   const [monthlySummaryData, setMonthlySummaryData] = useState<MonthlySummaryData[]>([]);
@@ -76,9 +86,12 @@ const SalesOverview = () => {
         const monthName = monthNames[parseInt(currentFilters.month) - 1];
         const formattedMonth = `${monthName} ${currentFilters.year}`;
         
+        // For users with restricted roles, use their mapped agent name instead of filter selection
+        const agentName = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (currentFilters.agent || undefined);
+        
         const response = await fetchUpdatedSalesSummary({
           month: formattedMonth,
-          agent_name: currentFilters.agent || undefined,
+          agent_name: agentName,
           area: currentFilters.area || undefined,
           status_payment: paymentStatus || undefined,
         });
@@ -94,7 +107,7 @@ const SalesOverview = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [hasRestrictedRole, userRoleForFiltering]);
 
   const fetchTotalStoresCallback = useCallback(async (currentFilters: DistribusiFilterValues, paymentStatus: string) => {
     console.log('Fetching total stores data with filters:', currentFilters, 'payment status:', paymentStatus);
@@ -110,9 +123,12 @@ const SalesOverview = () => {
         const monthName = monthNames[parseInt(currentFilters.month) - 1];
         const formattedMonth = `${monthName} ${currentFilters.year}`;
         
+        // For users with restricted roles, use their mapped agent name instead of filter selection
+        const agentName = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (currentFilters.agent || undefined);
+        
         const response = await fetchTotalStores({
           month: formattedMonth,
-          agent_name: currentFilters.agent || undefined,
+          agent_name: agentName,
           area: currentFilters.area || undefined,
           status_payment: paymentStatus || undefined,
         });
@@ -127,7 +143,7 @@ const SalesOverview = () => {
     } finally {
       setTotalStoresLoading(false);
     }
-  }, []);
+  }, [hasRestrictedRole, userRoleForFiltering]);
 
   const fetchMonthlySummaryCallback = useCallback(async (currentFilters: DistribusiFilterValues, paymentStatus: string) => {
     console.log('Fetching monthly summary data with filters:', currentFilters, 'payment status:', paymentStatus);
@@ -149,11 +165,14 @@ const SalesOverview = () => {
         startDate.setMonth(startDate.getMonth() - 2);
         
         const startMonth = `${monthNames[startDate.getMonth()]} ${startDate.getFullYear()}`;
+
+        // For users with restricted roles, use their mapped agent name instead of filter selection
+        const agentName = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (currentFilters.agent || undefined);
         
         const response = await fetchUpdatedSalesSummaryMonthly({
           start_month: startMonth,
           end_month: formattedMonth,
-          agent_name: currentFilters.agent || undefined,
+          agent_name: agentName,
           area: currentFilters.area || undefined,
           status_payment: paymentStatus || undefined,
         });
@@ -169,7 +188,7 @@ const SalesOverview = () => {
     } finally {
       setMonthlyLoading(false);
     }
-  }, []);
+  }, [hasRestrictedRole, userRoleForFiltering]);
 
   const fetchNOOCallback = useCallback(async (currentFilters: DistribusiFilterValues, paymentStatus: string) => {
     console.log('=== fetchNOOCallback called ===');
@@ -195,9 +214,12 @@ const SalesOverview = () => {
           year: currentFilters.year
         });
         
+        // For users with restricted roles, use their mapped agent name instead of filter selection
+        const agentName = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (currentFilters.agent || undefined);
+        
         const response = await fetchNOOData({
           month: formattedMonth,
-          agent_name: currentFilters.agent || undefined,
+          agent: agentName,
           area: currentFilters.area || undefined,
           status_payment: paymentStatus || undefined,
         });
@@ -212,7 +234,7 @@ const SalesOverview = () => {
     } finally {
       setNOOLoading(false);
     }
-  }, []);
+  }, [hasRestrictedRole, userRoleForFiltering]);
 
   const fetchFiltersCallback = useCallback(async (month: string, year: string) => {
     setFiltersLoading(true);
@@ -280,8 +302,8 @@ const SalesOverview = () => {
     const monthName = monthNames[parseInt(filters.month) - 1];
     const monthYear = `${monthName} ${filters.year}`;
     
-    // Use selected agent or default to NATIONAL if no agent selected
-    const agentKey = filters.agent || 'NATIONAL';
+    // For users with restricted roles, use their mapped agent name, otherwise use selected agent or default to NATIONAL
+    const agentKey = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (filters.agent || 'NATIONAL');
     
     // First try to get from configurable settings
     if (settings?.goal_profit) {
@@ -458,6 +480,11 @@ const SalesOverview = () => {
           <Typography variant="body1" color="textSecondary">
             Monitor sales performance, invoice metrics, and store statistics
           </Typography>
+          {hasRestrictedRole && (
+            <Typography variant="body2" color="info.main" sx={{ mt: 1, fontStyle: 'italic' }}>
+              Showing data for {getAgentNameFromRole(userRoleForFiltering!)} only
+            </Typography>
+          )}
         </Box>
 
         {/* Filters */}
@@ -514,7 +541,7 @@ const SalesOverview = () => {
                   value={filters.agent}
                   label="Agent"
                   onChange={(e) => handleFiltersChange({ ...filters, agent: e.target.value })}
-                  disabled={filtersLoading}
+                  disabled={filtersLoading || hasRestrictedRole}
                 >
                   <MenuItem value="">All Agents</MenuItem>
                   {availableFilters?.agents.map((agent) => (
@@ -581,7 +608,7 @@ const SalesOverview = () => {
         <Box mb={3}>
           <SalesMonthlyChart 
             filters={{
-              agent: filters.agent,
+              agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent,
               area: filters.area,
               month: filters.month,
               year: filters.year,
@@ -611,7 +638,7 @@ const SalesOverview = () => {
         <Box mb={3}>
           <StoresMonthlyChart 
             filters={{
-              agent: filters.agent,
+              agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent,
               area: filters.area,
               month: filters.month,
               year: filters.year,
@@ -631,6 +658,8 @@ const SalesOverview = () => {
               statusPayment: statusPayment
             }}
             title="Number of Orders (NOO)"
+            hasRestrictedRole={hasRestrictedRole}
+            userRoleForFiltering={userRoleForFiltering}
           />
         </Box>
       </Box>
