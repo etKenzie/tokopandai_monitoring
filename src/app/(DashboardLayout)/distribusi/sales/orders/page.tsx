@@ -121,6 +121,7 @@ const SalesOrdersPage = () => {
           <SalesOrdersTable 
             filters={filters}
             title="Sales Orders"
+            agentName={hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : undefined}
           />
         </Box>
       </Box>

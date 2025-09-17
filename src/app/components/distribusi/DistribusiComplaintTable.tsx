@@ -48,6 +48,7 @@ const headCells: HeadCell[] = [
   { id: 'created_at', label: 'Date', numeric: false },
   { id: 'order_code', label: 'Order Code', numeric: false },
   { id: 'store_name', label: 'Store Name', numeric: false },
+  { id: 'agent_name', label: 'Agent', numeric: false },
   { id: 'product_name', label: 'Product Name', numeric: false },
   { id: 'product_sku', label: 'SKU', numeric: false },
   { id: 'alasan', label: 'Reason', numeric: false },
@@ -59,6 +60,7 @@ interface DistribusiComplaintTableProps {
     month?: string;
     year?: string;
     alasan?: string;
+    agent?: string;
   };
   title?: string;
 }
@@ -87,7 +89,8 @@ const DistribusiComplaintTable = ({
         sortTime: 'desc',
         month: filters.month,
         year: filters.year,
-        alasan: filters.alasan
+        alasan: filters.alasan,
+        agent: filters.agent
       });
       
       setComplaints(response.data.data);
@@ -102,7 +105,7 @@ const DistribusiComplaintTable = ({
   useEffect(() => {
     fetchComplaintData();
     setPage(0);
-  }, [filters.month, filters.year, filters.alasan]);
+  }, [filters.month, filters.year, filters.alasan, filters.agent]);
 
   const handleRequestSort = (property: SortableField) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -441,6 +444,11 @@ const DistribusiComplaintTable = ({
                       <TableCell>
                         <Typography variant="body2" sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {row.store_name}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="textSecondary">
+                          {row.agent_name}
                         </Typography>
                       </TableCell>
                       <TableCell>

@@ -69,7 +69,7 @@ export const fetchVisits = async (params: VisitQueryParams): Promise<VisitsRespo
   if (params.sortTime) queryParams.append('sortTime', params.sortTime);
   if (params.visit_status) queryParams.append('visit_status', params.visit_status);
   if (params.month) queryParams.append('month', params.month);
-  if (params.agent) queryParams.append('agent', params.agent);
+  if (params.agent) queryParams.append('agent_name', params.agent);
   if (params.segment) queryParams.append('segment', params.segment);
   if (params.area) queryParams.append('area', params.area);
   if (params.visit_type) queryParams.append('visit_type', params.visit_type);
@@ -232,6 +232,7 @@ export interface Complaint {
   product_name: string;
   product_sku: string;
   store_name: string;
+  agent_name: string;
 }
 
 export interface ComplaintsResponse {
@@ -255,6 +256,7 @@ export interface ComplaintQueryParams {
   year?: string;
   order_code?: string;
   product_name?: string;
+  agent?: string;
 }
 
 // Fetch Complaints
@@ -270,6 +272,7 @@ export const fetchComplaints = async (params: ComplaintQueryParams): Promise<Com
   if (params.year) queryParams.append('year', params.year);
   if (params.order_code) queryParams.append('order_code', params.order_code);
   if (params.product_name) queryParams.append('product_name', params.product_name);
+  if (params.agent) queryParams.append('agent_name', params.agent);
   
   const url = `${baseUrl}/api/monitoring/complaint?${queryParams.toString()}`;
   

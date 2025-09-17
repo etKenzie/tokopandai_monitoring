@@ -63,11 +63,13 @@ interface DistribusiOverdueTableProps {
     area?: string;
   };
   title?: string;
+  agentName?: string;
 }
 
 const DistribusiOverdueTable = ({ 
   filters,
-  title = 'Distribusi Overdue Orders' 
+  title = 'Distribusi Overdue Orders',
+  agentName
 }: DistribusiOverdueTableProps) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
@@ -92,7 +94,7 @@ const DistribusiOverdueTable = ({
         sortTime: 'desc',
         payment: 'BELUM LUNAS',
         month: filters.month,
-        agent: filters.agent,
+        agent: agentName || filters.agent,
         segment: filters.segment,
         area: filters.area
       });
@@ -117,7 +119,7 @@ const DistribusiOverdueTable = ({
     fetchOverdueData();
     // Reset pagination when filters change
     setPage(0);
-  }, [filters.month, filters.agent, filters.segment, filters.area]);
+  }, [filters.month, filters.agent, filters.segment, filters.area, agentName]);
 
   const handleRequestSort = (property: SortableField) => {
     const isAsc = orderBy === property && order === 'asc';

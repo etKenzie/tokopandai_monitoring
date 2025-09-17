@@ -2,7 +2,9 @@
 
 import PageContainer from "@/app/components/container/PageContainer";
 import DistribusiComplaintTable from "@/app/components/distribusi/DistribusiComplaintTable";
+import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import { useAuth } from "@/app/context/AuthContext";
+import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from '@/config/roles';
 import { Box, Typography } from "@mui/material";
 import { useState } from "react";
 
@@ -14,24 +16,12 @@ const DistribusiComplaintPage = () => {
     alasan: ''
   });
 
-  const hasAccess = ["distribusi", "admin"].some(r => roles.includes(r));
-
-  if (!hasAccess) {
-    return (
-      <PageContainer title="Distribusi Complaints" description="View product complaints">
-        <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          height="60vh"
-        >
-          <Typography variant="h5" color="error">
-            You don't have access to this page.
-          </Typography>
-        </Box>
-      </PageContainer>
-    );
-  }
+  // Get restricted roles from config
+  const restrictedRoles = getRestrictedRoles();
+  
+  // Check if current user has a restricted role
+  const hasRestrictedRole = roles.some(role => restrictedRoles.includes(role));
+  const userRoleForFiltering = roles.find(role => restrictedRoles.includes(role));
 
   return (
     <PageContainer title="Distribusi Complaints" description="View product complaints">
@@ -60,7 +50,10 @@ const DistribusiComplaintPage = () => {
           gap: 3
         }}>
           <DistribusiComplaintTable 
-            filters={filters}
+            filters={{
+              ...filters,
+              agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : undefined
+            }}
             title="Product Complaints"
           />
         </Box>
@@ -69,4 +62,10 @@ const DistribusiComplaintPage = () => {
   );
 };
 
-export default DistribusiComplaintPage;
+export default function ProtectedDistribusiComplaintPage() {
+  return (
+    <ProtectedRoute requiredRoles={getPageRoles('DISTRIBUSI_DASHBOARD')}>
+      <DistribusiComplaintPage />
+    </ProtectedRoute>
+  );
+}

@@ -2,7 +2,9 @@
 
 import PageContainer from "@/app/components/container/PageContainer";
 import DistribusiVisitTable from "@/app/components/distribusi/DistribusiVisitTable";
+import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import { useAuth } from "@/app/context/AuthContext";
+import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from '@/config/roles';
 import { Box, Typography } from "@mui/material";
 import { useState } from "react";
 
@@ -15,24 +17,13 @@ const DistribusiVisitPage = () => {
     area: ''
   });
 
-  const hasAccess = ["distribusi", "admin"].some(r => roles.includes(r));
+  // Get restricted roles from config
+  const restrictedRoles = getRestrictedRoles();
+  
+  // Check if current user has a restricted role
+  const hasRestrictedRole = roles.some(role => restrictedRoles.includes(role));
+  const userRoleForFiltering = roles.find(role => restrictedRoles.includes(role));
 
-  if (!hasAccess) {
-    return (
-      <PageContainer title="Distribusi Visits" description="View sales visits">
-        <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          height="60vh"
-        >
-          <Typography variant="h5" color="error">
-            You don't have access to this page.
-          </Typography>
-        </Box>
-      </PageContainer>
-    );
-  }
 
   return (
     <PageContainer title="Distribusi Visits" description="View sales visits">
@@ -61,7 +52,10 @@ const DistribusiVisitPage = () => {
           gap: 3
         }}>
           <DistribusiVisitTable 
-            filters={filters}
+            filters={{
+              ...filters,
+              agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent
+            }}
             title="Sales Visits"
           />
         </Box>
@@ -70,4 +64,10 @@ const DistribusiVisitPage = () => {
   );
 };
 
-export default DistribusiVisitPage;
+export default function ProtectedDistribusiVisitPage() {
+  return (
+    <ProtectedRoute requiredRoles={getPageRoles('DISTRIBUSI_DASHBOARD')}>
+      <DistribusiVisitPage />
+    </ProtectedRoute>
+  );
+}

@@ -64,6 +64,7 @@ const DistribusiOverduePage = () => {
           <DistribusiOverdueTable 
             filters={filters}
             title="Overdue Orders"
+            agentName={hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : undefined}
           />
         </Box>
       </Box>

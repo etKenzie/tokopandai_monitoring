@@ -66,11 +66,13 @@ interface SalesOrdersTableProps {
     statusPayment?: string;
   };
   title?: string;
+  agentName?: string;
 }
 
 const SalesOrdersTable = ({ 
   filters,
-  title = 'Sales Orders' 
+  title = 'Sales Orders',
+  agentName
 }: SalesOrdersTableProps) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
@@ -103,7 +105,7 @@ const SalesOrdersTable = ({
         sortTime: 'desc',
         payment: paymentStatusFilter || undefined,
         month: filters.month,
-        agent: filters.agent,
+        agent: agentName || filters.agent,
         segment: filters.segment,
         area: filters.area
       });
@@ -128,7 +130,7 @@ const SalesOrdersTable = ({
     fetchOrdersData();
     // Reset pagination when filters change
     setPage(0);
-  }, [filters.month, filters.agent, filters.segment, filters.area, filters.statusPayment, paymentStatusFilter]);
+  }, [filters.month, filters.agent, filters.segment, filters.area, filters.statusPayment, paymentStatusFilter, agentName]);
 
   const handleRequestSort = (property: SortableField) => {
     const isAsc = orderBy === property && order === 'asc';
