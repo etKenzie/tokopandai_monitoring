@@ -13,7 +13,7 @@ import {
     Typography
 } from '@mui/material';
 import dynamic from "next/dynamic";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -34,6 +34,7 @@ const CashInMonthlyChart = ({ filters }: CashInMonthlyChartProps) => {
   const [chartType, setChartType] = useState<ChartType>('amounts');
   const [startMonthYear, setStartMonthYear] = useState<string>('');
   const [endMonthYear, setEndMonthYear] = useState<string>('');
+  const [isManuallySet, setIsManuallySet] = useState(false);
 
   // Generate month-year options (current month - 12 months back)
   const generateMonthYearOptions = () => {
@@ -59,11 +60,14 @@ const CashInMonthlyChart = ({ filters }: CashInMonthlyChartProps) => {
     updateMonthRange();
   }, []);
 
-  // Update month range when filters change
+  // Update month range when filters change (but not when manually set)
   useEffect(() => {
     console.log('Filters changed, updating month range:', filters);
-    updateMonthRange();
-  }, [filters.month, filters.year, filters.agent, filters.area]);
+    // Only update if dates haven't been manually set
+    if (!isManuallySet) {
+      updateMonthRange();
+    }
+  }, [filters.month, filters.year, filters.agent, filters.area, isManuallySet]);
 
   const updateMonthRange = () => {
     console.log('Updating month range with filters:', filters);
@@ -120,7 +124,7 @@ const CashInMonthlyChart = ({ filters }: CashInMonthlyChartProps) => {
     }
   };
 
-  const fetchChartData = async () => {
+  const fetchChartData = useCallback(async () => {
     if (!startMonthYear || !endMonthYear) {
       console.log('Missing month/year values:', { startMonthYear, endMonthYear });
       return;
@@ -150,15 +154,15 @@ const CashInMonthlyChart = ({ filters }: CashInMonthlyChartProps) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [startMonthYear, endMonthYear, filters.agent, filters.area]);
 
-  // Fetch data when month range changes - with better dependency management
+  // Fetch data when month range changes
   useEffect(() => {
     if (startMonthYear && endMonthYear) {
       console.log('Month range changed, fetching new data:', { startMonthYear, endMonthYear });
       fetchChartData();
     }
-  }, [startMonthYear, endMonthYear]); // Remove filters from dependency to prevent unnecessary re-fetches
+  }, [startMonthYear, endMonthYear]); // Remove fetchChartData to avoid circular dependency
 
   // Separate effect for filter changes that should trigger month range updates
   useEffect(() => {
@@ -166,19 +170,24 @@ const CashInMonthlyChart = ({ filters }: CashInMonthlyChartProps) => {
       console.log('Agent/Area filter changed, re-fetching data');
       fetchChartData();
     }
-  }, [filters.agent, filters.area]);
+  }, [filters.agent, filters.area]); // Remove fetchChartData to avoid circular dependency
 
   const handleChartTypeChange = (event: SelectChangeEvent<ChartType>) => {
     setChartType(event.target.value as ChartType);
   };
 
   const handleStartMonthYearChange = (event: SelectChangeEvent<string>) => {
+    console.log('Start month changed to:', event.target.value);
     setStartMonthYear(event.target.value);
+    setIsManuallySet(true);
   };
 
   const handleEndMonthYearChange = (event: SelectChangeEvent<string>) => {
+    console.log('End month changed to:', event.target.value);
     setEndMonthYear(event.target.value);
+    setIsManuallySet(true);
   };
+
 
   const formatValue = (value: number, type: ChartType) => {
     if (type === 'amounts') {
@@ -263,7 +272,10 @@ const CashInMonthlyChart = ({ filters }: CashInMonthlyChartProps) => {
     };
   };
 
-  const chartDataConfig = prepareChartData();
+  const chartDataConfig = useMemo(() => {
+    console.log('Recalculating chart data config...', { chartData, chartType, isManuallySet });
+    return prepareChartData();
+  }, [chartData, chartType, isManuallySet]);
 
   // Only render chart if we have valid data
   const shouldRenderChart = chartDataConfig.categories.length > 0 && chartDataConfig.series.length > 0;
@@ -373,6 +385,7 @@ const CashInMonthlyChart = ({ filters }: CashInMonthlyChartProps) => {
                 ))}
               </Select>
             </FormControl>
+
           </Box>
         </Box>
 
@@ -391,6 +404,7 @@ const CashInMonthlyChart = ({ filters }: CashInMonthlyChartProps) => {
             </Box>
           ) : shouldRenderChart ? (
             <ReactApexChart
+              key={`${startMonthYear}-${endMonthYear}-${chartType}`}
               options={chartOptions}
               series={chartDataConfig.series}
               type="line"
