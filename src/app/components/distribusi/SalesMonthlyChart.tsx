@@ -62,14 +62,16 @@ const SalesMonthlyChart = ({ filters, monthlyData }: SalesMonthlyChartProps) => 
     updateMonthRange();
   }, []);
 
-  // Update month range when filters change (but not when manually set)
+  // Update month range when filters change
   useEffect(() => {
     console.log('Filters changed, updating month range:', filters);
-    // Only update if dates haven't been manually set
-    if (!isManuallySet) {
-      updateMonthRange();
+    // Reset manual mode when page filters change (month, year, agent, area, status_payment)
+    if (filters.month || filters.year || filters.agent || filters.area || filters.status_payment) {
+      console.log('Page filters changed, resetting to automatic mode');
+      setIsManuallySet(false);
     }
-  }, [filters.month, filters.year, filters.agent, filters.area, filters.status_payment, isManuallySet]);
+    updateMonthRange();
+  }, [filters.month, filters.year, filters.agent, filters.area, filters.status_payment]);
 
   const updateMonthRange = () => {
     console.log('Updating month range with filters:', filters);
