@@ -1,4 +1,5 @@
 import {
+  IconBuildingStore,
   IconCashBanknote,
   IconClockCancel,
   IconDashboard,
@@ -101,6 +102,12 @@ const Menuitems: MenuitemsType[] = [
       
       
     ],
+  },
+  {
+    id: uniqueId(),
+    title: "Stores",
+    icon: IconBuildingStore,
+    href: "/distribusi/stores",
   },
   {
     id: uniqueId(),

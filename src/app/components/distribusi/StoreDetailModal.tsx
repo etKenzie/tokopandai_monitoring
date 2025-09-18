@@ -1,0 +1,278 @@
+'use client';
+
+import { Close as CloseIcon } from '@mui/icons-material';
+import {
+    Alert,
+    Box,
+    Button,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Divider,
+    Grid,
+    Paper,
+    Tab,
+    Tabs,
+    Typography
+} from '@mui/material';
+import { useEffect, useState } from 'react';
+import { Store, StoreOrder, fetchStoreOrders } from '../../api/distribusi/StoreSlice';
+import StoreOrdersTable from './StoreOrdersTable';
+import StoreSummaryTab from './StoreSummaryTab';
+
+interface StoreDetailModalProps {
+  open: boolean;
+  onClose: () => void;
+  store: Store | null;
+}
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`store-tabpanel-${index}`}
+      aria-labelledby={`store-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
+
+const StoreDetailModal = ({ open, onClose, store }: StoreDetailModalProps) => {
+  const [storeOrders, setStoreOrders] = useState<StoreOrder[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [tabValue, setTabValue] = useState(0);
+
+  useEffect(() => {
+    if (open && store) {
+      fetchStoreOrdersData();
+      setTabValue(0); // Reset to first tab when opening
+    }
+  }, [open, store]);
+
+  const fetchStoreOrdersData = async () => {
+    if (!store) return;
+
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetchStoreOrders(store.user_id);
+      setStoreOrders(response.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch store orders');
+      console.error('Failed to fetch store orders:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+
+  if (!store) return null;
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="xl"
+      fullWidth
+      PaperProps={{
+        sx: { minHeight: '90vh' }
+      }}
+    >
+      <DialogTitle>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box>
+            <Typography variant="h5" component="div">
+              {store.store_name}
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              {store.reseller_name} • {store.areas} • {store.segments}
+            </Typography>
+          </Box>
+          <Button
+            onClick={onClose}
+            startIcon={<CloseIcon />}
+            variant="outlined"
+            size="small"
+          >
+            Close
+          </Button>
+        </Box>
+      </DialogTitle>
+
+      <DialogContent dividers>
+        {loading ? (
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+            <CircularProgress />
+          </Box>
+        ) : error ? (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        ) : (
+          <Box>
+            {/* Store Information Header */}
+            <Box mb={3}>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Paper sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="h4" color="primary" fontWeight="bold">
+                      {formatDate(store.first_order_date)}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      First Order Date
+                    </Typography>
+                  </Paper>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Paper sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="h4" color="info.main" fontWeight="bold">
+                      {store.user_status}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Status
+                    </Typography>
+                  </Paper>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Paper sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="h4" color="info.main" fontWeight="bold">
+                      {store.final_score}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Final Score
+                    </Typography>
+                  </Paper>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Paper sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="h4" color="success.main" fontWeight="bold">
+                      {store.agent_name}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Agent
+                    </Typography>
+                  </Paper>
+                </Grid>
+              </Grid>
+            </Box>
+
+            {/* Performance Scores */}
+            <Box mb={3}>
+              <Typography variant="h6" gutterBottom>
+                Performance Scores
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Paper sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="h4" color="success.main" fontWeight="bold">
+                      {store.profit_score}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Profit Score
+                    </Typography>
+                  </Paper>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Paper sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="h4" color="warning.main" fontWeight="bold">
+                      {store.owed_score}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Owed Score
+                    </Typography>
+                  </Paper>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Paper sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="h4" color="info.main" fontWeight="bold">
+                      {store.activity_score}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Activity Score
+                    </Typography>
+                  </Paper>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Paper sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="h4" color="primary.main" fontWeight="bold">
+                      {store.payment_habits_score}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Payment Habits Score
+                    </Typography>
+                  </Paper>
+                </Grid>
+              </Grid>
+            </Box>
+
+            <Divider sx={{ my: 2 }} />
+
+            {/* Tabs */}
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+              <Tabs value={tabValue} onChange={handleTabChange} aria-label="store detail tabs">
+                <Tab label="Summary" />
+                <Tab label="Orders" />
+              </Tabs>
+            </Box>
+
+            <TabPanel value={tabValue} index={0}>
+              <StoreSummaryTab storeOrders={storeOrders} />
+            </TabPanel>
+
+            <TabPanel value={tabValue} index={1}>
+              <StoreOrdersTable storeOrders={storeOrders} />
+            </TabPanel>
+          </Box>
+        )}
+      </DialogContent>
+
+      <DialogActions>
+        <Button onClick={onClose} variant="outlined">
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+export default StoreDetailModal;
