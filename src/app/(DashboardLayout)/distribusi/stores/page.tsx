@@ -1,13 +1,15 @@
 "use client";
 
+import { Store, fetchStores } from "@/app/api/distribusi/StoreSlice";
 import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import PageContainer from "@/app/components/container/PageContainer";
+import StoreCategorySummary from "@/app/components/distribusi/StoreCategorySummary";
 import StoresTable from "@/app/components/distribusi/StoresTable";
 import { useAuth } from "@/app/context/AuthContext";
 import { useCheckRoles } from "@/app/hooks/useCheckRoles";
 import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from "@/config/roles";
 import { Box, FormControl, Grid, InputLabel, MenuItem, Select, Typography } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const StoresPage = () => {
   const { user, roles, refreshRoles } = useAuth();
@@ -32,8 +34,33 @@ const StoresPage = () => {
     agent_name: '',
     areas: '',
     segments: '',
-    user_status: 'Active'
+    user_status: 'Active',
+    category: ''
   });
+  const [stores, setStores] = useState<Store[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch stores data
+  useEffect(() => {
+    const fetchStoresData = async () => {
+      setLoading(true);
+      try {
+        const response = await fetchStores({
+          agent_name: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent_name,
+          areas: filters.areas,
+          segments: filters.segments,
+          user_status: filters.user_status
+        });
+        setStores(response.data);
+      } catch (error) {
+        console.error('Failed to fetch stores:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStoresData();
+  }, [filters.agent_name, filters.areas, filters.segments, filters.user_status, hasRestrictedRole, userRoleForFiltering]);
 
   return (
     <PageContainer title="Stores" description="View and manage stores">
@@ -72,6 +99,9 @@ const StoresPage = () => {
             </Grid>
           </Grid>
         </Box>
+
+        {/* Category Summary */}
+        <StoreCategorySummary stores={stores} />
 
         <Box sx={{ 
           flex: 1,

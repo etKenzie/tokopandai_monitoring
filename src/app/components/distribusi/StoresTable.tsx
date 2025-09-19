@@ -2,29 +2,29 @@
 
 import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    Chip,
-    CircularProgress,
-    FormControl,
-    Grid,
-    InputAdornment,
-    InputLabel,
-    MenuItem,
-    Paper,
-    Select,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    TableSortLabel,
-    TextField,
-    Typography
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  FormControl,
+  Grid,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TableSortLabel,
+  TextField,
+  Typography
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
@@ -32,7 +32,7 @@ import { Store, fetchStores } from '../../api/distribusi/StoreSlice';
 import StoreDetailModal from './StoreDetailModal';
 
 type StoreDirection = 'asc' | 'desc';
-type SortableField = keyof Store;
+type SortableField = keyof Store | 'category';
 
 interface HeadCell {
   id: SortableField;
@@ -49,6 +49,7 @@ const headCells: HeadCell[] = [
   { id: 'segments', label: 'Segment', numeric: false },
   { id: 'areas', label: 'Area', numeric: false },
   { id: 'agent_name', label: 'Agent', numeric: false },
+  { id: 'category', label: 'Category', numeric: false },
   { id: 'profit_score', label: 'Profit Score', numeric: true },
   { id: 'owed_score', label: 'Owed Score', numeric: true },
   { id: 'activity_score', label: 'Activity Score', numeric: true },
@@ -62,6 +63,7 @@ interface StoresTableProps {
     areas?: string;
     segments?: string;
     user_status?: string;
+    category?: string;
   };
   title?: string;
   agentName?: string;
@@ -83,6 +85,7 @@ const StoresTable = ({
   const [areaFilter, setAreaFilter] = useState<string>('');
   const [agentFilter, setAgentFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -145,6 +148,20 @@ const StoresTable = ({
     return 'default';
   };
 
+  const getCategory = (finalScore: number) => {
+    if (finalScore >= 75) return 'A';
+    if (finalScore >= 50) return 'B';
+    if (finalScore >= 25) return 'C';
+    return 'D';
+  };
+
+  const getCategoryColor = (finalScore: number) => {
+    if (finalScore >= 75) return 'success';
+    if (finalScore >= 50) return 'info';
+    if (finalScore >= 25) return 'warning';
+    return 'error';
+  };
+
   const searchFields = (store: Store, query: string): boolean => {
     if (!query) return true;
 
@@ -168,6 +185,7 @@ const StoresTable = ({
     if (areaFilter && s.areas !== areaFilter) return false;
     if (agentFilter && s.agent_name !== agentFilter) return false;
     if (statusFilter && s.user_status !== statusFilter) return false;
+    if (categoryFilter && getCategory(s.final_score) !== categoryFilter) return false;
 
     // Search functionality
     if (searchQuery) {
@@ -180,7 +198,7 @@ const StoresTable = ({
   // Reset page when local filters change
   useEffect(() => {
     setPage(0);
-  }, [segmentFilter, areaFilter, agentFilter, statusFilter, searchQuery]);
+  }, [segmentFilter, areaFilter, agentFilter, statusFilter, categoryFilter, searchQuery]);
 
   const uniqueSegments = Array.from(new Set(stores.map((s) => s.segments)));
   const uniqueAreas = Array.from(new Set(stores.map((s) => s.areas)));
@@ -188,8 +206,14 @@ const StoresTable = ({
   const uniqueStatuses = Array.from(new Set(stores.map((s) => s.user_status)));
 
   const sortedStores = [...filteredStores].sort((a, b) => {
-    let aValue: any = a[orderBy];
-    let bValue: any = b[orderBy];
+    let aValue: any = a[orderBy as keyof Store];
+    let bValue: any = b[orderBy as keyof Store];
+
+    // Handle category sorting
+    if (orderBy === 'category') {
+      aValue = getCategory(a.final_score);
+      bValue = getCategory(b.final_score);
+    }
 
     if (orderBy === 'profit_score' || orderBy === 'owed_score' || orderBy === 'activity_score' || orderBy === 'payment_habits_score' || orderBy === 'final_score') {
       aValue = Number(aValue);
@@ -216,10 +240,14 @@ const StoresTable = ({
 
   const totalStores = filteredStores.length;
   const activeStores = filteredStores.filter(s => s.user_status === 'Active').length;
-  const avgFinalScore = filteredStores.length > 0 ? 
-    Math.round(filteredStores.reduce((sum, s) => sum + s.final_score, 0) / filteredStores.length) : 0;
-  const avgProfitScore = filteredStores.length > 0 ? 
-    Math.round(filteredStores.reduce((sum, s) => sum + s.profit_score, 0) / filteredStores.length) : 0;
+  
+  // Filter out stores with final score of 0 (no transactions)
+  const storesWithTransactions = filteredStores.filter(s => s.final_score > 0);
+  
+  const avgFinalScore = storesWithTransactions.length > 0 ? 
+    Math.round(storesWithTransactions.reduce((sum, s) => sum + s.final_score, 0) / storesWithTransactions.length) : 0;
+  const avgProfitScore = storesWithTransactions.length > 0 ? 
+    Math.round(storesWithTransactions.reduce((sum, s) => sum + s.profit_score, 0) / storesWithTransactions.length) : 0;
 
   const prepareDataForExport = (stores: Store[]) => {
     return stores.map((s) => ({
@@ -231,6 +259,7 @@ const StoresTable = ({
       'Segment': s.segments,
       'Area': s.areas,
       'Agent': s.agent_name,
+      'Category': getCategory(s.final_score),
       'Profit Score': s.profit_score,
       'Owed Score': s.owed_score,
       'Activity Score': s.activity_score,
@@ -261,6 +290,7 @@ const StoresTable = ({
       { wch: 15 }, // Segment
       { wch: 15 }, // Area
       { wch: 20 }, // Agent
+      { wch: 10 }, // Category
       { wch: 15 }, // Profit Score
       { wch: 15 }, // Owed Score
       { wch: 15 }, // Activity Score
@@ -290,6 +320,7 @@ const StoresTable = ({
     setAreaFilter('');
     setAgentFilter('');
     setStatusFilter('');
+    setCategoryFilter('');
     setSearchQuery('');
     setPage(0);
   };
@@ -347,7 +378,7 @@ const StoresTable = ({
               variant="outlined"
               color="secondary"
               onClick={clearAllFilters}
-              disabled={!segmentFilter && !areaFilter && !agentFilter && !statusFilter && !searchQuery}
+              disabled={!segmentFilter && !areaFilter && !agentFilter && !statusFilter && !categoryFilter && !searchQuery}
             >
               Clear Filters
             </Button>
@@ -409,7 +440,7 @@ const StoresTable = ({
                 }}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
               <FormControl fullWidth>
                 <InputLabel>Status</InputLabel>
                 <Select
@@ -426,7 +457,7 @@ const StoresTable = ({
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
               <FormControl fullWidth>
                 <InputLabel>Agent</InputLabel>
                 <Select
@@ -443,7 +474,7 @@ const StoresTable = ({
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
               <FormControl fullWidth>
                 <InputLabel>Segment</InputLabel>
                 <Select
@@ -460,7 +491,7 @@ const StoresTable = ({
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
               <FormControl fullWidth>
                 <InputLabel>Area</InputLabel>
                 <Select
@@ -474,6 +505,22 @@ const StoresTable = ({
                       {area}
                     </MenuItem>
                   ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+              <FormControl fullWidth>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  value={categoryFilter}
+                  label="Category"
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                >
+                  <MenuItem value="">All Categories</MenuItem>
+                  <MenuItem value="A">A (75-100)</MenuItem>
+                  <MenuItem value="B">B (50-74)</MenuItem>
+                  <MenuItem value="C">C (25-49)</MenuItem>
+                  <MenuItem value="D">D (0-24)</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -573,6 +620,13 @@ const StoresTable = ({
                         />
                       </TableCell>
                       <TableCell>{row.agent_name}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={getCategory(row.final_score)}
+                          color={getCategoryColor(row.final_score) as any}
+                          size="small"
+                        />
+                      </TableCell>
                       <TableCell align="right">
                         <Chip
                           label={row.profit_score}
