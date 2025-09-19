@@ -167,7 +167,7 @@ export default function RootLayout({
               </Box>
 
               <Typography variant="body2" color="textSecondary" sx={{ mb: 3, textAlign: 'center' }}>
-                Page will refresh automatically if data doesn't load properly
+                Page will refresh automatically if data doesn&apos;t load properly
               </Typography>
 
               {/* Manual Refresh Button */}

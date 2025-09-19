@@ -221,7 +221,7 @@ const SettingsManager = () => {
   if (!isAdmin) {
     return (
       <Alert severity="error">
-        You don't have permission to access settings management.
+        You don&apos;t have permission to access settings management.
       </Alert>
     );
   }

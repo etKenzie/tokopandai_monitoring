@@ -103,7 +103,7 @@ export default function Dashboard() {
               Valdo Dashboard
             </Typography>
             <Typography variant="h6" color="textSecondary">
-              Welcome back! Here's your overview and quick access to your tools.
+              Welcome back! Here&apos;s your overview and quick access to your tools.
             </Typography>
           </Box>
 
@@ -283,7 +283,7 @@ export default function Dashboard() {
                       }}
                     >
                       <Typography variant="body1" color="textSecondary">
-                        No pages found matching "{searchQuery}"
+                        No pages found matching &quot;{searchQuery}&quot;
                       </Typography>
                     </Box>
                   )}

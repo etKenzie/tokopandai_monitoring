@@ -74,7 +74,7 @@ export default function ProtectedRoute({
               Access Denied
             </Typography>
             <Typography variant="body1" color="textSecondary" textAlign="center">
-              You don't have permission to access this page.
+              You don&apos;t have permission to access this page.
               <br />
               Required roles: {requiredRoles.join(', ')}
               <br />

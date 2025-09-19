@@ -102,7 +102,7 @@ export default function AccessDeniedPage() {
               </Typography>
               
               <Typography variant="body1" color="textSecondary" mb={3}>
-                You don't have permission to access the dashboard.
+                You don&apos;t have permission to access the dashboard.
               </Typography>
 
               <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
