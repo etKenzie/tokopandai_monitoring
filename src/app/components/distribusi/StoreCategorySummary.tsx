@@ -68,8 +68,8 @@ const StoreCategorySummary = ({ stores }: StoreCategorySummaryProps) => {
                     <Chip
                       label={category}
                       color={getCategoryColor(category) as any}
-                      size="large"
-                      sx={{ fontSize: '1.2rem', fontWeight: 'bold', minWidth: '50px' }}
+                      size="medium"
+                      sx={{ fontSize: '1.2rem', fontWeight: 'bold', minWidth: '50px', height: '40px' }}
                     />
                   </Box>
                   <Typography variant="h4" fontWeight="bold" color="primary">
