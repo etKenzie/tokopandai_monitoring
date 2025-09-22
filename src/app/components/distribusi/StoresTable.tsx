@@ -64,6 +64,7 @@ interface StoresTableProps {
     segments?: string;
     user_status?: string;
     category?: string;
+    interval_months?: number;
   };
   title?: string;
   agentName?: string;
@@ -98,7 +99,8 @@ const StoresTable = ({
         agent_name: agentName || filters.agent_name,
         areas: filters.areas,
         segments: filters.segments,
-        user_status: filters.user_status
+        user_status: filters.user_status,
+        interval_months: filters.interval_months
       });
       
       setStores(response.data);
@@ -114,7 +116,7 @@ const StoresTable = ({
     fetchStoresData();
     // Reset pagination when filters change
     setPage(0);
-  }, [filters.agent_name, filters.areas, filters.segments, filters.user_status, agentName]);
+  }, [filters.agent_name, filters.areas, filters.segments, filters.user_status, filters.interval_months, agentName]);
 
   const handleRequestSort = (property: SortableField) => {
     const isAsc = orderBy === property && order === 'asc';

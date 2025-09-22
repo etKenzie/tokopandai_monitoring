@@ -35,7 +35,8 @@ const StoresPage = () => {
     areas: '',
     segments: '',
     user_status: 'Active',
-    category: ''
+    category: '',
+    interval_months: 1
   });
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(false);
@@ -49,7 +50,8 @@ const StoresPage = () => {
           agent_name: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent_name,
           areas: filters.areas,
           segments: filters.segments,
-          user_status: filters.user_status
+          user_status: filters.user_status,
+          interval_months: filters.interval_months
         });
         setStores(response.data);
       } catch (error) {
@@ -60,7 +62,7 @@ const StoresPage = () => {
     };
 
     fetchStoresData();
-  }, [filters.agent_name, filters.areas, filters.segments, filters.user_status, hasRestrictedRole, userRoleForFiltering]);
+  }, [filters.agent_name, filters.areas, filters.segments, filters.user_status, filters.interval_months, hasRestrictedRole, userRoleForFiltering]);
 
   return (
     <PageContainer title="Stores" description="View and manage stores">
@@ -97,6 +99,21 @@ const StoresPage = () => {
                 </Select>
               </FormControl>
             </Grid>
+            {/* <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <FormControl fullWidth>
+                <InputLabel>Time Interval</InputLabel>
+                <Select
+                  value={filters.interval_months}
+                  label="Time Interval"
+                  onChange={(e) => setFilters(prev => ({ ...prev, interval_months: Number(e.target.value) }))}
+                >
+                  <MenuItem value={1}>1 Month</MenuItem>
+                  <MenuItem value={3}>3 Months</MenuItem>
+                  <MenuItem value={6}>6 Months</MenuItem>
+                  <MenuItem value={12}>12 Months</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid> */}
           </Grid>
         </Box>
 

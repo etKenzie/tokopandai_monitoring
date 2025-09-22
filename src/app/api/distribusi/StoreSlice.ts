@@ -29,6 +29,7 @@ export interface StoreQueryParams {
   areas?: string;
   segments?: string;
   user_status?: string;
+  interval_months?: number;
 }
 
 // Get API URL from environment variable with fallback
@@ -45,6 +46,7 @@ export const fetchStores = async (params: StoreQueryParams): Promise<StoresRespo
   if (params.areas) queryParams.append('areas', params.areas);
   if (params.segments) queryParams.append('segments', params.segments);
   if (params.user_status) queryParams.append('user_status', params.user_status);
+  if (params.interval_months) queryParams.append('interval_months', params.interval_months.toString());
   
   const url = `${baseUrl}/api/store?${queryParams.toString()}`;
   
@@ -138,13 +140,20 @@ export interface StoreOrdersResponse {
 }
 
 // Fetch Store Orders by user_id
-export const fetchStoreOrders = async (userId: string): Promise<StoreOrdersResponse> => {
+export const fetchStoreOrders = async (userId: string, intervalMonths?: number): Promise<StoreOrdersResponse> => {
   const baseUrl = AM_API_URL;
   
-  const url = `${baseUrl}/api/store/orders?user_id=${encodeURIComponent(userId)}`;
+  const queryParams = new URLSearchParams();
+  queryParams.append('user_id', userId);
+  if (intervalMonths) {
+    queryParams.append('interval_months', intervalMonths.toString());
+  }
+  
+  const url = `${baseUrl}/api/store/orders?${queryParams.toString()}`;
   
   console.log('Fetching store orders from:', url);
   console.log('User ID:', userId);
+  console.log('Interval Months:', intervalMonths);
   
   const response = await fetch(url, {
     method: 'GET',
@@ -155,6 +164,57 @@ export const fetchStoreOrders = async (userId: string): Promise<StoreOrdersRespo
   
   if (!response.ok) {
     throw new Error(`Failed to fetch store orders: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Types for Store Products API
+export interface StoreProduct {
+  product_id: string;
+  product_name: string;
+  sku: string;
+  brands: string;
+  type_category: string;
+  sub_category: string;
+  total_invoice: number;
+  average_buy_price: number;
+  order_count: number;
+  total_quantity: number;
+}
+
+export interface StoreProductsResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: StoreProduct[];
+}
+
+// Fetch Store Products by user_id
+export const fetchStoreProducts = async (userId: string, intervalMonths?: number): Promise<StoreProductsResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  const queryParams = new URLSearchParams();
+  queryParams.append('user_id', userId);
+  if (intervalMonths) {
+    queryParams.append('interval_months', intervalMonths.toString());
+  }
+  
+  const url = `${baseUrl}/api/store/products?${queryParams.toString()}`;
+  
+  console.log('Fetching store products from:', url);
+  console.log('User ID:', userId);
+  console.log('Interval Months:', intervalMonths);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch store products: ${response.status} ${response.statusText}`);
   }
   
   return response.json();

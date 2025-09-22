@@ -2,24 +2,29 @@
 
 import { Close as CloseIcon } from '@mui/icons-material';
 import {
-    Alert,
-    Box,
-    Button,
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    Divider,
-    Grid,
-    Paper,
-    Tab,
-    Tabs,
-    Typography
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  FormControl,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Tab,
+  Tabs,
+  Typography
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { Store, StoreOrder, fetchStoreOrders } from '../../api/distribusi/StoreSlice';
+import { Store, StoreOrder, StoreProduct, fetchStoreOrders, fetchStoreProducts } from '../../api/distribusi/StoreSlice';
 import StoreOrdersTable from './StoreOrdersTable';
+import StoreProductsTable from './StoreProductsTable';
 import StoreSummaryTab from './StoreSummaryTab';
 
 interface StoreDetailModalProps {
@@ -56,16 +61,28 @@ function TabPanel(props: TabPanelProps) {
 
 const StoreDetailModal = ({ open, onClose, store }: StoreDetailModalProps) => {
   const [storeOrders, setStoreOrders] = useState<StoreOrder[]>([]);
+  const [storeProducts, setStoreProducts] = useState<StoreProduct[]>([]);
   const [loading, setLoading] = useState(false);
+  const [productsLoading, setProductsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [productsError, setProductsError] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
+  const [intervalMonths, setIntervalMonths] = useState(1);
 
   useEffect(() => {
     if (open && store) {
       fetchStoreOrdersData();
+      fetchStoreProductsData();
       setTabValue(0); // Reset to first tab when opening
     }
   }, [open, store]);
+
+  // Refetch products data when intervalMonths changes
+  useEffect(() => {
+    if (open && store) {
+      fetchStoreProductsData();
+    }
+  }, [intervalMonths]);
 
   const fetchStoreOrdersData = async () => {
     if (!store) return;
@@ -80,6 +97,22 @@ const StoreDetailModal = ({ open, onClose, store }: StoreDetailModalProps) => {
       console.error('Failed to fetch store orders:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStoreProductsData = async () => {
+    if (!store) return;
+
+    setProductsLoading(true);
+    setProductsError(null);
+    try {
+      const response = await fetchStoreProducts(store.user_id, intervalMonths);
+      setStoreProducts(response.data);
+    } catch (err) {
+      setProductsError(err instanceof Error ? err.message : 'Failed to fetch store products');
+      console.error('Failed to fetch store products:', err);
+    } finally {
+      setProductsLoading(false);
     }
   };
 
@@ -252,6 +285,7 @@ const StoreDetailModal = ({ open, onClose, store }: StoreDetailModalProps) => {
               <Tabs value={tabValue} onChange={handleTabChange} aria-label="store detail tabs">
                 <Tab label="Summary" />
                 <Tab label="Orders" />
+                <Tab label="Products" />
               </Tabs>
             </Box>
 
@@ -261,6 +295,36 @@ const StoreDetailModal = ({ open, onClose, store }: StoreDetailModalProps) => {
 
             <TabPanel value={tabValue} index={1}>
               <StoreOrdersTable storeOrders={storeOrders} />
+            </TabPanel>
+
+            <TabPanel value={tabValue} index={2}>
+              {/* Products Interval Filter */}
+              <Box mb={3} sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                <FormControl size="small" sx={{ minWidth: 150 }}>
+                  <InputLabel>Time Interval</InputLabel>
+                  <Select
+                    value={intervalMonths}
+                    label="Time Interval"
+                    onChange={(e) => setIntervalMonths(Number(e.target.value))}
+                  >
+                    <MenuItem value={1}>1 Month</MenuItem>
+                    <MenuItem value={3}>3 Months</MenuItem>
+                    <MenuItem value={6}>6 Months</MenuItem>
+                    <MenuItem value={12}>12 Months</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+
+              {productsError ? (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {productsError}
+                </Alert>
+              ) : (
+                <StoreProductsTable 
+                  products={storeProducts} 
+                  loading={productsLoading} 
+                />
+              )}
             </TabPanel>
           </Box>
         )}
