@@ -340,7 +340,7 @@ const SalesOverview = () => {
     return 0;
   };
 
-  // Calculate days remaining until target date
+  // Calculate days remaining until target date (excluding Sundays)
   const getDaysRemaining = () => {
     // Use configurable target date from settings, fallback to default
     const targetDateStr = settings?.target_date || '2025-10-03';
@@ -351,78 +351,174 @@ const SalesOverview = () => {
     today.setHours(0, 0, 0, 0);
     targetDate.setHours(0, 0, 0, 0);
     
-    const timeDiff = targetDate.getTime() - today.getTime();
-    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    // If target date has passed, return 0
+    if (targetDate <= today) {
+      return 0;
+    }
     
-    return Math.max(0, daysDiff); // Return 0 if target date has passed
+    // Count working days (excluding Sundays) between today and target date
+    let workingDays = 0;
+    const currentDate = new Date(today);
+    
+    while (currentDate < targetDate) {
+      // Check if current day is not Sunday (0 = Sunday)
+      if (currentDate.getDay() !== 0) {
+        workingDays++;
+      }
+      // Move to next day
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    return workingDays;
+  };
+
+  // Calculate daily and weekly profit to goal
+  const getDailyProfitToGoal = () => {
+    const profitRemaining = (salesData?.total_profit || 0) - getGoalProfit();
+    const daysRemaining = getDaysRemaining();
+    
+    // If goal is already met or exceeded, return 0
+    if (profitRemaining >= 0) {
+      return 0;
+    }
+    
+    // Return positive number (absolute value) representing profit needed per day
+    return daysRemaining > 0 ? Math.abs(profitRemaining) / daysRemaining : 0;
+  };
+
+  const getWeeklyProfitToGoal = () => {
+    const profitRemaining = (salesData?.total_profit || 0) - getGoalProfit();
+    const weeksRemaining = getDaysRemaining() / 7;
+    
+    // If goal is already met or exceeded, return 0
+    if (profitRemaining >= 0) {
+      return 0;
+    }
+    
+    // Return positive number (absolute value) representing profit needed per week
+    return weeksRemaining > 0 ? Math.abs(profitRemaining) / weeksRemaining : 0;
+  };
+
+  // Dynamic color calculation based on progress percentage
+  const getProgressColor = (progressPercentage: number) => {
+    if (progressPercentage >= 100) {
+      return '#22c55e'; // Green for 100% and above
+    } else if (progressPercentage >= 80) {
+      return '#4ade80'; // Light green for 80-99%
+    } else if (progressPercentage >= 60) {
+      return '#f59e0b'; // Orange for 60-79%
+    } else if (progressPercentage >= 40) {
+      return '#d97706'; // Dark orange for 40-59%
+    } else if (progressPercentage >= 20) {
+      return '#f87171'; // Light red for 20-39%
+    } else {
+      return '#ef4444'; // Red for 0-19%
+    }
+  };
+
+  // Calculate progress percentage for profit to goal metrics
+  const getProfitToGoalProgress = (currentValue: number, targetValue: number) => {
+    if (targetValue === 0) return 100; // If no target, consider it 100%
+    return Math.min(100, (currentValue / targetValue) * 100);
   };
 
   // Prepare currency summary tiles data
   const getCurrencySummaryTiles = () => {
     return [
-      // First row - 4 tiles
+      // First row - 6 tiles
       {
         title: 'Total Invoice',
         value: salesData?.total_invoice || 0,
         isCurrency: true,
-        mdSize: 3,
+        mdSize: 2.4,
         isLoading: loading && !salesData
       },
       {
         title: 'Total Profit',
         value: salesData?.total_profit || 0,
         isCurrency: true,
-        mdSize: 3,
+        mdSize: 2.4,
         isLoading: loading && !salesData
       },
       {
         title: 'Goal Profit',
         value: getGoalProfit(),
         isCurrency: true,
-        mdSize: 3,
+        mdSize: 2.4,
         isLoading: false
       },
       {
         title: 'Profit Remaining',
         value:  (salesData?.total_profit || 0) - getGoalProfit(),
         isCurrency: true,
-        mdSize: 3,
+        mdSize: 2.4,
         isLoading: loading && !salesData,
-        color: ( (salesData?.total_profit || 0) - getGoalProfit()) >= 0 ? 'success.main' : 'error.main'
-      },
-      // Second row - 4 tiles
-      {
-        title: 'Average Daily Profit',
-        value: salesData?.average_profit_day || 0,
-        isCurrency: true,
-        mdSize: 3,
-        isLoading: loading && !salesData
-      },
-      {
-        title: 'Average Weekly Profit',
-        value: salesData?.average_profit_week || 0,
-        isCurrency: true,
-        mdSize: 3,
-        isLoading: loading && !salesData
-      },
-      {
-        title: 'Days Remaining',
-        value: getDaysRemaining(),
-        isCurrency: false,
-        unit: ' days',
-        mdSize: 3,
-        isLoading: false,
-        color: getDaysRemaining() <= 30 ? 'error.main' : getDaysRemaining() <= 90 ? 'warning.main' : 'success.main'
+        color: ( (salesData?.total_profit || 0) - getGoalProfit()) >= 0 ? '#22c55e' : '#ef4444'
       },
       {
         title: 'Profit Progress',
         value: getGoalProfit() > 0 ? ((salesData?.total_profit || 0) / getGoalProfit()) * 100 : 0,
         isCurrency: false,
         unit: '%',
-        mdSize: 3,
+        mdSize: 2.4,
         isLoading: loading && !salesData,
-        color: getGoalProfit() > 0 ? ((salesData?.total_profit || 0) / getGoalProfit()) >= 1 ? 'success.main' : 'warning.main' : 'text.primary'
-      }
+        color: getProgressColor(getGoalProfit() > 0 ? ((salesData?.total_profit || 0) / getGoalProfit()) * 100 : 0)
+      },
+      
+      // Second row - 6 tiles
+      {
+        title: 'Average Daily Profit',
+        value: salesData?.average_profit_day || 0,
+        isCurrency: true,
+        mdSize: 2.4,
+        isLoading: loading && !salesData
+      },
+      {
+        title: 'Average Weekly Profit',
+        value: salesData?.average_profit_week || 0,
+        isCurrency: true,
+        mdSize: 2.4,
+        isLoading: loading && !salesData
+      },
+      {
+        title: 'Daily Profit to Goal',
+        value: getDailyProfitToGoal(),
+        isCurrency: true,
+        mdSize: 2.4,
+        isLoading: loading && !salesData,
+        color: (() => {
+          const dailyProfitToGoal = getDailyProfitToGoal();
+          if (dailyProfitToGoal === 0) return '#22c55e'; // Goal met - green
+          
+          const currentDailyProfit = salesData?.average_profit_day || 0;
+          const progressPercentage = getProfitToGoalProgress(currentDailyProfit, dailyProfitToGoal);
+          return getProgressColor(progressPercentage);
+        })()
+      },
+      {
+        title: 'Weekly Profit to Goal',
+        value: getWeeklyProfitToGoal(),
+        isCurrency: true,
+        mdSize: 2.4,
+        isLoading: loading && !salesData,
+        color: (() => {
+          const weeklyProfitToGoal = getWeeklyProfitToGoal();
+          if (weeklyProfitToGoal === 0) return '#22c55e'; // Goal met - green
+          
+          const currentWeeklyProfit = salesData?.average_profit_week || 0;
+          const progressPercentage = getProfitToGoalProgress(currentWeeklyProfit, weeklyProfitToGoal);
+          return getProgressColor(progressPercentage);
+        })()
+      },
+      {
+        title: 'Days Remaining',
+        value: getDaysRemaining(),
+        isCurrency: false,
+        unit: ' days',
+        mdSize: 2.4,
+        isLoading: false,
+        color: getDaysRemaining() <= 30 ? '#ef4444' : getDaysRemaining() <= 90 ? '#f59e0b' : '#22c55e'
+      },
     ];
   };
 

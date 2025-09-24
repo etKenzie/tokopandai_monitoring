@@ -2,23 +2,35 @@
 
 import { StoreOrder } from '@/app/api/distribusi/StoreSlice';
 import {
-    Box,
-    Card,
-    CardContent,
-    Grid,
-    Paper,
-    Typography
+  Box,
+  Card,
+  CardContent,
+  FormControl,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Typography
 } from '@mui/material';
 import dynamic from "next/dynamic";
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
+
+type ChartType = 'totals' | 'margin';
 
 interface StoreSummaryTabProps {
   storeOrders: StoreOrder[];
 }
 
 const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
+  const [chartType, setChartType] = useState<ChartType>('totals');
+
+  const handleChartTypeChange = (event: any) => {
+    setChartType(event.target.value as ChartType);
+  };
+
   // Process data to get monthly summaries
   const monthlyData = useMemo(() => {
     const monthMap = new Map<string, {
@@ -27,6 +39,7 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
       total_profit: number;
       total_owed: number;
       order_count: number;
+      margin: number;
     }>();
 
     storeOrders.forEach(order => {
@@ -37,7 +50,8 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
           total_invoice: 0,
           total_profit: 0,
           total_owed: 0,
-          order_count: 0
+          order_count: 0,
+          margin: 0
         });
       }
 
@@ -52,7 +66,10 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
       }
     });
 
-    return Array.from(monthMap.values()).sort((a, b) => {
+    return Array.from(monthMap.values()).map(item => ({
+      ...item,
+      margin: item.total_invoice > 0 ? (item.total_profit / item.total_invoice) * 100 : 0
+    })).sort((a, b) => {
       // Sort by month chronologically
       const monthNames = [
         'January', 'February', 'March', 'April', 'May', 'June',
@@ -79,7 +96,7 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
 
   // Calculate overall totals
   const overallTotals = useMemo(() => {
-    return storeOrders.reduce((totals, order) => {
+    const totals = storeOrders.reduce((totals, order) => {
       totals.total_invoice += order.total_invoice;
       totals.total_profit += order.profit;
       totals.order_count += 1;
@@ -95,6 +112,11 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
       total_owed: 0,
       order_count: 0
     });
+
+    return {
+      ...totals,
+      margin: totals.total_invoice > 0 ? (totals.total_profit / totals.total_invoice) * 100 : 0
+    };
   }, [storeOrders]);
 
   const formatCurrency = (amount: number) => {
@@ -106,6 +128,10 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
     }).format(amount);
   };
 
+  const formatPercentage = (value: number) => {
+    return `${value.toFixed(2)}%`;
+  };
+
   // Prepare chart data
   const chartData = useMemo(() => {
     if (monthlyData.length === 0) {
@@ -113,69 +139,123 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
     }
 
     const categories = monthlyData.map(item => item.month);
-    const series = [
-      {
-        name: 'Total Invoice',
-        data: monthlyData.map(item => item.total_invoice)
-      },
-      {
-        name: 'Total Profit',
-        data: monthlyData.map(item => item.total_profit)
-      }
-    ];
+    let series: any[] = [];
+
+    switch (chartType) {
+      case 'totals':
+        series = [
+          {
+            name: 'Total Invoice',
+            data: monthlyData.map(item => item.total_invoice)
+          },
+          {
+            name: 'Total Profit',
+            data: monthlyData.map(item => item.total_profit)
+          }
+        ];
+        break;
+      case 'margin':
+        series = [
+          {
+            name: 'Margin %',
+            data: monthlyData.map(item => item.margin)
+          }
+        ];
+        break;
+    }
 
     return { categories, series };
-  }, [monthlyData]);
+  }, [monthlyData, chartType]);
 
-  const chartOptions = {
-    chart: {
-      type: 'line' as const,
-      height: 350,
-      toolbar: {
-        show: false
+  const chartOptions = useMemo(() => {
+    const getYAxisConfig = () => {
+      if (chartType === 'margin') {
+        return {
+          labels: {
+            formatter: function(value: number) {
+              return formatPercentage(value);
+            }
+          }
+        };
+      } else {
+        return {
+          labels: {
+            formatter: function(value: number) {
+              return formatCurrency(value);
+            }
+          }
+        };
       }
-    },
-    stroke: {
-      curve: 'smooth' as const,
-      width: 3
-    },
-    xaxis: {
-      categories: chartData.categories,
-      labels: {
-        style: {
-          fontSize: '12px'
+    };
+
+    const getTooltipConfig = () => {
+      if (chartType === 'margin') {
+        return {
+          y: {
+            formatter: function(value: number) {
+              return formatPercentage(value);
+            }
+          }
+        };
+      } else {
+        return {
+          y: {
+            formatter: function(value: number) {
+              return formatCurrency(value);
+            }
+          }
+        };
+      }
+    };
+
+    const getColors = () => {
+      switch (chartType) {
+        case 'margin':
+          return ['#F59E0B'];
+        case 'totals':
+        default:
+          return ['#3B82F6', '#10B981'];
+      }
+    };
+
+    return {
+      chart: {
+        type: 'line' as const,
+        height: 350,
+        toolbar: {
+          show: false
         }
-      }
-    },
-    yaxis: {
-      labels: {
-        formatter: function(value: number) {
-          return formatCurrency(value);
+      },
+      stroke: {
+        curve: 'smooth' as const,
+        width: 3
+      },
+      xaxis: {
+        categories: chartData.categories,
+        labels: {
+          style: {
+            fontSize: '12px'
+          }
         }
+      },
+      yaxis: getYAxisConfig(),
+      tooltip: getTooltipConfig(),
+      colors: getColors(),
+      grid: {
+        borderColor: '#E5E7EB',
+        strokeDashArray: 4
+      },
+      markers: {
+        size: 6,
+        strokeColors: '#FFFFFF',
+        strokeWidth: 2
+      },
+      legend: {
+        position: 'bottom' as const,
+        horizontalAlign: 'center' as const
       }
-    },
-    tooltip: {
-      y: {
-        formatter: function(value: number) {
-          return formatCurrency(value);
-        }
-      }
-    },
-    colors: ['#3B82F6', '#10B981'],
-    grid: {
-      borderColor: '#E5E7EB',
-      strokeDashArray: 4
-    },
-    markers: {
-      size: 6,
-      strokeColors: '#FFFFFF',
-      strokeWidth: 2
-    },
-    legend: {
-      position: 'bottom' as const,
-      horizontalAlign: 'center' as const
-    }
-  };
+    };
+  }, [chartData.categories, chartType]);
 
   return (
     <Box>
@@ -186,7 +266,7 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
             Most Recent Month - {mostRecentMonth.month}
           </Typography>
           <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
               <Paper sx={{ p: 2, textAlign: 'center' }}>
                 <Typography variant="h4" color="primary" fontWeight="bold">
                   {formatCurrency(mostRecentMonth.total_invoice)}
@@ -196,7 +276,7 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
                 </Typography>
               </Paper>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
               <Paper sx={{ p: 2, textAlign: 'center' }}>
                 <Typography variant="h4" color="success.main" fontWeight="bold">
                   {formatCurrency(mostRecentMonth.total_profit)}
@@ -206,7 +286,7 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
                 </Typography>
               </Paper>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
               <Paper sx={{ p: 2, textAlign: 'center' }}>
                 <Typography variant="h4" color="error.main" fontWeight="bold">
                   {formatCurrency(mostRecentMonth.total_owed)}
@@ -216,13 +296,23 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
                 </Typography>
               </Paper>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
               <Paper sx={{ p: 2, textAlign: 'center' }}>
                 <Typography variant="h4" color="info.main" fontWeight="bold">
                   {mostRecentMonth.order_count}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
                   Order Count
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+              <Paper sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="h4" color="warning.main" fontWeight="bold">
+                  {formatPercentage(mostRecentMonth.margin)}
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Margin
                 </Typography>
               </Paper>
             </Grid>
@@ -236,7 +326,7 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
           Overall Summary
         </Typography>
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h4" color="primary" fontWeight="bold">
                 {formatCurrency(overallTotals.total_invoice)}
@@ -246,7 +336,7 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
               </Typography>
             </Paper>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h4" color="success.main" fontWeight="bold">
                 {formatCurrency(overallTotals.total_profit)}
@@ -256,7 +346,7 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
               </Typography>
             </Paper>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h4" color="error.main" fontWeight="bold">
                 {formatCurrency(overallTotals.total_owed)}
@@ -266,7 +356,7 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
               </Typography>
             </Paper>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="h4" color="info.main" fontWeight="bold">
                 {overallTotals.order_count}
@@ -276,15 +366,42 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
               </Typography>
             </Paper>
           </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="h4" color="warning.main" fontWeight="bold">
+                {formatPercentage(overallTotals.margin)}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Overall Margin
+              </Typography>
+            </Paper>
+          </Grid>
         </Grid>
       </Box>
 
       {/* Monthly Trend Chart */}
       <Card>
         <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Monthly Trend
-          </Typography>
+          {/* Controls */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+            <Typography variant="h6" sx={{ margin: 0 }}>
+              Monthly Trend
+            </Typography>
+            
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              <FormControl size="small">
+                <InputLabel>Chart Type</InputLabel>
+                <Select
+                  value={chartType}
+                  label="Chart Type"
+                  onChange={handleChartTypeChange}
+                >
+                  <MenuItem value="totals">Totals</MenuItem>
+                  <MenuItem value="margin">Margin</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          </Box>
           <Box sx={{ height: 400, position: 'relative' }}>
             {chartData.categories.length > 0 ? (
               <ReactApexChart
