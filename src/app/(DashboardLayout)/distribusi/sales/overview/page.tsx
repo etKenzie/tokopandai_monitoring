@@ -50,7 +50,8 @@ const SalesOverview = () => {
     month: '',
     year: '',
     agent: '',
-    area: ''
+    area: '',
+    segment: ''
   });
 
   // Additional filter for status_payment
@@ -90,6 +91,7 @@ const SalesOverview = () => {
           month: formattedMonth,
           agent_name: agentName,
           area: currentFilters.area || undefined,
+          segment: currentFilters.segment || undefined,
           status_payment: paymentStatus || undefined,
         });
         console.log('Sales data response:', response);
@@ -127,6 +129,7 @@ const SalesOverview = () => {
           month: formattedMonth,
           agent_name: agentName,
           area: currentFilters.area || undefined,
+          segment: currentFilters.segment || undefined,
           status_payment: paymentStatus || undefined,
         });
         console.log('Total stores data response:', response);
@@ -171,6 +174,7 @@ const SalesOverview = () => {
           end_month: formattedMonth,
           agent_name: agentName,
           area: currentFilters.area || undefined,
+          segment: currentFilters.segment || undefined,
           status_payment: paymentStatus || undefined,
         });
         console.log('Monthly summary data response:', response);
@@ -240,7 +244,7 @@ const SalesOverview = () => {
       fetchMonthlySummaryCallback(filters, statusPayment);
       fetchFiltersCallback(filters.month, filters.year);
     }
-  }, [filters.month, filters.year, filters.agent, filters.area, statusPayment, fetchSalesDataCallback, fetchTotalStoresCallback, fetchMonthlySummaryCallback, fetchFiltersCallback]);
+  }, [filters.month, filters.year, filters.agent, filters.area, filters.segment, statusPayment, fetchSalesDataCallback, fetchTotalStoresCallback, fetchMonthlySummaryCallback, fetchFiltersCallback]);
 
   // Get goal profit based on selected agent and month
   const getGoalProfit = () => {
@@ -606,6 +610,23 @@ const SalesOverview = () => {
               </FormControl>
             </Grid>
 
+            {/* Segment Filter */}
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Segment</InputLabel>
+                <Select
+                  value={filters.segment}
+                  label="Segment"
+                  onChange={(e) => handleFiltersChange({ ...filters, segment: e.target.value })}
+                >
+                  <MenuItem value="">All Segments</MenuItem>
+                  <MenuItem value="RESELLER">RESELLER</MenuItem>
+                  <MenuItem value="HORECA">HORECA</MenuItem>
+                  <MenuItem value="OTHER">OTHER</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
             {/* Payment Status Filter */}
             <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
               <FormControl fullWidth size="small">
@@ -643,6 +664,7 @@ const SalesOverview = () => {
             filters={{
               agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent,
               area: filters.area,
+              segment: filters.segment,
               month: filters.month,
               year: filters.year,
               status_payment: statusPayment
@@ -673,6 +695,7 @@ const SalesOverview = () => {
             filters={{
               agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent,
               area: filters.area,
+              segment: filters.segment,
               month: filters.month,
               year: filters.year,
               status_payment: statusPayment

@@ -16,6 +16,7 @@ export interface DistribusiFilterValues {
   year: string;
   agent: string;
   area: string;
+  segment: string;
 }
 
 interface DistribusiFiltersProps {

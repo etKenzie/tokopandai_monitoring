@@ -21,6 +21,7 @@ interface SalesMonthlyChartProps {
   filters: {
     agent: string;
     area: string;
+    segment?: string;
     month?: string;
     year?: string;
     status_payment?: string;

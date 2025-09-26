@@ -527,6 +527,7 @@ export interface SalesSummaryQueryParams {
   month?: string;
   agent_name?: string;
   area?: string;
+  segment?: string;
   status_payment?: string;
 }
 
@@ -540,6 +541,7 @@ export const fetchSalesSummary = async (params: SalesSummaryQueryParams): Promis
   if (params.month) queryParams.append('month', params.month);
   if (params.agent_name) queryParams.append('agent_name', params.agent_name);
   if (params.area) queryParams.append('area', params.area);
+  if (params.segment) queryParams.append('segment', params.segment);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
   const url = `${baseUrl}/api/order/summary?${queryParams.toString()}`;
@@ -587,6 +589,7 @@ export interface SalesSummaryMonthlyQueryParams {
   end_month?: string;
   agent_name?: string;
   area?: string;
+  segment?: string;
   status_payment?: string;
 }
 
@@ -601,6 +604,7 @@ export const fetchSalesSummaryMonthly = async (params: SalesSummaryMonthlyQueryP
   if (params.end_month) queryParams.append('end_month', params.end_month);
   if (params.agent_name) queryParams.append('agent_name', params.agent_name);
   if (params.area) queryParams.append('area', params.area);
+  if (params.segment) queryParams.append('segment', params.segment);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
   const url = `${baseUrl}/api/order/summary-monthly?${queryParams.toString()}`;
@@ -642,6 +646,7 @@ export interface TotalStoresQueryParams {
   month?: string;
   agent_name?: string;
   area?: string;
+  segment?: string;
   status_payment?: string;
 }
 
@@ -655,6 +660,7 @@ export const fetchTotalStores = async (params: TotalStoresQueryParams): Promise<
   if (params.month) queryParams.append('month', params.month);
   if (params.agent_name) queryParams.append('agent_name', params.agent_name);
   if (params.area) queryParams.append('area', params.area);
+  if (params.segment) queryParams.append('segment', params.segment);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
   const url = `${baseUrl}/api/order/total-stores?${queryParams.toString()}`;
@@ -841,6 +847,7 @@ export const fetchUpdatedSalesSummary = async (params: SalesSummaryQueryParams):
   if (params.month) queryParams.append('month', params.month);
   if (params.agent_name) queryParams.append('agent_name', params.agent_name);
   if (params.area) queryParams.append('area', params.area);
+  if (params.segment) queryParams.append('segment', params.segment);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
   const url = `${baseUrl}/api/order/summary?${queryParams.toString()}`;
@@ -874,6 +881,7 @@ export const fetchUpdatedSalesSummaryMonthly = async (params: SalesSummaryMonthl
   if (params.end_month) queryParams.append('end_month', params.end_month);
   if (params.agent_name) queryParams.append('agent_name', params.agent_name);
   if (params.area) queryParams.append('area', params.area);
+  if (params.segment) queryParams.append('segment', params.segment);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
   const url = `${baseUrl}/api/order/summary-monthly?${queryParams.toString()}`;
