@@ -81,6 +81,12 @@ const Menuitems: MenuitemsType[] = [
         icon: IconMapPlus,
         href: "/distribusi/sales/noo",
       },
+      {
+        id: uniqueId(),
+        title: "Compare",
+        icon: IconMenuOrder,
+        href: "/distribusi/sales/compare",
+      },
       
       
     ],

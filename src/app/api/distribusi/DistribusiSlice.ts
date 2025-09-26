@@ -975,3 +975,70 @@ export const fetchNOOData = async (params: NOOQueryParams): Promise<NOOResponse>
   
   return response.json();
 };
+
+// Types for Compare API
+export interface CompareData {
+  W1_total_invoice: number;
+  W1_total_profit: number;
+  W1_invoice_count: number;
+  W1_margin: number;
+  W2_total_invoice: number;
+  W2_total_profit: number;
+  W2_invoice_count: number;
+  W2_margin: number;
+  W3_total_invoice: number;
+  W3_total_profit: number;
+  W3_invoice_count: number;
+  W3_margin: number;
+  W4_total_invoice: number;
+  W4_total_profit: number;
+  W4_invoice_count: number;
+  W4_margin: number;
+  W5_total_invoice?: number;
+  W5_total_profit?: number;
+  W5_invoice_count?: number;
+  W5_margin?: number;
+  total_invoice: number;
+  total_profit: number;
+  total_invoice_count: number;
+  total_margin: number;
+}
+
+export interface CompareResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: CompareData;
+}
+
+// Types for Compare Query Parameters
+export interface CompareQueryParams {
+  month: string;
+  agent_name?: string;
+}
+
+// Fetch Compare Data
+export const fetchCompareData = async (params: CompareQueryParams): Promise<CompareResponse> => {
+  const searchParams = new URLSearchParams();
+  
+  if (params.month) {
+    searchParams.append('month', params.month);
+  }
+  
+  if (params.agent_name) {
+    searchParams.append('agent_name', params.agent_name);
+  }
+  
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/order/compare?${searchParams.toString()}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch compare data: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
