@@ -1,10 +1,9 @@
 'use client';
 
-import { fetchNOOData, fetchOrderFilters, fetchTotalStores, fetchUpdatedSalesSummary, fetchUpdatedSalesSummaryMonthly, MonthlySummaryData, NOOOrder, OrderFiltersData, SalesSummaryData, TotalStoresData } from '@/app/api/distribusi/DistribusiSlice';
+import { fetchOrderFilters, fetchTotalStores, fetchUpdatedSalesSummary, fetchUpdatedSalesSummaryMonthly, MonthlySummaryData, OrderFiltersData, SalesSummaryData, TotalStoresData } from '@/app/api/distribusi/DistribusiSlice';
 import ProtectedRoute from '@/app/components/auth/ProtectedRoute';
 import PageContainer from '@/app/components/container/PageContainer';
 import { DistribusiFilterValues } from '@/app/components/distribusi/DistribusiFilters';
-import NOOTable from '@/app/components/distribusi/NOOTable';
 import SalesMonthlyChart from '@/app/components/distribusi/SalesMonthlyChart';
 import StoresMonthlyChart from '@/app/components/distribusi/StoresMonthlyChart';
 import SummaryTiles from '@/app/components/shared/SummaryTiles';
@@ -39,11 +38,9 @@ const SalesOverview = () => {
   const [salesData, setSalesData] = useState<SalesSummaryData | null>(null);
   const [monthlySummaryData, setMonthlySummaryData] = useState<MonthlySummaryData[]>([]);
   const [totalStoresData, setTotalStoresData] = useState<TotalStoresData | null>(null);
-  const [nooData, setNOOData] = useState<NOOOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [monthlyLoading, setMonthlyLoading] = useState(false);
   const [totalStoresLoading, setTotalStoresLoading] = useState(false);
-  const [nooLoading, setNOOLoading] = useState(false);
   const [availableFilters, setAvailableFilters] = useState<OrderFiltersData | null>(null);
   const [filtersLoading, setFiltersLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -190,51 +187,6 @@ const SalesOverview = () => {
     }
   }, [hasRestrictedRole, userRoleForFiltering]);
 
-  const fetchNOOCallback = useCallback(async (currentFilters: DistribusiFilterValues, paymentStatus: string) => {
-    console.log('=== fetchNOOCallback called ===');
-    console.log('Fetching NOO data with filters:', currentFilters, 'payment status:', paymentStatus);
-    setNOOLoading(true);
-    try {
-      // Only fetch data if we have month and year (required)
-      if (currentFilters.month && currentFilters.year) {
-        // Format month for API (e.g., "08" -> "August 2025")
-        const monthNames = [
-          'January', 'February', 'March', 'April', 'May', 'June',
-          'July', 'August', 'September', 'October', 'November', 'December'
-        ];
-        const monthIndex = parseInt(currentFilters.month, 10) - 1;
-        const monthName = monthNames[monthIndex];
-        const formattedMonth = `${monthName} ${currentFilters.year}`;
-        
-        console.log('NOO Month formatting:', {
-          originalMonth: currentFilters.month,
-          monthIndex: monthIndex,
-          monthName: monthName,
-          formattedMonth: formattedMonth,
-          year: currentFilters.year
-        });
-        
-        // For users with restricted roles, use their mapped agent name instead of filter selection
-        const agentName = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (currentFilters.agent || undefined);
-        
-        const response = await fetchNOOData({
-          month: formattedMonth,
-          agent: agentName,
-          area: currentFilters.area || undefined,
-          status_payment: paymentStatus || undefined,
-        });
-        console.log('NOO data response:', response);
-        setNOOData(response.data);
-      } else {
-        setNOOData([]);
-      }
-    } catch (err) {
-      console.error('Failed to fetch NOO data:', err);
-      setNOOData([]);
-    } finally {
-      setNOOLoading(false);
-    }
-  }, [hasRestrictedRole, userRoleForFiltering]);
 
   const fetchFiltersCallback = useCallback(async (month: string, year: string) => {
     setFiltersLoading(true);
@@ -286,10 +238,9 @@ const SalesOverview = () => {
       fetchSalesDataCallback(filters, statusPayment);
       fetchTotalStoresCallback(filters, statusPayment);
       fetchMonthlySummaryCallback(filters, statusPayment);
-      fetchNOOCallback(filters, statusPayment);
       fetchFiltersCallback(filters.month, filters.year);
     }
-  }, [filters.month, filters.year, filters.agent, filters.area, statusPayment, fetchSalesDataCallback, fetchTotalStoresCallback, fetchMonthlySummaryCallback, fetchNOOCallback, fetchFiltersCallback]);
+  }, [filters.month, filters.year, filters.agent, filters.area, statusPayment, fetchSalesDataCallback, fetchTotalStoresCallback, fetchMonthlySummaryCallback, fetchFiltersCallback]);
 
   // Get goal profit based on selected agent and month
   const getGoalProfit = () => {
@@ -486,14 +437,7 @@ const SalesOverview = () => {
         isCurrency: true,
         mdSize: 2.4,
         isLoading: loading && !salesData,
-        color: (() => {
-          const dailyProfitToGoal = getDailyProfitToGoal();
-          if (dailyProfitToGoal === 0) return '#22c55e'; // Goal met - green
-          
-          const currentDailyProfit = salesData?.average_profit_day || 0;
-          const progressPercentage = getProfitToGoalProgress(currentDailyProfit, dailyProfitToGoal);
-          return getProgressColor(progressPercentage);
-        })()
+        color: getProgressColor(getGoalProfit() > 0 ? ((salesData?.total_profit || 0) / getGoalProfit()) * 100 : 0)
       },
       {
         title: 'Weekly Profit to Goal',
@@ -501,14 +445,7 @@ const SalesOverview = () => {
         isCurrency: true,
         mdSize: 2.4,
         isLoading: loading && !salesData,
-        color: (() => {
-          const weeklyProfitToGoal = getWeeklyProfitToGoal();
-          if (weeklyProfitToGoal === 0) return '#22c55e'; // Goal met - green
-          
-          const currentWeeklyProfit = salesData?.average_profit_week || 0;
-          const progressPercentage = getProfitToGoalProgress(currentWeeklyProfit, weeklyProfitToGoal);
-          return getProgressColor(progressPercentage);
-        })()
+        color: getProgressColor(getGoalProfit() > 0 ? ((salesData?.total_profit || 0) / getGoalProfit()) * 100 : 0)
       },
       {
         title: 'Days Remaining',
@@ -743,21 +680,6 @@ const SalesOverview = () => {
           />
         </Box>
 
-        {/* NOO Table */}
-        <Box mb={3}>
-          <NOOTable 
-            filters={{
-              agent: filters.agent,
-              area: filters.area,
-              month: filters.month,
-              year: filters.year,
-              statusPayment: statusPayment
-            }}
-            title="Number of Orders (NOO)"
-            hasRestrictedRole={hasRestrictedRole}
-            userRoleForFiltering={userRoleForFiltering}
-          />
-        </Box>
       </Box>
     </PageContainer>
   );
