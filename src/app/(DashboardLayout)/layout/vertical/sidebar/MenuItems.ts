@@ -7,8 +7,8 @@ import {
   IconHome,
   IconMailCancel,
   IconMapPlus,
+  IconMenu2,
   IconMenuOrder,
-  IconNewSection,
   IconTrendingUp
 } from "@tabler/icons-react";
 import { uniqueId } from "lodash";
@@ -72,7 +72,7 @@ const Menuitems: MenuitemsType[] = [
       {
         id: uniqueId(),
         title: "Orders",
-        icon: IconMenuOrder,
+        icon: IconMenu2,
         href: "/distribusi/sales/orders",
       },
       {

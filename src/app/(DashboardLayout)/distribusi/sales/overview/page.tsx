@@ -704,18 +704,20 @@ const SalesOverview = () => {
           />
         </Box>
 
-        {/* Order Type Chart */}
-        <Box mb={3}>
-          <OrderTypeChart 
-            filters={{
-              agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent,
-              area: filters.area,
-              segment: filters.segment,
-              month: filters.month,
-              year: filters.year,
-            }}
-          />
-        </Box>
+        {/* Order Type Chart - Only for admin and distribusi roles */}
+        {(roles.includes('admin') || roles.includes('distribusi')) && (
+          <Box mb={3}>
+            <OrderTypeChart 
+              filters={{
+                agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent,
+                area: filters.area,
+                segment: filters.segment,
+                month: filters.month,
+                year: filters.year,
+              }}
+            />
+          </Box>
+        )}
 
       </Box>
     </PageContainer>
