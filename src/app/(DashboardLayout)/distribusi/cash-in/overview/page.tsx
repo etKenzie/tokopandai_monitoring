@@ -41,7 +41,8 @@ const CashInOverview = () => {
     month: '',
     year: '',
     agent: '',
-    area: ''
+    area: '',
+    segment: ''
   });
 
   // Set initial date values in useEffect to avoid hydration issues

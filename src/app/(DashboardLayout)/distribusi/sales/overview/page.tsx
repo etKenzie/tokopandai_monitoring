@@ -4,6 +4,7 @@ import { fetchOrderFilters, fetchTotalStores, fetchUpdatedSalesSummary, fetchUpd
 import ProtectedRoute from '@/app/components/auth/ProtectedRoute';
 import PageContainer from '@/app/components/container/PageContainer';
 import { DistribusiFilterValues } from '@/app/components/distribusi/DistribusiFilters';
+import OrderTypeChart from '@/app/components/distribusi/OrderTypeChart';
 import SalesMonthlyChart from '@/app/components/distribusi/SalesMonthlyChart';
 import StoresMonthlyChart from '@/app/components/distribusi/StoresMonthlyChart';
 import SummaryTiles from '@/app/components/shared/SummaryTiles';
@@ -359,15 +360,15 @@ const SalesOverview = () => {
     if (progressPercentage >= 100) {
       return '#22c55e'; // Green for 100% and above
     } else if (progressPercentage >= 80) {
-      return '#4ade80'; // Light green for 80-99%
+      return '#f59e0b'; // Orange for 80-99%
     } else if (progressPercentage >= 60) {
-      return '#f59e0b'; // Orange for 60-79%
+      return '#d97706'; // Dark orange for 60-79%
     } else if (progressPercentage >= 40) {
-      return '#d97706'; // Dark orange for 40-59%
+      return '#f87171'; // Light red for 40-59%
     } else if (progressPercentage >= 20) {
-      return '#f87171'; // Light red for 20-39%
+      return '#ef4444'; // Red for 20-39%
     } else {
-      return '#ef4444'; // Red for 0-19%
+      return '#dc2626'; // Dark red for 0-19%
     }
   };
 
@@ -699,6 +700,19 @@ const SalesOverview = () => {
               month: filters.month,
               year: filters.year,
               status_payment: statusPayment
+            }}
+          />
+        </Box>
+
+        {/* Order Type Chart */}
+        <Box mb={3}>
+          <OrderTypeChart 
+            filters={{
+              agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent,
+              area: filters.area,
+              segment: filters.segment,
+              month: filters.month,
+              year: filters.year,
             }}
           />
         </Box>
