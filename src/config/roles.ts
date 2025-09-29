@@ -16,7 +16,7 @@ export const ROLES = {
 export const PAGE_ROLES = {
   // Dashboard pages
   KASBON_DASHBOARD: [ROLES.ADMIN],
-  DISTRIBUSI_DASHBOARD: [ROLES.ADMIN, "rully", "rifqi", "oki", "mardi"],
+  DISTRIBUSI_DASHBOARD: [ROLES.ADMIN, "rully", "rifqi", "oki", "mardi", "distribusi"],
   ANALYTICS_DASHBOARD: [ROLES.ANALYST, ROLES.ADMIN],
   
   // Admin pages

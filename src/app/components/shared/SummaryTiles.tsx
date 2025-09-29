@@ -23,12 +23,12 @@ interface SummaryTilesProps {
 const SummaryTiles: React.FC<SummaryTilesProps> = ({ tiles, md = 4 }) => {
   const formatValue = (value: string | number, isCurrency?: boolean) => {
     if (isCurrency && typeof value === 'number') {
-      // Format currency with commas as thousand separators but preserve actual decimals
+      // Format currency with commas as thousand separators, no decimal places
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'IDR',
         minimumFractionDigits: 0,
-        maximumFractionDigits: 3, // Allow up to 3 decimal places if they exist
+        maximumFractionDigits: 0, // No decimal places for currency
       }).format(value);
     }
     
