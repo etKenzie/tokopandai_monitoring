@@ -1050,3 +1050,65 @@ export const fetchCompareData = async (params: CompareQueryParams): Promise<Comp
   
   return response.json();
 };
+
+// Types for Product Summary API
+export interface ProductSummaryData {
+  product_id: string;
+  product_name: string;
+  sku: string;
+  brands: string;
+  type_category: string;
+  sub_category: string;
+  total_invoice: number;
+  average_buy_price: number;
+  order_count: number;
+  total_quantity: number;
+  active_stores: number;
+}
+
+export interface ProductSummaryResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: ProductSummaryData[];
+}
+
+// Types for Product Summary Query Parameters
+export interface ProductSummaryQueryParams {
+  month?: string;
+  agent?: string;
+  area?: string;
+  segment?: string;
+}
+
+// Fetch Product Summary Data
+export const fetchProductSummary = async (params: ProductSummaryQueryParams): Promise<ProductSummaryResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.month) queryParams.append('month', params.month);
+  if (params.agent) queryParams.append('agent', params.agent);
+  if (params.area) queryParams.append('area', params.area);
+  if (params.segment) queryParams.append('segment', params.segment);
+  
+  const url = `${baseUrl}/api/product/summary?${queryParams.toString()}`;
+  
+  console.log('Fetching product summary data from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch product summary data: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};

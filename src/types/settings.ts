@@ -14,6 +14,7 @@ export interface AppSetting {
 export interface SettingsData {
   target_date: string;
   goal_profit: Record<string, Record<string, number>>;
+  goal_cash_in: Record<string, Record<string, number>>;
 }
 
 export interface SettingsContextType {

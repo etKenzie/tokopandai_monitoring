@@ -9,6 +9,7 @@ import {
   IconMapPlus,
   IconMenu2,
   IconMenuOrder,
+  IconPackage,
   IconTrendingUp
 } from "@tabler/icons-react";
 import { uniqueId } from "lodash";
@@ -86,6 +87,12 @@ const Menuitems: MenuitemsType[] = [
         title: "Compare",
         icon: IconMenuOrder,
         href: "/distribusi/sales/compare",
+      },
+      {
+        id: uniqueId(),
+        title: "Products",
+        icon: IconPackage,
+        href: "/distribusi/sales/product",
       },
       
       

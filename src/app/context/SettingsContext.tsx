@@ -53,7 +53,8 @@ export const SettingsProvider = ({ children }: SettingsProviderProps) => {
       // Transform settings array into SettingsData object
       const settingsData: SettingsData = {
         target_date: '2025-10-03', // default
-        goal_profit: {} // default
+        goal_profit: {}, // default
+        goal_cash_in: {} // default
       };
 
       data?.forEach((setting: AppSetting) => {
@@ -61,6 +62,8 @@ export const SettingsProvider = ({ children }: SettingsProviderProps) => {
           settingsData.target_date = setting.value;
         } else if (setting.key === 'goal_profit') {
           settingsData.goal_profit = setting.value;
+        } else if (setting.key === 'goal_cash_in') {
+          settingsData.goal_cash_in = setting.value;
         }
       });
 
