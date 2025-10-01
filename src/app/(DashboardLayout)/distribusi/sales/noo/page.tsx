@@ -7,7 +7,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { useCheckRoles } from "@/app/hooks/useCheckRoles";
 import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from "@/config/roles";
 import { Box, FormControl, Grid, InputLabel, MenuItem, Select, Typography } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const NOOPage = () => {
   const { user, roles, refreshRoles } = useAuth();
@@ -51,15 +51,15 @@ const NOOPage = () => {
   }, []);
 
   return (
-    <PageContainer title="Number of Orders (NOO)" description="View number of orders by store">
+    <PageContainer title="New Ordering Outlet (NOO)" description="View new customers">
       <Box>
         {/* Header */}
         <Box mb={3}>
           <Typography variant="h3" fontWeight="bold" mb={1}>
-            Number of Orders (NOO)
+            New Ordering Outlet (NOO)
           </Typography>
           <Typography variant="body1" color="textSecondary">
-            View and analyze the number of orders by store
+            View and analyze the new customers this month
           </Typography>
           {hasRestrictedRole && (
             <Typography variant="body2" color="info.main" sx={{ mt: 1, fontStyle: 'italic' }}>

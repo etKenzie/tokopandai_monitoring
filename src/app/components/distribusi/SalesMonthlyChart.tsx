@@ -2,18 +2,18 @@
 
 import { SalesSummaryMonthlyResponse, fetchSalesSummaryMonthly } from '@/app/api/distribusi/DistribusiSlice';
 import {
-  Box,
-  Card,
-  CardContent,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
-  Typography
+    Box,
+    Card,
+    CardContent,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
+    SelectChangeEvent,
+    Typography
 } from '@mui/material';
 import dynamic from "next/dynamic";
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -27,11 +27,12 @@ interface SalesMonthlyChartProps {
     status_payment?: string;
   };
   monthlyData?: any[];
+  profitGoals?: Record<string, number>; // Month-Year to goal value mapping
 }
 
 type ChartType = 'amounts' | 'counts' | 'days' | 'margin' | 'avg_profit';
 
-const SalesMonthlyChart = ({ filters, monthlyData }: SalesMonthlyChartProps) => {
+const SalesMonthlyChart = ({ filters, monthlyData, profitGoals }: SalesMonthlyChartProps) => {
   const [chartData, setChartData] = useState<SalesSummaryMonthlyResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [chartType, setChartType] = useState<ChartType>('amounts');
@@ -260,6 +261,16 @@ const SalesMonthlyChart = ({ filters, monthlyData }: SalesMonthlyChartProps) => 
           data: sortedData.map(item => item.total_profit || 0)
         }
       ];
+      
+      // Add profit goal line if profitGoals data is available
+      if (profitGoals) {
+        series.push({
+          name: 'Profit Goal',
+          data: sortedData.map(item => profitGoals[item.month] || 0),
+          type: 'line',
+          color: '#ef4444' // Red color for goal line
+        });
+      }
     } else if (chartType === 'counts') {
       series = [
         {

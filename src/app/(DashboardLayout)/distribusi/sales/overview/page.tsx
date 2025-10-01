@@ -296,6 +296,20 @@ const SalesOverview = () => {
     return 0;
   };
 
+  // Get profit goals for chart range (for monthly chart)
+  const getProfitGoalsForChart = () => {
+    if (!settings?.goal_profit) return {};
+    
+    // For users with restricted roles, use their mapped agent name, otherwise use selected agent or default to NATIONAL
+    const agentKey = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (filters.agent || 'NATIONAL');
+    
+    // Get goals for the selected agent, fallback to NATIONAL
+    const agentGoals = settings.goal_profit[agentKey] || settings.goal_profit['NATIONAL'] || {};
+    
+    console.log('Profit goals for chart:', { agentKey, goals: agentGoals });
+    return agentGoals;
+  };
+
   // Calculate days remaining until target date (excluding Sundays)
   const getDaysRemaining = () => {
     // Use configurable target date from settings, fallback to default
@@ -671,6 +685,7 @@ const SalesOverview = () => {
               status_payment: statusPayment
             }}
             monthlyData={monthlySummaryData}
+            profitGoals={getProfitGoalsForChart()}
           />
         </Box>
 

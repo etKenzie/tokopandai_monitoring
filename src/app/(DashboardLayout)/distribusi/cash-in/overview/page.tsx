@@ -265,7 +265,7 @@ const CashInOverview = () => {
     const totalPaidInvoice = cashInData.paid.paid_total_invoice;
     const goalCashIn = getGoalCashIn();
     const cashInProgress = goalCashIn > 0 ? (totalPaidInvoice / goalCashIn) * 100 : 0;
-    const cashInRemaining = goalCashIn - totalPaidInvoice; // Goal minus actual (how much more needed)
+    const cashInRemaining = totalPaidInvoice - goalCashIn;
 
     return [
       {
@@ -295,7 +295,7 @@ const CashInOverview = () => {
         isCurrency: true,
         mdSize: 2.4,
         isLoading: loading && !cashInData,
-        color: cashInRemaining <= 0 ? '#22c55e' : '#ef4444' // Green if goal achieved (remaining <= 0), red if still need more
+        color: cashInRemaining <= 0 ? '#ef4444' :'#22c55e'  // Green if goal achieved (remaining <= 0), red if still need more
       },
       {
         title: 'Cash-In Progress',

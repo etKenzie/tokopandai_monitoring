@@ -15,6 +15,9 @@ interface ProductFilters {
   year: string;
   area: string;
   segment: string;
+  brand: string;
+  typeCategory: string;
+  subCategory: string;
 }
 
 const ProductPage = () => {
@@ -40,12 +43,26 @@ const ProductPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  // Filter options extracted from product data
+  const [filterOptions, setFilterOptions] = useState<{
+    brands: string[];
+    typeCategories: string[];
+    subCategories: string[];
+  }>({
+    brands: [],
+    typeCategories: [],
+    subCategories: []
+  });
+  
   // Initialize filters with empty values to avoid hydration mismatch
   const [filters, setFilters] = useState<ProductFilters>({
     month: '',
     year: '',
     area: '',
-    segment: ''
+    segment: '',
+    brand: '',
+    typeCategory: '',
+    subCategory: ''
   });
 
   // Set initial date values in useEffect to avoid hydration issues
@@ -59,6 +76,20 @@ const ProductPage = () => {
       month: currentMonth,
       year: currentYear
     }));
+  }, []);
+
+
+  // Extract filter options from product data
+  const extractFilterOptions = useCallback((productData: ProductSummaryData[]) => {
+    const brands = Array.from(new Set(productData.map(p => p.brands).filter(Boolean))).sort();
+    const typeCategories = Array.from(new Set(productData.map(p => p.type_category).filter(Boolean))).sort();
+    const subCategories = Array.from(new Set(productData.map(p => p.sub_category).filter(Boolean))).sort();
+    
+    setFilterOptions({
+      brands,
+      typeCategories,
+      subCategories
+    });
   }, []);
 
   const fetchProductsCallback = useCallback(async (currentFilters: ProductFilters) => {
@@ -85,9 +116,27 @@ const ProductPage = () => {
           segment: currentFilters.segment || undefined,
         });
         console.log('Products data response:', response);
-        setProducts(response.data);
+        
+        // Apply client-side filtering for brand, type category, and sub category
+        let filteredProducts = response.data;
+        
+        if (currentFilters.brand) {
+          filteredProducts = filteredProducts.filter(p => p.brands === currentFilters.brand);
+        }
+        if (currentFilters.typeCategory) {
+          filteredProducts = filteredProducts.filter(p => p.type_category === currentFilters.typeCategory);
+        }
+        if (currentFilters.subCategory) {
+          filteredProducts = filteredProducts.filter(p => p.sub_category === currentFilters.subCategory);
+        }
+        
+        setProducts(filteredProducts);
+        
+        // Extract filter options from the original unfiltered data
+        extractFilterOptions(response.data);
       } else {
         setProducts([]);
+        setFilterOptions({ brands: [], typeCategories: [], subCategories: [] });
       }
     } catch (err) {
       console.error('Failed to fetch products data:', err);
@@ -96,8 +145,7 @@ const ProductPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [hasRestrictedRole, userRoleForFiltering]);
-
+  }, [hasRestrictedRole, userRoleForFiltering, extractFilterOptions]);
 
   const handleFiltersChange = useCallback((newFilters: ProductFilters) => {
     console.log('Filters changed:', newFilters);
@@ -111,7 +159,7 @@ const ProductPage = () => {
     if (filters.month && filters.year) {
       fetchProductsCallback(filters);
     }
-  }, [filters.month, filters.year, filters.area, filters.segment, fetchProductsCallback]);
+  }, [filters.month, filters.year, filters.area, filters.segment, filters.brand, filters.typeCategory, filters.subCategory, fetchProductsCallback]);
 
   return (
     <PageContainer title="Product Performance" description="Monitor product performance and sales metrics">
@@ -215,6 +263,71 @@ const ProductPage = () => {
                   <MenuItem value="RESELLER">RESELLER</MenuItem>
                   <MenuItem value="HORECA">HORECA</MenuItem>
                   <MenuItem value="OTHER">OTHER</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </Box>
+
+        {/* Client-side Filters */}
+        <Box mb={3}>
+          <Typography variant="h6" mb={2} color="textSecondary">
+            Product Filters
+          </Typography>
+          <Grid container spacing={2}>
+            {/* Brand Filter */}
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Brand</InputLabel>
+                <Select
+                  value={filters.brand}
+                  label="Brand"
+                  onChange={(e) => handleFiltersChange({ ...filters, brand: e.target.value })}
+                >
+                  <MenuItem value="">All Brands</MenuItem>
+                  {filterOptions.brands.map((brand) => (
+                    <MenuItem key={brand} value={brand}>
+                      {brand}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Type Category Filter */}
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Type Category</InputLabel>
+                <Select
+                  value={filters.typeCategory}
+                  label="Type Category"
+                  onChange={(e) => handleFiltersChange({ ...filters, typeCategory: e.target.value })}
+                >
+                  <MenuItem value="">All Types</MenuItem>
+                  {filterOptions.typeCategories.map((type) => (
+                    <MenuItem key={type} value={type}>
+                      {type}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Sub Category Filter */}
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Sub Category</InputLabel>
+                <Select
+                  value={filters.subCategory}
+                  label="Sub Category"
+                  onChange={(e) => handleFiltersChange({ ...filters, subCategory: e.target.value })}
+                >
+                  <MenuItem value="">All Sub Categories</MenuItem>
+                  {filterOptions.subCategories.map((subCategory) => (
+                    <MenuItem key={subCategory} value={subCategory}>
+                      {subCategory}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Grid>
