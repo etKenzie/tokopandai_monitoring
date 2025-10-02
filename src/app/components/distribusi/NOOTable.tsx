@@ -286,8 +286,8 @@ const NOOTable = ({
     }
   });
 
-  const totalInvoice = filteredOrders.reduce((sum, o) => sum + o.total_invoice, 0);
-  const totalProfit = filteredOrders.reduce((sum, o) => sum + o.profit, 0);
+  const totalInvoice = filteredOrders.reduce((sum, o) => sum + Number(o.total_invoice) || 0, 0);
+  const totalProfit = filteredOrders.reduce((sum, o) => sum + Number(o.profit) || 0, 0);
   const totalOrders = filteredOrders.length;
   
   // Calculate unique stores (NOO) based on user_id
@@ -332,8 +332,8 @@ const NOOTable = ({
       }
       
       const store = storeDetails.get(storeId)!;
-      store.totalInvoice += order.total_invoice;
-      store.totalProfit += order.profit;
+      store.totalInvoice += Number(order.total_invoice) || 0;
+      store.totalProfit += Number(order.profit) || 0;
       store.orderCount += 1;
     });
 
