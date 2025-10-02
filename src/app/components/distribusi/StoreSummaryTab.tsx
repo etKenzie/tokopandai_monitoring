@@ -2,16 +2,16 @@
 
 import { StoreOrder } from '@/app/api/distribusi/StoreSlice';
 import {
-  Box,
-  Card,
-  CardContent,
-  FormControl,
-  Grid,
-  InputLabel,
-  MenuItem,
-  Paper,
-  Select,
-  Typography
+    Box,
+    Card,
+    CardContent,
+    FormControl,
+    Grid,
+    InputLabel,
+    MenuItem,
+    Paper,
+    Select,
+    Typography
 } from '@mui/material';
 import dynamic from "next/dynamic";
 import { useMemo, useState } from 'react';
@@ -56,13 +56,13 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
       }
 
       const monthData = monthMap.get(month)!;
-      monthData.total_invoice += order.total_invoice;
-      monthData.total_profit += order.profit;
+      monthData.total_invoice += Number(order.total_invoice) || 0;
+      monthData.total_profit += Number(order.profit) || 0;
       monthData.order_count += 1;
 
       // Add to total_owed if payment status is "BELUM LUNAS"
       if (order.status_payment === "BELUM LUNAS") {
-        monthData.total_owed += order.total_invoice;
+        monthData.total_owed += Number(order.total_invoice) || 0;
       }
     });
 
@@ -97,12 +97,12 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
   // Calculate overall totals
   const overallTotals = useMemo(() => {
     const totals = storeOrders.reduce((totals, order) => {
-      totals.total_invoice += order.total_invoice;
-      totals.total_profit += order.profit;
+      totals.total_invoice += Number(order.total_invoice) || 0;
+      totals.total_profit += Number(order.profit) || 0;
       totals.order_count += 1;
       
       if (order.status_payment === "BELUM LUNAS") {
-        totals.total_owed += order.total_invoice;
+        totals.total_owed += Number(order.total_invoice) || 0;
       }
       
       return totals;
