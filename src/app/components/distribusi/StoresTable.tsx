@@ -2,29 +2,29 @@
 
 import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  FormControl,
-  Grid,
-  InputAdornment,
-  InputLabel,
-  MenuItem,
-  Paper,
-  Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TableSortLabel,
-  TextField,
-  Typography
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    CircularProgress,
+    FormControl,
+    Grid,
+    InputAdornment,
+    InputLabel,
+    MenuItem,
+    Paper,
+    Select,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TablePagination,
+    TableRow,
+    TableSortLabel,
+    TextField,
+    Typography
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
@@ -46,7 +46,7 @@ const headCells: HeadCell[] = [
   { id: 'first_order_date', label: 'First Order Date', numeric: false },
   { id: 'first_order_month', label: 'First Order Month', numeric: false },
   { id: 'user_status', label: 'Status', numeric: false },
-  { id: 'segments', label: 'Segment', numeric: false },
+  { id: 'segment', label: 'Segment', numeric: false },
   { id: 'areas', label: 'Area', numeric: false },
   { id: 'agent_name', label: 'Agent', numeric: false },
   { id: 'category', label: 'Category', numeric: false },
@@ -61,7 +61,7 @@ interface StoresTableProps {
   filters: {
     agent_name?: string;
     areas?: string;
-    segments?: string;
+    segment?: string;
     user_status?: string;
     category?: string;
     interval_months?: number;
@@ -98,7 +98,7 @@ const StoresTable = ({
       const response = await fetchStores({
         agent_name: agentName || filters.agent_name,
         areas: filters.areas,
-        segments: filters.segments,
+        segment: filters.segment,
         user_status: filters.user_status,
         interval_months: filters.interval_months
       });
@@ -116,7 +116,7 @@ const StoresTable = ({
     fetchStoresData();
     // Reset pagination when filters change
     setPage(0);
-  }, [filters.agent_name, filters.areas, filters.segments, filters.user_status, filters.interval_months, agentName]);
+  }, [filters.agent_name, filters.areas, filters.segment, filters.user_status, filters.interval_months, agentName]);
 
   const handleRequestSort = (property: SortableField) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -170,7 +170,7 @@ const StoresTable = ({
     const searchableFields = [
       store.reseller_name?.toLowerCase() || '',
       store.store_name?.toLowerCase() || '',
-      store.segments?.toLowerCase() || '',
+      store.segment?.toLowerCase() || '',
       store.areas?.toLowerCase() || '',
       store.agent_name?.toLowerCase() || '',
       store.user_status?.toLowerCase() || '',
@@ -183,7 +183,7 @@ const StoresTable = ({
 
   const filteredStores = stores.filter((s) => {
     // Apply filters
-    if (segmentFilter && s.segments !== segmentFilter) return false;
+    if (segmentFilter && s.segment !== segmentFilter) return false;
     if (areaFilter && s.areas !== areaFilter) return false;
     if (agentFilter && s.agent_name !== agentFilter) return false;
     if (statusFilter && s.user_status !== statusFilter) return false;
@@ -202,7 +202,7 @@ const StoresTable = ({
     setPage(0);
   }, [segmentFilter, areaFilter, agentFilter, statusFilter, categoryFilter, searchQuery]);
 
-  const uniqueSegments = Array.from(new Set(stores.map((s) => s.segments)));
+  const uniqueSegments = Array.from(new Set(stores.map((s) => s.segment)));
   const uniqueAreas = Array.from(new Set(stores.map((s) => s.areas)));
   const uniqueAgents = Array.from(new Set(stores.map((s) => s.agent_name)));
   const uniqueStatuses = Array.from(new Set(stores.map((s) => s.user_status)));
@@ -258,7 +258,7 @@ const StoresTable = ({
       'First Order Date': formatDate(s.first_order_date),
       'First Order Month': s.first_order_month,
       'Status': s.user_status,
-      'Segment': s.segments,
+      'Segment': s.segment,
       'Area': s.areas,
       'Agent': s.agent_name,
       'Category': getCategory(s.final_score),
@@ -609,14 +609,14 @@ const StoresTable = ({
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={row.segments}
+                          label={row.segment || 'N/A'}
                           size="small"
                           variant="outlined"
                         />
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={row.areas}
+                          label={row.areas || 'N/A'}
                           size="small"
                           variant="outlined"
                         />

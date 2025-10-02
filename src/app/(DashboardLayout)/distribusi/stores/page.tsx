@@ -33,7 +33,7 @@ const StoresPage = () => {
   const [filters, setFilters] = useState({
     agent_name: '',
     areas: '',
-    segments: '',
+    segment: '',
     user_status: 'Active',
     category: '',
     interval_months: 1
@@ -49,7 +49,7 @@ const StoresPage = () => {
         const response = await fetchStores({
           agent_name: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent_name,
           areas: filters.areas,
-          segments: filters.segments,
+          segment: filters.segment,
           user_status: filters.user_status,
           interval_months: filters.interval_months
         });
@@ -62,7 +62,7 @@ const StoresPage = () => {
     };
 
     fetchStoresData();
-  }, [filters.agent_name, filters.areas, filters.segments, filters.user_status, filters.interval_months, hasRestrictedRole, userRoleForFiltering]);
+  }, [filters.agent_name, filters.areas, filters.segment, filters.user_status, filters.interval_months, hasRestrictedRole, userRoleForFiltering]);
 
   return (
     <PageContainer title="Stores" description="View and manage stores">

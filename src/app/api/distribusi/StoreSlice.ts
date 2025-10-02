@@ -6,7 +6,7 @@ export interface Store {
   first_order_date: string;
   first_order_month: string;
   user_status: string;
-  segments: string;
+  segment: string;
   areas: string;
   agent_name: string;
   profit_score: number;
@@ -27,7 +27,7 @@ export interface StoresResponse {
 export interface StoreQueryParams {
   agent_name?: string;
   areas?: string;
-  segments?: string;
+  segment?: string;
   user_status?: string;
   interval_months?: number;
 }
@@ -44,7 +44,7 @@ export const fetchStores = async (params: StoreQueryParams): Promise<StoresRespo
   
   if (params.agent_name) queryParams.append('agent_name', params.agent_name);
   if (params.areas) queryParams.append('areas', params.areas);
-  if (params.segments) queryParams.append('segments', params.segments);
+  if (params.segment) queryParams.append('segment', params.segment);
   if (params.user_status) queryParams.append('user_status', params.user_status);
   if (params.interval_months) queryParams.append('interval_months', params.interval_months.toString());
   
@@ -90,7 +90,7 @@ export const fetchStoresByArea = async (area: string): Promise<StoresResponse> =
 // Helper function to fetch stores by segment
 export const fetchStoresBySegment = async (segment: string): Promise<StoresResponse> => {
   return fetchStores({
-    segments: segment
+    segment: segment
   });
 };
 
