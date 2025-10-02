@@ -181,6 +181,7 @@ export interface StoreProduct {
   average_buy_price: number;
   order_count: number;
   total_quantity: number;
+  active_stores: number;
 }
 
 export interface StoreProductsResponse {

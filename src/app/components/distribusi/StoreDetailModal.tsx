@@ -158,7 +158,7 @@ const StoreDetailModal = ({ open, onClose, store }: StoreDetailModalProps) => {
               {store.store_name}
             </Typography>
             <Typography variant="body2" color="textSecondary">
-              {store.reseller_name} • {store.areas} • {store.segments}
+              {store.reseller_name} • {store.areas} • {store.segment}
             </Typography>
           </Box>
           <Button
