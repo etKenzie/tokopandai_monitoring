@@ -310,6 +310,40 @@ const SalesOverview = () => {
     return agentGoals;
   };
 
+  // Get goal profits for all agents (for OrderTypeChart when grouping by agent)
+  const getGoalProfitByAgent = () => {
+    if (!filters.month || !filters.year) return {};
+    
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const monthName = monthNames[parseInt(filters.month) - 1];
+    const monthYear = `${monthName} ${filters.year}`;
+    const staticMonthYear = `${monthName.toLowerCase()} ${filters.year}`;
+    
+    const goalProfitByAgent: { [agentName: string]: number } = {};
+    
+    // Get goal profits from settings first, then fallback to static data
+    if (settings?.goal_profit) {
+      Object.keys(settings.goal_profit).forEach(agentKey => {
+        if (settings.goal_profit![agentKey] && settings.goal_profit![agentKey][monthYear]) {
+          goalProfitByAgent[agentKey] = settings.goal_profit![agentKey][monthYear];
+        }
+      });
+    }
+    
+    // Fallback to static goalProfit data for any missing agents
+    Object.keys(goalProfit).forEach(agentKey => {
+      if (!goalProfitByAgent[agentKey] && goalProfit[agentKey] && goalProfit[agentKey][staticMonthYear]) {
+        goalProfitByAgent[agentKey] = goalProfit[agentKey][staticMonthYear];
+      }
+    });
+    
+    console.log('Goal profit by agent:', { monthYear, staticMonthYear, goalProfitByAgent });
+    return goalProfitByAgent;
+  };
+
   // Calculate days remaining until target date (excluding Sundays)
   const getDaysRemaining = () => {
     // Use configurable target date from settings, fallback to default
@@ -730,6 +764,8 @@ const SalesOverview = () => {
                 month: filters.month,
                 year: filters.year,
               }}
+              goalProfit={getGoalProfit()}
+              goalProfitByAgent={getGoalProfitByAgent()}
             />
           </Box>
         )}

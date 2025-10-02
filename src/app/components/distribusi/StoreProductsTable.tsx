@@ -1,25 +1,37 @@
 'use client';
 
+import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
-    Box,
-    Chip,
-    CircularProgress,
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    TableSortLabel,
-    Typography
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  FormControl,
+  Grid,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TableSortLabel,
+  TextField,
+  Typography
 } from '@mui/material';
-import { useState } from 'react';
-import { StoreProduct } from '../../api/distribusi/StoreSlice';
+import { useEffect, useState } from 'react';
+import * as XLSX from 'xlsx';
+import { ProductSummaryData } from '../../api/distribusi/DistribusiSlice';
 
 type ProductDirection = 'asc' | 'desc';
-type SortableProductField = keyof StoreProduct;
+type SortableProductField = keyof ProductSummaryData;
 
 interface ProductHeadCell {
   id: SortableProductField;
@@ -37,18 +49,30 @@ const headCells: ProductHeadCell[] = [
   { id: 'average_buy_price', label: 'Avg Buy Price', numeric: true },
   { id: 'order_count', label: 'Order Count', numeric: true },
   { id: 'total_quantity', label: 'Total Quantity', numeric: true },
+  { id: 'active_stores', label: 'Active Stores', numeric: true },
 ];
 
 interface StoreProductsTableProps {
-  products: StoreProduct[];
+  products: ProductSummaryData[];
   loading?: boolean;
+  onRefresh?: () => void;
+  title?: string;
 }
 
-const StoreProductsTable = ({ products, loading = false }: StoreProductsTableProps) => {
+const StoreProductsTable = ({ 
+  products, 
+  loading = false, 
+  onRefresh,
+  title = 'Product Performance'
+}: StoreProductsTableProps) => {
   const [orderBy, setOrderBy] = useState<SortableProductField>('total_invoice');
   const [order, setOrder] = useState<ProductDirection>('desc');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [brandFilter, setBrandFilter] = useState<string>('');
+  const [typeCategoryFilter, setTypeCategoryFilter] = useState<string>('');
+  const [subCategoryFilter, setSubCategoryFilter] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   const handleRequestSort = (property: SortableProductField) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -65,6 +89,45 @@ const StoreProductsTable = ({ products, loading = false }: StoreProductsTablePro
     setRowsPerPage(newRowsPerPage);
     setPage(0);
   };
+
+  const searchFields = (product: ProductSummaryData, query: string): boolean => {
+    if (!query) return true;
+
+    const searchableFields = [
+      product.product_name?.toLowerCase() || '',
+      product.sku?.toLowerCase() || '',
+      product.brands?.toLowerCase() || '',
+      product.type_category?.toLowerCase() || '',
+      product.sub_category?.toLowerCase() || '',
+    ];
+
+    return searchableFields.some((field) =>
+      field.includes(query.toLowerCase())
+    );
+  };
+
+  const filteredProducts = products.filter((product) => {
+    // Apply filters
+    if (brandFilter && product.brands !== brandFilter) return false;
+    if (typeCategoryFilter && product.type_category !== typeCategoryFilter) return false;
+    if (subCategoryFilter && product.sub_category !== subCategoryFilter) return false;
+
+    // Search functionality
+    if (searchQuery) {
+      return searchFields(product, searchQuery);
+    }
+
+    return true;
+  });
+
+  // Reset page when local filters change
+  useEffect(() => {
+    setPage(0);
+  }, [brandFilter, typeCategoryFilter, subCategoryFilter, searchQuery]);
+
+  const uniqueBrands = Array.from(new Set(products.map((p) => p.brands)));
+  const uniqueTypeCategories = Array.from(new Set(products.map((p) => p.type_category)));
+  const uniqueSubCategories = Array.from(new Set(products.map((p) => p.sub_category)));
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -85,13 +148,13 @@ const StoreProductsTable = ({ products, loading = false }: StoreProductsTablePro
     }
   };
 
-  const sortedProducts = [...products].sort((a, b) => {
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
     let aValue: any = a[orderBy];
     let bValue: any = b[orderBy];
 
     // Handle numeric fields
     if (orderBy === 'total_invoice' || orderBy === 'average_buy_price' || 
-        orderBy === 'order_count' || orderBy === 'total_quantity') {
+        orderBy === 'order_count' || orderBy === 'total_quantity' || orderBy === 'active_stores') {
       aValue = Number(aValue);
       bValue = Number(bValue);
     }
@@ -109,47 +172,236 @@ const StoreProductsTable = ({ products, loading = false }: StoreProductsTablePro
     }
   });
 
-  const totalValue = products.reduce((sum, product) => sum + product.total_invoice, 0);
-  const totalQuantity = products.reduce((sum, product) => sum + product.total_quantity, 0);
-  const totalOrders = products.reduce((sum, product) => sum + product.order_count, 0);
+  const totalValue = filteredProducts.reduce((sum, product) => sum + product.total_invoice, 0);
+  const totalQuantity = filteredProducts.reduce((sum, product) => sum + product.total_quantity, 0);
+  const totalOrders = filteredProducts.reduce((sum, product) => sum + product.order_count, 0);
+  const totalActiveStores = filteredProducts.reduce((sum, product) => sum + product.active_stores, 0);
+
+  const prepareDataForExport = (products: ProductSummaryData[]) => {
+    return products.map((p) => ({
+      'Product Name': p.product_name,
+      'SKU': p.sku,
+      'Brand': p.brands,
+      'Type Category': p.type_category,
+      'Sub Category': p.sub_category,
+      'Total Invoice': p.total_invoice,
+      'Average Buy Price': p.average_buy_price,
+      'Order Count': p.order_count,
+      'Total Quantity': p.total_quantity,
+      'Active Stores': p.active_stores,
+    }));
+  };
+
+  const handleExcelExport = () => {
+    if (!products.length) return;
+
+    // Only run on client side
+    if (typeof window === 'undefined' || typeof document === 'undefined' || typeof Blob === 'undefined') return;
+
+    const data = prepareDataForExport(filteredProducts);
+    
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(data);
+
+    // Set column widths
+    const colWidths = [
+      { wch: 30 }, // Product Name
+      { wch: 15 }, // SKU
+      { wch: 20 }, // Brand
+      { wch: 20 }, // Type Category
+      { wch: 25 }, // Sub Category
+      { wch: 15 }, // Total Invoice
+      { wch: 15 }, // Average Buy Price
+      { wch: 15 }, // Order Count
+      { wch: 15 }, // Total Quantity
+      { wch: 15 }, // Active Stores
+    ];
+    ws['!cols'] = colWidths;
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Product Performance');
+
+    // Generate Excel file
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    
+    // Download file
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `product-performance.xlsx`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const clearAllFilters = () => {
+    setBrandFilter('');
+    setTypeCategoryFilter('');
+    setSubCategoryFilter('');
+    setSearchQuery('');
+    setPage(0);
+  };
 
   return (
-    <Box>
-      {/* Summary Stats */}
-      <Box mb={3} sx={{ display: 'flex', justifyContent: 'center', gap: 4 }}>
-        <Box sx={{ textAlign: 'center', minWidth: '150px' }}>
-          <Typography variant="h4" color="primary" fontWeight="bold" mb={1}>
-            {products.length}
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            Total Products
-          </Typography>
+    <Card>
+      <CardContent>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            mb: 3,
+          }}
+        >
+          <Box>
+            {onRefresh && (
+              <Button
+                variant="outlined"
+                startIcon={<RefreshIcon />}
+                onClick={onRefresh}
+                disabled={loading}
+                sx={{ mr: 1 }}
+              >
+                Refresh
+              </Button>
+            )}
+            <Button
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+              onClick={handleExcelExport}
+              disabled={filteredProducts.length === 0}
+              sx={{ mr: 1 }}
+            >
+              Export Excel
+            </Button>
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={clearAllFilters}
+              disabled={!brandFilter && !typeCategoryFilter && !subCategoryFilter && !searchQuery}
+            >
+              Clear Filters
+            </Button>
+          </Box>
         </Box>
-        <Box sx={{ textAlign: 'center', minWidth: '150px' }}>
-          <Typography variant="h4" color="success.main" fontWeight="bold" mb={1}>
-            {formatCurrency(totalValue)}
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            Total Value
-          </Typography>
+
+        {/* Summary Stats */}
+        <Box mb={3} sx={{ display: 'flex', justifyContent: 'center', gap: 4 }}>
+          <Box sx={{ textAlign: 'center', minWidth: '150px' }}>
+            <Typography variant="h3" color="primary" fontWeight="bold" mb={1}>
+              {filteredProducts.length}
+            </Typography>
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              Total Products
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: 'center', minWidth: '150px' }}>
+            <Typography variant="h3" color="success.main" fontWeight="bold" mb={1}>
+              {formatCurrency(totalValue)}
+            </Typography>
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              Total Value
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: 'center', minWidth: '150px' }}>
+            <Typography variant="h3" color="info.main" fontWeight="bold" mb={1}>
+              {totalQuantity}
+            </Typography>
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              Total Quantity
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: 'center', minWidth: '150px' }}>
+            <Typography variant="h3" color="warning.main" fontWeight="bold" mb={1}>
+              {totalOrders}
+            </Typography>
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              Total Orders
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: 'center', minWidth: '150px' }}>
+            <Typography variant="h3" color="secondary.main" fontWeight="bold" mb={1}>
+              {totalActiveStores}
+            </Typography>
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              Active Stores
+            </Typography>
+          </Box>
         </Box>
-        <Box sx={{ textAlign: 'center', minWidth: '150px' }}>
-          <Typography variant="h4" color="info.main" fontWeight="bold" mb={1}>
-            {totalQuantity}
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            Total Quantity
-          </Typography>
+
+        {/* Search and Filters */}
+        <Box mb={3}>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                fullWidth
+                variant="outlined"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <FormControl fullWidth>
+                <InputLabel>Brand</InputLabel>
+                <Select
+                  value={brandFilter}
+                  label="Brand"
+                  onChange={(e) => setBrandFilter(e.target.value)}
+                >
+                  <MenuItem value="">All Brands</MenuItem>
+                  {uniqueBrands.map((brand) => (
+                    <MenuItem key={brand} value={brand}>
+                      {brand}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <FormControl fullWidth>
+                <InputLabel>Type Category</InputLabel>
+                <Select
+                  value={typeCategoryFilter}
+                  label="Type Category"
+                  onChange={(e) => setTypeCategoryFilter(e.target.value)}
+                >
+                  <MenuItem value="">All Types</MenuItem>
+                  {uniqueTypeCategories.map((type) => (
+                    <MenuItem key={type} value={type}>
+                      {type}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <FormControl fullWidth>
+                <InputLabel>Sub Category</InputLabel>
+                <Select
+                  value={subCategoryFilter}
+                  label="Sub Category"
+                  onChange={(e) => setSubCategoryFilter(e.target.value)}
+                >
+                  <MenuItem value="">All Sub Categories</MenuItem>
+                  {uniqueSubCategories.map((subCategory) => (
+                    <MenuItem key={subCategory} value={subCategory}>
+                      {subCategory}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
         </Box>
-        <Box sx={{ textAlign: 'center', minWidth: '150px' }}>
-          <Typography variant="h4" color="warning.main" fontWeight="bold" mb={1}>
-            {totalOrders}
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            Total Orders
-          </Typography>
-        </Box>
-      </Box>
 
       {/* Products Table */}
       <TableContainer component={Paper} variant="outlined">
@@ -245,6 +497,11 @@ const StoreProductsTable = ({ products, loading = false }: StoreProductsTablePro
                         {product.total_quantity}
                       </Typography>
                     </TableCell>
+                    <TableCell align="right">
+                      <Typography variant="body2">
+                        {product.active_stores}
+                      </Typography>
+                    </TableCell>
                   </TableRow>
                 ))
             )}
@@ -253,14 +510,15 @@ const StoreProductsTable = ({ products, loading = false }: StoreProductsTablePro
         <TablePagination
           rowsPerPageOptions={[5, 10, 25, 50]}
           component="div"
-          count={products.length}
+          count={filteredProducts.length}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </TableContainer>
-    </Box>
+      </CardContent>
+    </Card>
   );
 };
 

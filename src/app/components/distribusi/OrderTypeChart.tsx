@@ -1,15 +1,15 @@
 'use client';
 
 import {
-    Box,
-    Card,
-    CardContent,
-    CircularProgress,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
-    Typography
+  Box,
+  Card,
+  CardContent,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Typography
 } from '@mui/material';
 import dynamic from "next/dynamic";
 import { useEffect, useState } from 'react';
@@ -43,13 +43,15 @@ interface OrderTypeChartProps {
     area: string;
     segment: string;
   };
+  goalProfit?: number;
+  goalProfitByAgent?: { [agentName: string]: number };
 }
 
-const OrderTypeChart = ({ filters }: OrderTypeChartProps) => {
+const OrderTypeChart = ({ filters, goalProfit = 0, goalProfitByAgent = {} }: OrderTypeChartProps) => {
   const [chartData, setChartData] = useState<OrderTypeData[]>([]);
   const [loading, setLoading] = useState(false);
   const [groupBy, setGroupBy] = useState<string>('agent');
-  const [metricType, setMetricType] = useState<string>('invoice_profit');
+  const [metricType, setMetricType] = useState<string>('goal_profit');
 
   const groupByOptions = [
     { value: 'area', label: 'Area' },
@@ -61,6 +63,7 @@ const OrderTypeChart = ({ filters }: OrderTypeChartProps) => {
   ];
 
   const metricTypeOptions = [
+    { value: 'goal_profit', label: 'Profit' },
     { value: 'invoice_profit', label: 'Invoice & Profit' },
     { value: 'margin', label: 'Margin' },
     { value: 'orders_stores', label: 'Total Orders & Active Stores' },
@@ -135,6 +138,51 @@ const OrderTypeChart = ({ filters }: OrderTypeChartProps) => {
   // Get chart configuration based on metric type
   const getChartConfig = () => {
     switch (metricType) {
+      case 'goal_profit':
+        // Only show goal profit when grouping by agent
+        if (groupBy !== 'agent') {
+          // When not grouping by agent, just show total profit
+          return {
+            yaxis: [
+              {
+                title: { text: 'Total Profit (IDR)', style: { fontSize: '14px', fontWeight: 600 } },
+                labels: { formatter: (value: number) => formatCurrency(value) }
+              }
+            ],
+            tooltip: {
+              y: [
+                { formatter: (value: number) => formatCurrency(value), title: { formatter: () => 'Total Profit: ' } }
+              ]
+            },
+            colors: ['#10B981'],
+            series: [
+              { name: 'Total Profit', data: chartData.map(item => item.total_profit) }
+            ]
+          };
+        }
+        
+        // When grouping by agent, show both goal profit and total profit on same axis
+        const goalProfitData = chartData.map(item => goalProfitByAgent[item.type_name] || 0);
+        
+        return {
+          yaxis: [
+            {
+              title: { text: 'Profit (IDR)', style: { fontSize: '14px', fontWeight: 600 } },
+              labels: { formatter: (value: number) => formatCurrency(value) }
+            }
+          ],
+          tooltip: {
+            y: [
+              { formatter: (value: number) => formatCurrency(value), title: { formatter: () => 'Goal Profit: ' } },
+              { formatter: (value: number) => formatCurrency(value), title: { formatter: () => 'Total Profit: ' } }
+            ]
+          },
+          colors: ['#8B5CF6', '#10B981'],
+          series: [
+            { name: 'Goal Profit', data: goalProfitData },
+            { name: 'Total Profit', data: chartData.map(item => item.total_profit) }
+          ]
+        };
       case 'invoice_profit':
         return {
           yaxis: [
