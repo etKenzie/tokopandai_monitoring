@@ -1,11 +1,11 @@
 'use client';
 
 import {
-    Box,
-    Card,
-    CardContent,
-    CircularProgress,
-    Typography
+  Box,
+  Card,
+  CardContent,
+  CircularProgress,
+  Typography
 } from '@mui/material';
 import dynamic from "next/dynamic";
 import { useEffect, useState } from 'react';
@@ -234,7 +234,7 @@ const UnpaidOverviewChart = ({ filters }: UnpaidOverviewChartProps) => {
           </Typography>
           <Typography variant="body2" color="textSecondary">
             Total overdue categories: {Object.keys(chartData.data).length} | 
-            Total amount: {formatCurrency(Object.values(chartData.data).reduce((sum, item) => sum + item.total_invoice, 0))} | 
+            Total amount: {formatCurrency(Object.values(chartData.data).reduce((sum, item) => sum + Number(item.total_invoice) || 0, 0))} | 
             Total count: {formatNumber(Object.values(chartData.data).reduce((sum, item) => sum + item.count, 0))}
           </Typography>
         </Box>

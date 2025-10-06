@@ -1,15 +1,15 @@
 'use client';
 
 import {
-  Box,
-  Card,
-  CardContent,
-  CircularProgress,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  Typography
+    Box,
+    Card,
+    CardContent,
+    CircularProgress,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
+    Typography
 } from '@mui/material';
 import dynamic from "next/dynamic";
 import { useEffect, useState } from 'react';
@@ -465,7 +465,7 @@ const OrderTypeChart = ({ filters, goalProfit = 0, goalProfitByAgent = {} }: Ord
           </Typography>
           <Typography variant="body2" color="textSecondary">
             Total {groupByOptions.find(opt => opt.value === groupBy)?.label.toLowerCase()} categories: {chartData.length} | 
-            Total invoice: {formatCurrency(chartData.reduce((sum, item) => sum + item.total_invoice, 0))} | 
+            Total invoice: {formatCurrency(chartData.reduce((sum, item) => sum + Number(item.total_invoice) || 0, 0))} | 
             Total orders: {formatNumber(chartData.reduce((sum, item) => sum + item.total_orders, 0))} |
             Total active stores: {formatNumber(chartData.reduce((sum, item) => sum + item.active_stores, 0))}
           </Typography>

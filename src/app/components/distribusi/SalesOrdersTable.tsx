@@ -2,29 +2,29 @@
 
 import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  FormControl,
-  Grid,
-  InputAdornment,
-  InputLabel,
-  MenuItem,
-  Paper,
-  Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TableSortLabel,
-  TextField,
-  Typography
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    CircularProgress,
+    FormControl,
+    Grid,
+    InputAdornment,
+    InputLabel,
+    MenuItem,
+    Paper,
+    Select,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TablePagination,
+    TableRow,
+    TableSortLabel,
+    TextField,
+    Typography
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
@@ -250,8 +250,8 @@ const SalesOrdersTable = ({
     }
   });
 
-  const totalInvoice = filteredOrders.reduce((sum, o) => sum + o.total_invoice, 0);
-  const totalProfit = filteredOrders.reduce((sum, o) => sum + o.profit, 0);
+  const totalInvoice = filteredOrders.reduce((sum, o) => sum + Number(o.total_invoice) || 0, 0);
+  const totalProfit = filteredOrders.reduce((sum, o) => sum + Number(o.profit) || 0, 0);
   const totalOrders = filteredOrders.length;
 
   const prepareDataForExport = (orders: Order[]) => {
