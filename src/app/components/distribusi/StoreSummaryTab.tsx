@@ -2,16 +2,16 @@
 
 import { StoreOrder } from '@/app/api/distribusi/StoreSlice';
 import {
-    Box,
-    Card,
-    CardContent,
-    FormControl,
-    Grid,
-    InputLabel,
-    MenuItem,
-    Paper,
-    Select,
-    Typography
+  Box,
+  Card,
+  CardContent,
+  FormControl,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Typography
 } from '@mui/material';
 import dynamic from "next/dynamic";
 import { useMemo, useState } from 'react';
@@ -69,12 +69,16 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
     return Array.from(monthMap.values()).map(item => ({
       ...item,
       margin: item.total_invoice > 0 ? (item.total_profit / item.total_invoice) * 100 : 0
-    })).sort((a, b) => {
+    })).sort((a: { month: string; total_invoice: number; total_profit: number; total_owed: number; order_count: number; margin: number; }, b: { month: string; total_invoice: number; total_profit: number; total_owed: number; order_count: number; margin: number; }) => {
       // Sort by month chronologically
       const monthNames = [
         'January', 'February', 'March', 'April', 'May', 'June',
         'July', 'August', 'September', 'October', 'November', 'December'
       ];
+      
+      // Handle "Other" case - put it at the beginning (most left)
+      if (a.month === 'Other') return -1;
+      if (b.month === 'Other') return 1;
       
       const [monthA, yearA] = a.month.split(' ');
       const [monthB, yearB] = b.month.split(' ');
@@ -91,8 +95,8 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
     });
   }, [storeOrders]);
 
-  // Get most recent month data
-  const mostRecentMonth = monthlyData[monthlyData.length - 1];
+  // Get most recent month data (exclude "Other")
+  const mostRecentMonth = monthlyData.filter(item => item.month !== 'Other')[monthlyData.filter(item => item.month !== 'Other').length - 1];
 
   // Calculate overall totals
   const overallTotals = useMemo(() => {
