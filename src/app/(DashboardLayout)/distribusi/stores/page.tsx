@@ -9,7 +9,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { useCheckRoles } from "@/app/hooks/useCheckRoles";
 import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from "@/config/roles";
 import { Box, FormControl, Grid, InputLabel, MenuItem, Select, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const StoresPage = () => {
   const { user, roles, refreshRoles } = useAuth();
@@ -66,9 +66,9 @@ const StoresPage = () => {
   }, [filters.agent_name, filters.areas, filters.segment, filters.user_status, filters.interval_months, hasRestrictedRole, userRoleForFiltering]);
 
   // Handle filtered stores updates from StoresTable
-  const handleFilteredStoresChange = (filtered: Store[]) => {
+  const handleFilteredStoresChange = useCallback((filtered: Store[]) => {
     setFilteredStores(filtered);
-  };
+  }, []);
 
   return (
     <PageContainer title="Stores" description="View and manage stores">

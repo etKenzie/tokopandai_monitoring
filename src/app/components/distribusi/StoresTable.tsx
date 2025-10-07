@@ -26,7 +26,7 @@ import {
   TextField,
   Typography
 } from '@mui/material';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { Store, fetchStores } from '../../api/distribusi/StoreSlice';
 import StoreDetailModal from './StoreDetailModal';
@@ -92,6 +92,7 @@ const StoresTable = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const prevFilteredStoresRef = useRef<Store[]>([]);
 
   const fetchStoresData = async () => {
     setLoading(true);
@@ -183,21 +184,23 @@ const StoresTable = ({
     );
   };
 
-  const filteredStores = stores.filter((s) => {
-    // Apply filters
-    if (segmentFilter && s.segment !== segmentFilter) return false;
-    if (areaFilter && s.areas !== areaFilter) return false;
-    if (agentFilter && s.agent_name !== agentFilter) return false;
-    if (statusFilter && s.user_status !== statusFilter) return false;
-    if (categoryFilter && getCategory(s.final_score) !== categoryFilter) return false;
+  const filteredStores = useMemo(() => {
+    return stores.filter((s) => {
+      // Apply filters
+      if (segmentFilter && s.segment !== segmentFilter) return false;
+      if (areaFilter && s.areas !== areaFilter) return false;
+      if (agentFilter && s.agent_name !== agentFilter) return false;
+      if (statusFilter && s.user_status !== statusFilter) return false;
+      if (categoryFilter && getCategory(s.final_score) !== categoryFilter) return false;
 
-    // Search functionality
-    if (searchQuery) {
-      return searchFields(s, searchQuery);
-    }
+      // Search functionality
+      if (searchQuery) {
+        return searchFields(s, searchQuery);
+      }
 
-    return true;
-  });
+      return true;
+    });
+  }, [stores, segmentFilter, areaFilter, agentFilter, statusFilter, categoryFilter, searchQuery]);
 
   // Reset page when local filters change
   useEffect(() => {
@@ -206,7 +209,8 @@ const StoresTable = ({
 
   // Notify parent component when filtered stores change
   useEffect(() => {
-    if (onFilteredStoresChange) {
+    if (onFilteredStoresChange && filteredStores !== prevFilteredStoresRef.current) {
+      prevFilteredStoresRef.current = filteredStores;
       onFilteredStoresChange(filteredStores);
     }
   }, [filteredStores, onFilteredStoresChange]);
