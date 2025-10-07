@@ -39,6 +39,7 @@ const StoresPage = () => {
     interval_months: 1
   });
   const [stores, setStores] = useState<Store[]>([]);
+  const [filteredStores, setFilteredStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Fetch stores data
@@ -63,6 +64,11 @@ const StoresPage = () => {
 
     fetchStoresData();
   }, [filters.agent_name, filters.areas, filters.segment, filters.user_status, filters.interval_months, hasRestrictedRole, userRoleForFiltering]);
+
+  // Handle filtered stores updates from StoresTable
+  const handleFilteredStoresChange = (filtered: Store[]) => {
+    setFilteredStores(filtered);
+  };
 
   return (
     <PageContainer title="Stores" description="View and manage stores">
@@ -118,7 +124,7 @@ const StoresPage = () => {
         </Box>
 
         {/* Category Summary */}
-        <StoreCategorySummary stores={stores} />
+        <StoreCategorySummary stores={filteredStores.length > 0 ? filteredStores : stores} />
 
         <Box sx={{ 
           flex: 1,
@@ -132,6 +138,7 @@ const StoresPage = () => {
             filters={filters}
             title="Stores"
             agentName={hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : undefined}
+            onFilteredStoresChange={handleFilteredStoresChange}
           />
         </Box>
       </Box>
