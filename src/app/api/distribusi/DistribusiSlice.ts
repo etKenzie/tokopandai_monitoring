@@ -1064,6 +1064,7 @@ export interface ProductSummaryData {
   order_count: number;
   total_quantity: number;
   active_stores: number;
+  profit: number;
 }
 
 export interface ProductSummaryResponse {
@@ -1089,7 +1090,7 @@ export const fetchProductSummary = async (params: ProductSummaryQueryParams): Pr
   const queryParams = new URLSearchParams();
   
   if (params.month) queryParams.append('month', params.month);
-  if (params.agent) queryParams.append('agent', params.agent);
+  if (params.agent) queryParams.append('agent_name', params.agent);
   if (params.area) queryParams.append('area', params.area);
   if (params.segment) queryParams.append('segment', params.segment);
   

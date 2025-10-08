@@ -1,6 +1,6 @@
 'use client';
 
-import { fetchProductSummary, ProductSummaryData } from '@/app/api/distribusi/DistribusiSlice';
+import { fetchOrderFilters, fetchProductSummary, OrderFiltersData, ProductSummaryData } from '@/app/api/distribusi/DistribusiSlice';
 import ProtectedRoute from '@/app/components/auth/ProtectedRoute';
 import PageContainer from '@/app/components/container/PageContainer';
 import StoreProductsTable from '@/app/components/distribusi/StoreProductsTable';
@@ -15,6 +15,7 @@ interface ProductFilters {
   year: string;
   area: string;
   segment: string;
+  agent: string;
 }
 
 const ProductPage = () => {
@@ -39,16 +40,20 @@ const ProductPage = () => {
   const [products, setProducts] = useState<ProductSummaryData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [availableFilters, setAvailableFilters] = useState<OrderFiltersData | null>(null);
+  const [filtersLoading, setFiltersLoading] = useState(false);
   
   // Filter options extracted from product data
   const [filterOptions, setFilterOptions] = useState<{
     brands: string[];
     typeCategories: string[];
     subCategories: string[];
+    agents: string[];
   }>({
     brands: [],
     typeCategories: [],
-    subCategories: []
+    subCategories: [],
+    agents: []
   });
   
   // Initialize filters with empty values to avoid hydration mismatch
@@ -56,7 +61,8 @@ const ProductPage = () => {
     month: '',
     year: '',
     area: '',
-    segment: ''
+    segment: '',
+    agent: ''
   });
 
   // Set initial date values in useEffect to avoid hydration issues
@@ -78,11 +84,14 @@ const ProductPage = () => {
     const brands = Array.from(new Set(productData.map(p => p.brands).filter(Boolean))).sort();
     const typeCategories = Array.from(new Set(productData.map(p => p.type_category).filter(Boolean))).sort();
     const subCategories = Array.from(new Set(productData.map(p => p.sub_category).filter(Boolean))).sort();
+    // Note: Agents are not available in ProductSummaryData, so we'll need to get them from a separate API call
+    // For now, we'll use a predefined list or fetch from stores data
     
     setFilterOptions({
       brands,
       typeCategories,
-      subCategories
+      subCategories,
+      agents: [] // Will be populated separately
     });
   }, []);
 
@@ -101,7 +110,7 @@ const ProductPage = () => {
         const formattedMonth = `${monthName} ${currentFilters.year}`;
         
         // For users with restricted roles, use their mapped agent name instead of filter selection
-        const agentName = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : undefined;
+        const agentName = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (currentFilters.agent || undefined);
         
         const response = await fetchProductSummary({
           month: formattedMonth,
@@ -118,7 +127,7 @@ const ProductPage = () => {
         extractFilterOptions(response.data);
       } else {
         setProducts([]);
-        setFilterOptions({ brands: [], typeCategories: [], subCategories: [] });
+        setFilterOptions({ brands: [], typeCategories: [], subCategories: [], agents: [] });
       }
     } catch (err) {
       console.error('Failed to fetch products data:', err);
@@ -128,6 +137,33 @@ const ProductPage = () => {
       setLoading(false);
     }
   }, [hasRestrictedRole, userRoleForFiltering, extractFilterOptions]);
+
+  const fetchFiltersCallback = useCallback(async (month: string, year: string) => {
+    setFiltersLoading(true);
+    try {
+      if (month && year) {
+        // Format month for API (e.g., "08" -> "August 2025")
+        const monthNames = [
+          'January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        const monthName = monthNames[parseInt(month) - 1];
+        const formattedMonth = `${monthName} ${year}`;
+        
+        const response = await fetchOrderFilters({
+          month: formattedMonth,
+        });
+        setAvailableFilters(response.data);
+      } else {
+        setAvailableFilters(null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch filters:', error);
+      setAvailableFilters(null);
+    } finally {
+      setFiltersLoading(false);
+    }
+  }, []);
 
   const handleFiltersChange = useCallback((newFilters: ProductFilters) => {
     console.log('Filters changed:', newFilters);
@@ -141,7 +177,14 @@ const ProductPage = () => {
     if (filters.month && filters.year) {
       fetchProductsCallback(filters);
     }
-  }, [filters.month, filters.year, filters.area, filters.segment, fetchProductsCallback]);
+  }, [filters.month, filters.year, filters.area, filters.segment, filters.agent, fetchProductsCallback]);
+
+  useEffect(() => {
+    // Fetch available filters when month and year change
+    if (filters.month && filters.year) {
+      fetchFiltersCallback(filters.month, filters.year);
+    }
+  }, [filters.month, filters.year, fetchFiltersCallback]);
 
   return (
     <PageContainer title="Product Performance" description="Monitor product performance and sales metrics">
@@ -245,6 +288,26 @@ const ProductPage = () => {
                   <MenuItem value="RESELLER">RESELLER</MenuItem>
                   <MenuItem value="HORECA">HORECA</MenuItem>
                   <MenuItem value="OTHER">OTHER</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Agent Filter */}
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Agent</InputLabel>
+                <Select
+                  value={filters.agent}
+                  label="Agent"
+                  onChange={(e) => handleFiltersChange({ ...filters, agent: e.target.value })}
+                  disabled={hasRestrictedRole || filtersLoading}
+                >
+                  <MenuItem value="">All Agents</MenuItem>
+                  {availableFilters?.agents?.map((agent) => (
+                    <MenuItem key={agent} value={agent}>
+                      {agent}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Grid>

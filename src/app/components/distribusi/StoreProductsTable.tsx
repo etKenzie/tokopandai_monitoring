@@ -2,33 +2,34 @@
 
 import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    Chip,
-    CircularProgress,
-    FormControl,
-    Grid,
-    InputAdornment,
-    InputLabel,
-    MenuItem,
-    Paper,
-    Select,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    TableSortLabel,
-    TextField,
-    Typography
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  FormControl,
+  Grid,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TableSortLabel,
+  TextField,
+  Typography
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { ProductSummaryData } from '../../api/distribusi/DistribusiSlice';
+import ProductDetailModal from './ProductDetailModal';
 
 type ProductDirection = 'asc' | 'desc';
 type SortableProductField = keyof ProductSummaryData;
@@ -50,6 +51,7 @@ const headCells: ProductHeadCell[] = [
   { id: 'order_count', label: 'Order Count', numeric: true },
   { id: 'total_quantity', label: 'Total Quantity', numeric: true },
   { id: 'active_stores', label: 'Active Stores', numeric: true },
+  { id: 'profit', label: 'Profit', numeric: true },
 ];
 
 interface StoreProductsTableProps {
@@ -73,6 +75,8 @@ const StoreProductsTable = ({
   const [typeCategoryFilter, setTypeCategoryFilter] = useState<string>('');
   const [subCategoryFilter, setSubCategoryFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedProduct, setSelectedProduct] = useState<ProductSummaryData | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const handleRequestSort = (property: SortableProductField) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -154,7 +158,7 @@ const StoreProductsTable = ({
 
     // Handle numeric fields
     if (orderBy === 'total_invoice' || orderBy === 'average_buy_price' || 
-        orderBy === 'order_count' || orderBy === 'total_quantity' || orderBy === 'active_stores') {
+        orderBy === 'order_count' || orderBy === 'total_quantity' || orderBy === 'active_stores' || orderBy === 'profit') {
       aValue = Number(aValue);
       bValue = Number(bValue);
     }
@@ -173,9 +177,8 @@ const StoreProductsTable = ({
   });
 
   const totalValue = filteredProducts.reduce((sum, product) => sum + Number(product.total_invoice) || 0, 0);
-  const totalQuantity = filteredProducts.reduce((sum, product) => sum + product.total_quantity, 0);
-  const totalOrders = filteredProducts.reduce((sum, product) => sum + product.order_count, 0);
-  const totalActiveStores = filteredProducts.reduce((sum, product) => sum + product.active_stores, 0);
+  const totalProfit = filteredProducts.reduce((sum, product) => sum + product.profit, 0);
+  const margin = totalValue > 0 ? (totalProfit / totalValue) * 100 : 0;
 
   const prepareDataForExport = (products: ProductSummaryData[]) => {
     return products.map((p) => ({
@@ -189,6 +192,7 @@ const StoreProductsTable = ({
       'Order Count': p.order_count,
       'Total Quantity': p.total_quantity,
       'Active Stores': p.active_stores,
+      'Profit': p.profit,
     }));
   };
 
@@ -216,6 +220,7 @@ const StoreProductsTable = ({
       { wch: 15 }, // Order Count
       { wch: 15 }, // Total Quantity
       { wch: 15 }, // Active Stores
+      { wch: 15 }, // Profit
     ];
     ws['!cols'] = colWidths;
 
@@ -241,6 +246,16 @@ const StoreProductsTable = ({
     setSubCategoryFilter('');
     setSearchQuery('');
     setPage(0);
+  };
+
+  const handleRowClick = (product: ProductSummaryData) => {
+    setSelectedProduct(product);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedProduct(null);
   };
 
   return (
@@ -301,31 +316,23 @@ const StoreProductsTable = ({
               {formatCurrency(totalValue)}
             </Typography>
             <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Total Value
+              Total Invoice
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: 'center', minWidth: '150px' }}>
+            <Typography variant="h3" color="success.main" fontWeight="bold" mb={1}>
+              {formatCurrency(totalProfit)}
+            </Typography>
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              Total Profit
             </Typography>
           </Box>
           <Box sx={{ textAlign: 'center', minWidth: '150px' }}>
             <Typography variant="h3" color="info.main" fontWeight="bold" mb={1}>
-              {totalQuantity}
+              {margin.toFixed(2)}%
             </Typography>
             <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Total Quantity
-            </Typography>
-          </Box>
-          <Box sx={{ textAlign: 'center', minWidth: '150px' }}>
-            <Typography variant="h3" color="warning.main" fontWeight="bold" mb={1}>
-              {totalOrders}
-            </Typography>
-            <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Total Orders
-            </Typography>
-          </Box>
-          <Box sx={{ textAlign: 'center', minWidth: '150px' }}>
-            <Typography variant="h3" color="secondary.main" fontWeight="bold" mb={1}>
-              {totalActiveStores}
-            </Typography>
-            <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Active Stores
+              Margin
             </Typography>
           </Box>
         </Box>
@@ -444,7 +451,17 @@ const StoreProductsTable = ({
               sortedProducts
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((product) => (
-                  <TableRow key={product.product_id} hover>
+                  <TableRow 
+                    key={product.product_id} 
+                    hover 
+                    onClick={() => handleRowClick(product)}
+                    sx={{ 
+                      cursor: 'pointer',
+                      '&:hover': {
+                        backgroundColor: 'action.hover',
+                      }
+                    }}
+                  >
                     <TableCell>
                       <Typography variant="body2" fontWeight="medium">
                         {product.product_name}
@@ -502,6 +519,11 @@ const StoreProductsTable = ({
                         {product.active_stores}
                       </Typography>
                     </TableCell>
+                    <TableCell align="right">
+                      <Typography variant="body2" fontWeight="medium" color="success.main">
+                        {formatCurrency(product.profit)}
+                      </Typography>
+                    </TableCell>
                   </TableRow>
                 ))
             )}
@@ -518,6 +540,13 @@ const StoreProductsTable = ({
         />
       </TableContainer>
       </CardContent>
+
+      {/* Product Detail Modal */}
+      <ProductDetailModal
+        open={modalOpen}
+        onClose={handleCloseModal}
+        product={selectedProduct}
+      />
     </Card>
   );
 };
