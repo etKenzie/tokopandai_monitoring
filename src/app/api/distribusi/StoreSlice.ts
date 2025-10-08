@@ -182,6 +182,7 @@ export interface StoreProduct {
   order_count: number;
   total_quantity: number;
   active_stores: number;
+  profit: number;
 }
 
 export interface StoreProductsResponse {
