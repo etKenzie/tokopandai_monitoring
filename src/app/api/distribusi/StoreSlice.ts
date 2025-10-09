@@ -10,10 +10,14 @@ export interface Store {
   areas: string;
   agent_name: string;
   profit_score: number;
+  "3_month_profit": number;
   owed_score: number;
   activity_score: number;
+  active_months: number;
   payment_habits_score: number;
   final_score: number;
+  order_this_year: number;
+  three_month_profit: number;
 }
 
 export interface StoresResponse {

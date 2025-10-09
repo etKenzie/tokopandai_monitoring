@@ -50,6 +50,8 @@ const headCells: HeadCell[] = [
   { id: 'areas', label: 'Area', numeric: false },
   { id: 'agent_name', label: 'Agent', numeric: false },
   { id: 'category', label: 'Category', numeric: false },
+  { id: '3_month_profit', label: '3 Month Profit', numeric: true },
+  { id: 'active_months', label: 'Active Months', numeric: true },
   { id: 'profit_score', label: 'Profit Score', numeric: true },
   { id: 'owed_score', label: 'Owed Score', numeric: true },
   { id: 'activity_score', label: 'Activity Score', numeric: true },
@@ -89,6 +91,7 @@ const StoresTable = ({
   const [agentFilter, setAgentFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
+  const [activeMonthsFilter, setActiveMonthsFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -192,6 +195,7 @@ const StoresTable = ({
       if (agentFilter && s.agent_name !== agentFilter) return false;
       if (statusFilter && s.user_status !== statusFilter) return false;
       if (categoryFilter && getCategory(s.final_score) !== categoryFilter) return false;
+      if (activeMonthsFilter && s.active_months !== parseInt(activeMonthsFilter)) return false;
 
       // Search functionality
       if (searchQuery) {
@@ -200,12 +204,12 @@ const StoresTable = ({
 
       return true;
     });
-  }, [stores, segmentFilter, areaFilter, agentFilter, statusFilter, categoryFilter, searchQuery]);
+  }, [stores, segmentFilter, areaFilter, agentFilter, statusFilter, categoryFilter, activeMonthsFilter, searchQuery]);
 
   // Reset page when local filters change
   useEffect(() => {
     setPage(0);
-  }, [segmentFilter, areaFilter, agentFilter, statusFilter, categoryFilter, searchQuery]);
+  }, [segmentFilter, areaFilter, agentFilter, statusFilter, categoryFilter, activeMonthsFilter, searchQuery]);
 
   // Notify parent component when filtered stores change
   useEffect(() => {
@@ -219,6 +223,7 @@ const StoresTable = ({
   const uniqueAreas = Array.from(new Set(stores.map((s) => s.areas)));
   const uniqueAgents = Array.from(new Set(stores.map((s) => s.agent_name)));
   const uniqueStatuses = Array.from(new Set(stores.map((s) => s.user_status)));
+  const uniqueActiveMonths = Array.from(new Set(stores.map((s) => s.active_months))).sort((a, b) => a - b);
 
   const sortedStores = [...filteredStores].sort((a, b) => {
     let aValue: any = a[orderBy as keyof Store];
@@ -336,6 +341,7 @@ const StoresTable = ({
     setAgentFilter('');
     setStatusFilter('');
     setCategoryFilter('');
+    setActiveMonthsFilter('');
     setSearchQuery('');
     setPage(0);
   };
@@ -347,6 +353,15 @@ const StoresTable = ({
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
   const handleRowClick = (store: Store) => {
@@ -539,6 +554,23 @@ const StoresTable = ({
                 </Select>
               </FormControl>
             </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+              <FormControl fullWidth>
+                <InputLabel>Active Months</InputLabel>
+                <Select
+                  value={activeMonthsFilter}
+                  label="Active Months"
+                  onChange={(e) => setActiveMonthsFilter(e.target.value)}
+                >
+                  <MenuItem value="">All Active Months</MenuItem>
+                  {uniqueActiveMonths.map((months) => (
+                    <MenuItem key={months} value={months.toString()}>
+                      {months} {months === 1 ? 'Month' : 'Months'}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
           </Grid>
         </Box>
 
@@ -641,6 +673,16 @@ const StoresTable = ({
                           color={getCategoryColor(row.final_score) as any}
                           size="small"
                         />
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2" fontWeight="medium" color="success.main">
+                          {formatCurrency(row["3_month_profit"])}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2" fontWeight="medium">
+                          {row.active_months}
+                        </Typography>
                       </TableCell>
                       <TableCell align="right">
                         <Chip
