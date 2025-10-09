@@ -3,6 +3,7 @@
 import { fetchOrderFilters, fetchProductSummary, OrderFiltersData, ProductSummaryData } from '@/app/api/distribusi/DistribusiSlice';
 import ProtectedRoute from '@/app/components/auth/ProtectedRoute';
 import PageContainer from '@/app/components/container/PageContainer';
+import ProductTypeMonthlyChart from '@/app/components/distribusi/ProductTypeMonthlyChart';
 import StoreProductsTable from '@/app/components/distribusi/StoreProductsTable';
 import { useAuth } from '@/app/context/AuthContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
@@ -314,6 +315,18 @@ const ProductPage = () => {
           </Grid>
         </Box>
 
+        {/* Product Type Monthly Chart */}
+        <Box mb={3}>
+          <ProductTypeMonthlyChart 
+            filters={{
+              agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent,
+              area: filters.area,
+              segment: filters.segment,
+              month: filters.month,
+              year: filters.year,
+            }}
+          />
+        </Box>
 
         {/* Products Table */}
         <Box>

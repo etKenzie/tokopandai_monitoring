@@ -1113,3 +1113,58 @@ export const fetchProductSummary = async (params: ProductSummaryQueryParams): Pr
   
   return response.json();
 };
+
+// Types for Product Type Monthly API
+export interface ProductTypeMonthlyData {
+  total_invoice: number;
+  total_profit: number;
+}
+
+export interface ProductTypeMonthlyResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: Record<string, Record<string, ProductTypeMonthlyData>>;
+}
+
+// Types for Product Type Monthly Query Parameters
+export interface ProductTypeMonthlyQueryParams {
+  start_month?: string;
+  end_month?: string;
+  agent_name?: string;
+  area?: string;
+  segment?: string;
+}
+
+// Fetch Product Type Monthly Data
+export const fetchProductTypeMonthly = async (params: ProductTypeMonthlyQueryParams): Promise<ProductTypeMonthlyResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.start_month) queryParams.append('start_month', params.start_month);
+  if (params.end_month) queryParams.append('end_month', params.end_month);
+  if (params.agent_name) queryParams.append('agent_name', params.agent_name);
+  if (params.area) queryParams.append('area', params.area);
+  if (params.segment) queryParams.append('segment', params.segment);
+  
+  const url = `${baseUrl}/api/product/type?${queryParams.toString()}`;
+  
+  console.log('Fetching product type monthly data from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch product type monthly data: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
