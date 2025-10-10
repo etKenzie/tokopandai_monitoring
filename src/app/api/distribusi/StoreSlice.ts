@@ -136,11 +136,34 @@ export interface StoreOrder {
   overdue_status: string | null;
 }
 
+export interface StoreMetadata {
+  user_id: string;
+  reseller_name: string;
+  store_name: string;
+  first_order_date: string;
+  first_order_month: string;
+  user_status: string;
+  segment: string;
+  areas: string;
+  agent_name: string;
+  profit_score: number;
+  "3_month_profit": number;
+  owed_score: number;
+  activity_score: number;
+  active_months: number;
+  payment_habits_score: number;
+  final_score: number;
+  order_this_year: number;
+}
+
 export interface StoreOrdersResponse {
   code: number;
   status: string;
   message: string;
-  data: StoreOrder[];
+  data: {
+    data: StoreOrder[];
+    metadata: StoreMetadata;
+  };
 }
 
 // Fetch Store Orders by user_id
@@ -224,4 +247,77 @@ export const fetchStoreProducts = async (userId: string, intervalMonths?: number
   }
   
   return response.json();
+};
+
+// Types for Store Monthly API
+export interface StoreMonthly {
+  user_id: string;
+  store_name: string;
+  agent_name: string;
+  total_invoice: number;
+  total_profit: number;
+  margin: number;
+}
+
+export interface StoreMonthlyResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: StoreMonthly[];
+}
+
+// Fetch Store Monthly data
+export const fetchStoreMonthly = async (month: string): Promise<StoreMonthlyResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  const queryParams = new URLSearchParams();
+  queryParams.append('month', month);
+  
+  const url = `${baseUrl}/api/store/monthly?${queryParams.toString()}`;
+  
+  console.log('Fetching store monthly from:', url);
+  console.log('Month:', month);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch store monthly: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Fetch a single store by user_id
+export const fetchStoreById = async (userId: string): Promise<Store | null> => {
+  const baseUrl = AM_API_URL;
+  
+  // Since the API might not support user_id filtering, let's fetch all stores and filter
+  const url = `${baseUrl}/api/store`;
+  
+  console.log('Fetching store by ID from:', url);
+  console.log('User ID:', userId);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch store: ${response.status} ${response.statusText}`);
+  }
+  
+  const result = await response.json();
+  if (result.data && result.data.length > 0) {
+    // Find the store with matching user_id
+    const store = result.data.find((s: Store) => s.user_id === userId);
+    return store || null;
+  }
+  return null;
 };

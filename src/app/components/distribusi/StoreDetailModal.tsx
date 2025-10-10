@@ -22,7 +22,7 @@ import {
   Typography
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { Store, StoreOrder, StoreProduct, fetchStoreOrders, fetchStoreProducts } from '../../api/distribusi/StoreSlice';
+import { Store, StoreMetadata, StoreOrder, StoreProduct, fetchStoreOrders, fetchStoreProducts } from '../../api/distribusi/StoreSlice';
 import StoreOrdersTable from './StoreOrdersTable';
 import StoreProductsTable from './StoreProductsTable';
 import StoreSummaryTab from './StoreSummaryTab';
@@ -62,6 +62,7 @@ function TabPanel(props: TabPanelProps) {
 const StoreDetailModal = ({ open, onClose, store }: StoreDetailModalProps) => {
   const [storeOrders, setStoreOrders] = useState<StoreOrder[]>([]);
   const [storeProducts, setStoreProducts] = useState<StoreProduct[]>([]);
+  const [storeMetadata, setStoreMetadata] = useState<StoreMetadata | null>(null);
   const [loading, setLoading] = useState(false);
   const [productsLoading, setProductsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +92,8 @@ const StoreDetailModal = ({ open, onClose, store }: StoreDetailModalProps) => {
     setError(null);
     try {
       const response = await fetchStoreOrders(store.user_id);
-      setStoreOrders(response.data);
+      setStoreOrders(response.data.data);
+      setStoreMetadata(response.data.metadata);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch store orders');
       console.error('Failed to fetch store orders:', err);
@@ -158,7 +160,7 @@ const StoreDetailModal = ({ open, onClose, store }: StoreDetailModalProps) => {
               {store.store_name}
             </Typography>
             <Typography variant="body2" color="textSecondary">
-              {store.reseller_name} • {store.areas} • {store.segment}
+              {storeMetadata?.reseller_name || store.reseller_name} • {storeMetadata?.areas || store.areas} • {storeMetadata?.segment || store.segment}
             </Typography>
           </Box>
           <Button
@@ -186,43 +188,53 @@ const StoreDetailModal = ({ open, onClose, store }: StoreDetailModalProps) => {
             {/* Store Information Header */}
             <Box mb={3}>
               <Grid container spacing={2}>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="h4" color="primary" fontWeight="bold">
-                      {formatDate(store.first_order_date)}
+                      {storeMetadata ? formatDate(storeMetadata.first_order_date) : formatDate(store.first_order_date)}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
                       First Order Date
                     </Typography>
                   </Paper>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                  <Paper sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="h4" color="success.main" fontWeight="bold">
+                      {formatCurrency(storeMetadata?.["3_month_profit"] || store["3_month_profit"] || 0)}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      3 Month Profit
+                    </Typography>
+                  </Paper>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="h4" color="info.main" fontWeight="bold">
-                      {store.user_status}
+                      {storeMetadata?.active_months || store.active_months || 0}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Active Months
+                    </Typography>
+                  </Paper>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                  <Paper sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="h4" color="info.main" fontWeight="bold">
+                      {storeMetadata?.user_status || store.user_status}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
                       Status
                     </Typography>
                   </Paper>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="h4" color="info.main" fontWeight="bold">
-                      {store.final_score}
+                      {storeMetadata?.agent_name || store.user_status}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
-                      Final Score
-                    </Typography>
-                  </Paper>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Paper sx={{ p: 2, textAlign: 'center' }}>
-                    <Typography variant="h4" color="success.main" fontWeight="bold">
-                      {store.agent_name}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Agent
+                      Agent Name
                     </Typography>
                   </Paper>
                 </Grid>
@@ -235,40 +247,50 @@ const StoreDetailModal = ({ open, onClose, store }: StoreDetailModalProps) => {
                 Performance Scores
               </Typography>
               <Grid container spacing={2}>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                  <Paper sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="h4" color="primary.main" fontWeight="bold">
+                      {storeMetadata?.final_score || store.final_score}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Final Score
+                    </Typography>
+                  </Paper>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="h4" color="success.main" fontWeight="bold">
-                      {store.profit_score}
+                      {storeMetadata?.profit_score || store.profit_score}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
                       Profit Score
                     </Typography>
                   </Paper>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="h4" color="warning.main" fontWeight="bold">
-                      {store.owed_score}
+                      {storeMetadata?.owed_score || store.owed_score}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
                       Owed Score
                     </Typography>
                   </Paper>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="h4" color="info.main" fontWeight="bold">
-                      {store.activity_score}
+                      {storeMetadata?.activity_score || store.activity_score}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
                       Activity Score
                     </Typography>
                   </Paper>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="h4" color="primary.main" fontWeight="bold">
-                      {store.payment_habits_score}
+                      {storeMetadata?.payment_habits_score || store.payment_habits_score}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
                       Payment Habits Score

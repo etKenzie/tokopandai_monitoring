@@ -2,23 +2,24 @@
 
 import { Close as CloseIcon } from '@mui/icons-material';
 import {
-    Alert,
-    Box,
-    Button,
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    Divider,
-    Paper,
-    Tab,
-    Tabs,
-    Typography
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  Paper,
+  Tab,
+  Tabs,
+  Typography
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Product, ProductOrder, fetchProductOrders } from '../../api/distribusi/ProductSlice';
 import ProductOrdersTable from './ProductOrdersTable';
+import ProductSummaryTab from './ProductSummaryTab';
 
 interface ProductDetailModalProps {
   open: boolean;
@@ -240,11 +241,16 @@ const ProductDetailModal = ({ open, onClose, product }: ProductDetailModalProps)
             {/* Tabs */}
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <Tabs value={tabValue} onChange={handleTabChange} aria-label="product detail tabs">
+                <Tab label="Overview" />
                 <Tab label="Orders" />
               </Tabs>
             </Box>
 
             <TabPanel value={tabValue} index={0}>
+              <ProductSummaryTab productOrders={productOrders} />
+            </TabPanel>
+
+            <TabPanel value={tabValue} index={1}>
               <ProductOrdersTable 
                 orders={productOrders} 
                 loading={loading}

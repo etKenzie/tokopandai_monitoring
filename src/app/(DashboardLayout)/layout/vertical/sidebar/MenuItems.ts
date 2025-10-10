@@ -4,6 +4,7 @@ import {
   IconClockCancel,
   IconDashboard,
   IconFlag,
+  IconGitCompare,
   IconHome,
   IconMailCancel,
   IconMapPlus,
@@ -129,6 +130,25 @@ const Menuitems: MenuitemsType[] = [
     title: "Stores",
     icon: IconBuildingStore,
     href: "/distribusi/stores",
+    
+    children: [
+      {
+        id: uniqueId(),
+        title: "Overview",
+        icon: IconDashboard,
+        href: "/distribusi/stores/overview",
+        chip: "New",
+        chipColor: "secondary",
+      },
+      {
+        id: uniqueId(),
+        title: "Monthly",
+        icon: IconGitCompare,
+        href: "/distribusi/stores/monthly",
+      },
+      
+      
+    ],
   },
   {
     id: uniqueId(),

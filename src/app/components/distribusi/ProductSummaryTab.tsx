@@ -1,17 +1,17 @@
 'use client';
 
-import { StoreOrder } from '@/app/api/distribusi/StoreSlice';
+import { ProductOrder } from '@/app/api/distribusi/ProductSlice';
 import {
-    Box,
-    Card,
-    CardContent,
-    FormControl,
-    Grid,
-    InputLabel,
-    MenuItem,
-    Paper,
-    Select,
-    Typography
+  Box,
+  Card,
+  CardContent,
+  FormControl,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Typography
 } from '@mui/material';
 import dynamic from "next/dynamic";
 import { useMemo, useState } from 'react';
@@ -20,11 +20,11 @@ const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false })
 
 type ChartType = 'totals' | 'margin';
 
-interface StoreSummaryTabProps {
-  storeOrders: StoreOrder[];
+interface ProductSummaryTabProps {
+  productOrders: ProductOrder[];
 }
 
-const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
+const ProductSummaryTab = ({ productOrders }: ProductSummaryTabProps) => {
   const [chartType, setChartType] = useState<ChartType>('totals');
 
   const handleChartTypeChange = (event: any) => {
@@ -42,11 +42,7 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
       margin: number;
     }>();
 
-    if (!storeOrders || !Array.isArray(storeOrders)) {
-      return [];
-    }
-
-    storeOrders.forEach(order => {
+    productOrders.forEach(order => {
       const month = order.month;
       if (!monthMap.has(month)) {
         monthMap.set(month, {
@@ -97,24 +93,14 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
       
       return monthIndexA - monthIndexB;
     });
-  }, [storeOrders]);
+  }, [productOrders]);
 
   // Get most recent month data (exclude "Other")
   const mostRecentMonth = monthlyData.filter(item => item.month !== 'Other')[monthlyData.filter(item => item.month !== 'Other').length - 1];
 
   // Calculate overall totals
   const overallTotals = useMemo(() => {
-    if (!storeOrders || !Array.isArray(storeOrders)) {
-      return {
-        total_invoice: 0,
-        total_profit: 0,
-        total_owed: 0,
-        order_count: 0,
-        margin: 0
-      };
-    }
-
-    const totals = storeOrders.reduce((totals, order) => {
+    const totals = productOrders.reduce((totals, order) => {
       totals.total_invoice += Number(order.total_invoice) || 0;
       totals.total_profit += Number(order.profit) || 0;
       totals.order_count += 1;
@@ -135,7 +121,7 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
       ...totals,
       margin: totals.total_invoice > 0 ? (totals.total_profit / totals.total_invoice) * 100 : 0
     };
-  }, [storeOrders]);
+  }, [productOrders]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -447,4 +433,4 @@ const StoreSummaryTab = ({ storeOrders }: StoreSummaryTabProps) => {
   );
 };
 
-export default StoreSummaryTab;
+export default ProductSummaryTab;

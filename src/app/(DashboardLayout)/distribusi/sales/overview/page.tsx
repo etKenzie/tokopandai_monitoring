@@ -577,7 +577,7 @@ const SalesOverview = () => {
         <Box mb={3}>
           <Grid container spacing={2}>
             {/* Month Filter */}
-            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Month</InputLabel>
                 <Select
@@ -599,7 +599,7 @@ const SalesOverview = () => {
             </Grid>
 
             {/* Year Filter */}
-            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Year</InputLabel>
                 <Select
@@ -620,7 +620,7 @@ const SalesOverview = () => {
             </Grid>
 
             {/* Agent Filter */}
-            <Grid size={{ xs: 12, sm: 6, md: 2.4  }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Agent</InputLabel>
                 <Select
@@ -640,7 +640,7 @@ const SalesOverview = () => {
             </Grid>
 
             {/* Area Filter */}
-            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Area</InputLabel>
                 <Select
@@ -660,7 +660,7 @@ const SalesOverview = () => {
             </Grid>
 
             {/* Segment Filter */}
-            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Segment</InputLabel>
                 <Select
@@ -677,7 +677,7 @@ const SalesOverview = () => {
             </Grid>
 
             {/* Payment Status Filter */}
-            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Payment Status</InputLabel>
                 <Select
