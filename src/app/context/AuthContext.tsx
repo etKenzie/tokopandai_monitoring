@@ -16,6 +16,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   getUserRoles: (userId: string) => Promise<string[]>;
   refreshRoles: () => Promise<string[]>;
 }
@@ -321,6 +322,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      console.log('Sending password reset email...');
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+      
+      if (error) throw error;
+      
+      console.log('Password reset email sent successfully');
+    } catch (error) {
+      console.error('Password reset error:', error);
+      throw error;
+    }
+  };
+
   const refreshRoles = async () => {
     if (user) {
       console.log('Manually refreshing roles for user:', user.id);
@@ -352,6 +370,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signIn,
     signUp,
     signOut,
+    resetPassword,
     getUserRoles,
     refreshRoles,
   };

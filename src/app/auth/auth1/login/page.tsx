@@ -94,6 +94,22 @@ export default function Login () {
                     Create an account
                   </Typography>
                 </Stack>
+                <Stack direction="row" spacing={1} mt={1}>
+                  <Typography color="textSecondary" variant="body2">
+                    Forgot your password?
+                  </Typography>
+                  <Typography
+                    component={Link}
+                    href="/auth/auth1/forgot-password"
+                    fontWeight="500"
+                    sx={{
+                      textDecoration: 'none',
+                      color: 'primary.main',
+                    }}
+                  >
+                    Reset it here
+                  </Typography>
+                </Stack>
               }
             />
           </Box>
