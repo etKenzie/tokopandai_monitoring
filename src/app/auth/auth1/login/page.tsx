@@ -1,12 +1,12 @@
-import Link from 'next/link';
+import Logo from '@/app/(DashboardLayout)/layout/shared/logo/Logo';
+import PageContainer from '@/app/components/container/PageContainer';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import PageContainer from '@/app/components/container/PageContainer';
-import Logo from '@/app/(DashboardLayout)/layout/shared/logo/Logo';
-import AuthLogin from '../../authForms/AuthLogin';
 import Image from 'next/image';
+import Link from 'next/link';
+import AuthLogin from '../../authForms/AuthLogin';
 
 export default function Login () {
   return (
@@ -78,42 +78,45 @@ export default function Login () {
                 </Typography>
               }
               subtitle={
-                <Stack direction="row" spacing={1} mt={3}>
-                  <Typography color="textSecondary" variant="h6" fontWeight="500">
-                    New to Modernize?
-                  </Typography>
-                  <Typography
-                    component={Link}
-                    href="/auth/auth1/register"
-                    fontWeight="500"
-                    sx={{
-                      textDecoration: 'none',
-                      color: 'primary.main',
-                    }}
-                  >
-                    Create an account
-                  </Typography>
-                </Stack>
-                <Stack direction="row" spacing={1} mt={1}>
-                  <Typography color="textSecondary" variant="body2">
-                    Forgot your password?
-                  </Typography>
-                  <Typography
-                    component={Link}
-                    href="/auth/auth1/forgot-password"
-                    fontWeight="500"
-                    sx={{
-                      textDecoration: 'none',
-                      color: 'primary.main',
-                    }}
-                  >
-                    Reset it here
-                  </Typography>
-                </Stack>
+                <Box>
+                  <Stack direction="row" spacing={1} mt={3}>
+                    <Typography color="textSecondary" variant="h6" fontWeight="500">
+                      New to Modernize?
+                    </Typography>
+                    <Typography
+                      component={Link}
+                      href="/auth/auth1/register"
+                      fontWeight="500"
+                      sx={{
+                        textDecoration: 'none',
+                        color: 'primary.main',
+                      }}
+                    >
+                      Create an account
+                    </Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={1} mt={1}>
+                    <Typography color="textSecondary" variant="body2">
+                      Forgot your password?
+                    </Typography>
+                    <Typography
+                      component={Link}
+                      href="/auth/auth1/forgot-password"
+                      fontWeight="500"
+                      sx={{
+                        textDecoration: 'none',
+                        color: 'primary.main',
+                      }}
+                    >
+                      Reset it here
+                    </Typography>
+                  </Stack>
+                </Box>
               }
             />
           </Box>
         </Grid>
       </Grid>
     </PageContainer>
-  );};
+  );
+}
