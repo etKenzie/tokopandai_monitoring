@@ -12,6 +12,7 @@ import { useAuth } from '@/app/context/AuthContext';
 import { useSettings } from '@/app/context/SettingsContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from '@/config/roles';
+import { getGoalProfit, getProfitGoalsForChart } from '@/utils/goalProfitUtils';
 import { Box, FormControl, Grid, InputLabel, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { goalProfit } from '../../goalProfit';
@@ -248,66 +249,33 @@ const SalesOverview = () => {
   }, [filters.month, filters.year, filters.agent, filters.area, filters.segment, statusPayment, fetchSalesDataCallback, fetchTotalStoresCallback, fetchMonthlySummaryCallback, fetchFiltersCallback]);
 
   // Get goal profit based on selected agent and month
-  const getGoalProfit = () => {
+  const getGoalProfitValue = () => {
     if (!filters.month || !filters.year) return 0;
-    
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    const monthName = monthNames[parseInt(filters.month) - 1];
-    const monthYear = `${monthName} ${filters.year}`;
     
     // For users with restricted roles, use their mapped agent name, otherwise use selected agent or default to NATIONAL
     const agentKey = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (filters.agent || 'NATIONAL');
     
-    // First try to get from configurable settings
-    if (settings?.goal_profit) {
-      if (settings.goal_profit[agentKey] && settings.goal_profit[agentKey][monthYear]) {
-        console.log('Found goal profit in settings for agent:', { agentKey, monthYear, value: settings.goal_profit[agentKey][monthYear] });
-        return settings.goal_profit[agentKey][monthYear];
-      }
-      
-      // Fallback to NATIONAL if agent not found in settings
-      if (settings.goal_profit['NATIONAL'] && settings.goal_profit['NATIONAL'][monthYear]) {
-        console.log('Using NATIONAL goal profit from settings:', { monthYear, value: settings.goal_profit['NATIONAL'][monthYear] });
-        return settings.goal_profit['NATIONAL'][monthYear];
-      }
-    }
-    
-    // Fallback to static goalProfit data if settings not available
-    // Convert to lowercase for static data lookup
-    const staticMonthYear = `${monthName.toLowerCase()} ${filters.year}`;
-    console.log('Goal Profit Lookup (fallback to static):', { agentKey, monthYear: staticMonthYear, availableAgents: Object.keys(goalProfit) });
-    
-    // Check if agent exists in goalProfit data
-    if (goalProfit[agentKey] && goalProfit[agentKey][staticMonthYear]) {
-      console.log('Found goal profit for agent (static):', { agentKey, monthYear: staticMonthYear, value: goalProfit[agentKey][staticMonthYear] });
-      return goalProfit[agentKey][staticMonthYear];
-    }
-    
-    // Fallback to NATIONAL if agent not found
-    if (goalProfit['NATIONAL'] && goalProfit['NATIONAL'][staticMonthYear]) {
-      console.log('Using NATIONAL goal profit (static):', { monthYear: staticMonthYear, value: goalProfit['NATIONAL'][staticMonthYear] });
-      return goalProfit['NATIONAL'][staticMonthYear];
-    }
-    
-    console.log('No goal profit found for:', { agentKey, monthYear });
-    return 0;
+    return getGoalProfit({
+      agentKey,
+      month: filters.month,
+      year: filters.year,
+      settings
+    });
   };
 
   // Get profit goals for chart range (for monthly chart)
-  const getProfitGoalsForChart = () => {
+  const getProfitGoalsForChartValue = () => {
     if (!settings?.goal_profit) return {};
     
     // For users with restricted roles, use their mapped agent name, otherwise use selected agent or default to NATIONAL
     const agentKey = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (filters.agent || 'NATIONAL');
     
-    // Get goals for the selected agent, fallback to NATIONAL
-    const agentGoals = settings.goal_profit[agentKey] || settings.goal_profit['NATIONAL'] || {};
-    
-    console.log('Profit goals for chart:', { agentKey, goals: agentGoals });
-    return agentGoals;
+    return getProfitGoalsForChart({
+      agentKey,
+      month: filters.month || '1',
+      year: filters.year || '2025',
+      settings
+    });
   };
 
   // Get goal profits for all agents (for OrderTypeChart when grouping by agent)
@@ -378,7 +346,7 @@ const SalesOverview = () => {
 
   // Calculate daily and weekly profit to goal
   const getDailyProfitToGoal = () => {
-    const profitRemaining = (salesData?.total_profit || 0) - getGoalProfit();
+    const profitRemaining = (salesData?.total_profit || 0) - getGoalProfitValue();
     const daysRemaining = getDaysRemaining();
     
     // If goal is already met or exceeded, return 0
@@ -391,7 +359,7 @@ const SalesOverview = () => {
   };
 
   const getWeeklyProfitToGoal = () => {
-    const profitRemaining = (salesData?.total_profit || 0) - getGoalProfit();
+    const profitRemaining = (salesData?.total_profit || 0) - getGoalProfitValue();
     const weeksRemaining = getDaysRemaining() / 7;
     
     // If goal is already met or exceeded, return 0
@@ -446,27 +414,27 @@ const SalesOverview = () => {
       },
       {
         title: 'Goal Profit',
-        value: getGoalProfit(),
+        value: getGoalProfitValue(),
         isCurrency: true,
         mdSize: 2.4,
         isLoading: false
       },
       {
         title: 'Profit Remaining',
-        value:  (salesData?.total_profit || 0) - getGoalProfit(),
+        value:  (salesData?.total_profit || 0) - getGoalProfitValue(),
         isCurrency: true,
         mdSize: 2.4,
         isLoading: loading && !salesData,
-        color: ( (salesData?.total_profit || 0) - getGoalProfit()) >= 0 ? '#22c55e' : '#ef4444'
+        color: ( (salesData?.total_profit || 0) - getGoalProfitValue()) >= 0 ? '#22c55e' : '#ef4444'
       },
       {
         title: 'Profit Progress',
-        value: getGoalProfit() > 0 ? ((salesData?.total_profit || 0) / getGoalProfit()) * 100 : 0,
+        value: getGoalProfitValue() > 0 ? ((salesData?.total_profit || 0) / getGoalProfitValue()) * 100 : 0,
         isCurrency: false,
         unit: '%',
         mdSize: 2.4,
         isLoading: loading && !salesData,
-        color: getProgressColor(getGoalProfit() > 0 ? ((salesData?.total_profit || 0) / getGoalProfit()) * 100 : 0)
+        color: getProgressColor(getGoalProfitValue() > 0 ? ((salesData?.total_profit || 0) / getGoalProfitValue()) * 100 : 0)
       },
       
       // Second row - 6 tiles
@@ -490,7 +458,7 @@ const SalesOverview = () => {
         isCurrency: true,
         mdSize: 2.4,
         isLoading: loading && !salesData,
-        color: getProgressColor(getGoalProfit() > 0 ? ((salesData?.total_profit || 0) / getGoalProfit()) * 100 : 0)
+        color: getProgressColor(getGoalProfitValue() > 0 ? ((salesData?.total_profit || 0) / getGoalProfitValue()) * 100 : 0)
       },
       {
         title: 'Weekly Profit to Goal',
@@ -498,7 +466,7 @@ const SalesOverview = () => {
         isCurrency: true,
         mdSize: 2.4,
         isLoading: loading && !salesData,
-        color: getProgressColor(getGoalProfit() > 0 ? ((salesData?.total_profit || 0) / getGoalProfit()) * 100 : 0)
+        color: getProgressColor(getGoalProfitValue() > 0 ? ((salesData?.total_profit || 0) / getGoalProfitValue()) * 100 : 0)
       },
       {
         title: 'Days Remaining',
@@ -719,7 +687,7 @@ const SalesOverview = () => {
               status_payment: statusPayment
             }}
             monthlyData={monthlySummaryData}
-            profitGoals={getProfitGoalsForChart()}
+            profitGoals={getProfitGoalsForChartValue()}
           />
         </Box>
 
@@ -764,7 +732,7 @@ const SalesOverview = () => {
                 month: filters.month,
                 year: filters.year,
               }}
-              goalProfit={getGoalProfit()}
+              goalProfit={getGoalProfitValue()}
               goalProfitByAgent={getGoalProfitByAgent()}
             />
           </Box>
