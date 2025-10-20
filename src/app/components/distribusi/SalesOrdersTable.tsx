@@ -2,33 +2,33 @@
 
 import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  FormControl,
-  Grid,
-  InputAdornment,
-  InputLabel,
-  MenuItem,
-  Paper,
-  Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TableSortLabel,
-  TextField,
-  Typography
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    CircularProgress,
+    FormControl,
+    Grid,
+    InputAdornment,
+    InputLabel,
+    MenuItem,
+    Paper,
+    Select,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TablePagination,
+    TableRow,
+    TableSortLabel,
+    TextField,
+    Typography
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
-import { Order, fetchOrders } from '../../api/distribusi/DistribusiSlice';
+import { fetchFullOrders, fetchOrders, FullOrder, Order } from '../../api/distribusi/DistribusiSlice';
 import OrderDetailModal from '../shared/OrderDetailModal';
 
 type OrderDirection = 'asc' | 'desc';
@@ -89,6 +89,7 @@ const SalesOrdersTable = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedOrderCode, setSelectedOrderCode] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [fullDownloadLoading, setFullDownloadLoading] = useState(false);
 
   const fetchOrdersData = async () => {
     // Only fetch data if month is selected
@@ -326,6 +327,181 @@ const SalesOrdersTable = ({
     window.URL.revokeObjectURL(url);
   };
 
+  const prepareFullDataForExport = (fullOrders: FullOrder[]) => {
+    const data: any[] = [];
+    
+    fullOrders.forEach((order) => {
+      if (order.detail_order && order.detail_order.length > 0) {
+        order.detail_order.forEach((detail) => {
+          data.push({
+            'Order Code': order.order_code,
+            'Order Item ID': detail.order_item_id,
+            'Month': order.month,
+            'Reseller Name': order.reseller_name,
+            'Store Name': order.store_name,
+            'Segment': order.segment,
+            'Area': order.area,
+            'Agent': order.agent_name,
+            'Order Status': order.status_order,
+            'Payment Status': order.status_payment,
+            'Payment Type': order.payment_type,
+            'Order Date': formatDate(order.order_date),
+            'Payment Due Date': getPaymentDueDateDisplay(order.payment_due_date).label,
+            'Total Invoice': order.total_invoice,
+            'Profit': order.profit,
+            'Business Type': order.business_type,
+            'Sub Business Type': order.sub_business_type,
+            'Product Name': detail.product_name,
+            'SKU': detail.sku,
+            'Brands': detail.brands,
+            'Type Category': detail.type_category,
+            'Sub Category': detail.sub_category,
+            'Price': detail.price,
+            'Order Quantity': detail.order_quantity,
+            'Stock Product': detail.stock_product,
+            'Variant': detail.variant,
+            'Variant Value': detail.variant_value,
+            'Buy Price': detail.buy_price,
+            'Serve Price': detail.serve_price,
+            'Principle': detail.principle,
+            'Hub': detail.hub,
+            'Address': detail.alamat,
+            'Phone Number': order.phone_number,
+            'Reseller Code': order.reseller_code,
+          });
+        });
+      } else {
+        // If no detail_order, add the main order data
+        data.push({
+          'Order Code': order.order_code,
+          'Order Item ID': '',
+          'Month': order.month,
+          'Reseller Name': order.reseller_name,
+          'Store Name': order.store_name,
+          'Segment': order.segment,
+          'Area': order.area,
+          'Agent': order.agent_name,
+          'Order Status': order.status_order,
+          'Payment Status': order.status_payment,
+          'Payment Type': order.payment_type,
+          'Order Date': formatDate(order.order_date),
+          'Payment Due Date': getPaymentDueDateDisplay(order.payment_due_date).label,
+          'Total Invoice': order.total_invoice,
+          'Profit': order.profit,
+          'Business Type': order.business_type,
+          'Sub Business Type': order.sub_business_type,
+          'Product Name': '',
+          'SKU': '',
+          'Brands': '',
+          'Type Category': '',
+          'Sub Category': '',
+          'Price': '',
+          'Order Quantity': '',
+          'Stock Product': '',
+          'Variant': '',
+          'Variant Value': '',
+          'Buy Price': '',
+          'Serve Price': '',
+          'Principle': '',
+          'Hub': '',
+          'Address': '',
+          'Phone Number': order.phone_number,
+          'Reseller Code': order.reseller_code,
+        });
+      }
+    });
+    
+    return data;
+  };
+
+  const handleFullDownload = async () => {
+    if (!filters.month) {
+      alert('Please select a month to download full data');
+      return;
+    }
+
+    // Only run on client side
+    if (typeof window === 'undefined' || typeof document === 'undefined' || typeof Blob === 'undefined') return;
+
+    try {
+      setFullDownloadLoading(true);
+      
+      const response = await fetchFullOrders({
+        sortTime: 'desc',
+        month: filters.month,
+        agent: agentName || filters.agent,
+        segment: filters.segment,
+        area: filters.area,
+        status_payment: paymentStatusFilter || undefined
+      });
+
+      const data = prepareFullDataForExport(response.data);
+      
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(data);
+
+      // Set column widths
+      const colWidths = [
+        { wch: 15 }, // Order Code
+        { wch: 25 }, // Order Item ID
+        { wch: 15 }, // Month
+        { wch: 25 }, // Reseller Name
+        { wch: 25 }, // Store Name
+        { wch: 15 }, // Segment
+        { wch: 15 }, // Area
+        { wch: 20 }, // Agent
+        { wch: 15 }, // Order Status
+        { wch: 15 }, // Payment Status
+        { wch: 15 }, // Payment Type
+        { wch: 15 }, // Order Date
+        { wch: 15 }, // Payment Due Date
+        { wch: 15 }, // Total Invoice
+        { wch: 15 }, // Profit
+        { wch: 20 }, // Business Type
+        { wch: 25 }, // Sub Business Type
+        { wch: 30 }, // Product Name
+        { wch: 15 }, // SKU
+        { wch: 15 }, // Brands
+        { wch: 20 }, // Type Category
+        { wch: 20 }, // Sub Category
+        { wch: 15 }, // Price
+        { wch: 15 }, // Order Quantity
+        { wch: 15 }, // Stock Product
+        { wch: 15 }, // Variant
+        { wch: 15 }, // Variant Value
+        { wch: 15 }, // Buy Price
+        { wch: 15 }, // Serve Price
+        { wch: 25 }, // Principle
+        { wch: 15 }, // Hub
+        { wch: 40 }, // Address
+        { wch: 15 }, // Phone Number
+        { wch: 25 }, // Reseller Code
+      ];
+      ws['!cols'] = colWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Full Sales Orders');
+
+      // Generate Excel file
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      
+      // Download file
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `full-sales-orders-${filters.month.replace(' ', '-').toLowerCase()}.xlsx`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download full data:', error);
+      alert('Failed to download full data. Please try again.');
+    } finally {
+      setFullDownloadLoading(false);
+    }
+  };
+
   const clearAllFilters = () => {
     setSegmentFilter('');
     setAreaFilter('');
@@ -402,6 +578,16 @@ const SalesOrdersTable = ({
               sx={{ mr: 1 }}
             >
               Export Excel
+            </Button>
+            <Button
+              variant="outlined"
+              color="secondary"
+              startIcon={fullDownloadLoading ? <CircularProgress size={16} /> : <DownloadIcon />}
+              onClick={handleFullDownload}
+              disabled={!filters.month || fullDownloadLoading}
+              sx={{ mr: 1 }}
+            >
+              {fullDownloadLoading ? 'Downloading...' : 'Download Full'}
             </Button>
             <Button
               variant="outlined"

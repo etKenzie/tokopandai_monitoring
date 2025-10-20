@@ -29,6 +29,77 @@ export interface Order {
   overdue_status: string;
 }
 
+// Types for Full Order API (with detail_order)
+export interface FullOrderDetailItem {
+  order_id: string;
+  order_item_id: string;
+  order_code: string;
+  product_id: string;
+  sku: string;
+  price: string;
+  order_quantity: number;
+  total_invoice: string;
+  profit: number;
+  stock_product: number;
+  variant_name: string;
+  product_variant_id: string;
+  variant: string;
+  variant_value: number;
+  order_date: string;
+  status: string;
+  nama_lengkap: string;
+  nama_toko: string;
+  reseller_code: string;
+  alamat: string;
+  product_name: string;
+  brands: string;
+  type_category: string;
+  sub_category: string;
+  dt_code: string;
+  hub: string;
+  principle_id: string;
+  principle: string;
+  serve_price: number | null;
+  buy_price: number;
+}
+
+export interface FullOrder {
+  order_id: string;
+  order_code: string;
+  user_id: string;
+  reseller_name: string;
+  store_name: string;
+  segment: string;
+  area: string;
+  reseller_code: string;
+  phone_number: string;
+  status_order: string;
+  status_payment: string;
+  payment_type: string;
+  order_date: string;
+  faktur_date: string | null;
+  payment_due_date: string | null;
+  process_hub: string;
+  is_cross: number;
+  order_type: string;
+  month: string;
+  payment_date: string | null;
+  total_invoice: string;
+  agent_name: string;
+  admin_name: string;
+  business_type: string;
+  sub_business_type: string;
+  profit: number;
+  detail_order: FullOrderDetailItem[];
+}
+
+export interface FullOrdersResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: FullOrder[];
+}
+
 export interface OrdersResponse {
   code: number;
   status: string;
@@ -1164,6 +1235,50 @@ export const fetchProductTypeMonthly = async (params: ProductTypeMonthlyQueryPar
   
   if (!response.ok) {
     throw new Error(`Failed to fetch product type monthly data: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Types for Full Orders Query Parameters
+export interface FullOrdersQueryParams {
+  sortTime?: 'asc' | 'desc';
+  month?: string;
+  agent?: string;
+  segment?: string;
+  area?: string;
+  status_payment?: string;
+}
+
+// Fetch Full Orders (with detail_order)
+export const fetchFullOrders = async (params: FullOrdersQueryParams): Promise<FullOrdersResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.sortTime) queryParams.append('sortTime', params.sortTime);
+  if (params.month) queryParams.append('month', params.month);
+  if (params.agent) queryParams.append('agent', params.agent);
+  if (params.segment) queryParams.append('segment', params.segment);
+  if (params.area) queryParams.append('area', params.area);
+  if (params.status_payment) queryParams.append('status_payment', params.status_payment);
+  
+  const url = `${baseUrl}/api/order/dashboard?${queryParams.toString()}`;
+  
+  console.log('Fetching full orders from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch full orders: ${response.status} ${response.statusText}`);
   }
   
   return response.json();
