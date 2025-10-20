@@ -9,6 +9,8 @@ export interface Store {
   segment: string;
   areas: string;
   agent_name: string;
+  business_type: string;
+  sub_business_type: string;
   profit_score: number;
   "3_month_profit": number;
   owed_score: number;
@@ -146,6 +148,8 @@ export interface StoreMetadata {
   segment: string;
   areas: string;
   agent_name: string;
+  business_type: string;
+  sub_business_type: string;
   profit_score: number;
   "3_month_profit": number;
   owed_score: number;

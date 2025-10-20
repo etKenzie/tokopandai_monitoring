@@ -2,29 +2,29 @@
 
 import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  FormControl,
-  Grid,
-  InputAdornment,
-  InputLabel,
-  MenuItem,
-  Paper,
-  Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TableSortLabel,
-  TextField,
-  Typography
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    CircularProgress,
+    FormControl,
+    Grid,
+    InputAdornment,
+    InputLabel,
+    MenuItem,
+    Paper,
+    Select,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TablePagination,
+    TableRow,
+    TableSortLabel,
+    TextField,
+    Typography
 } from '@mui/material';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
@@ -49,6 +49,8 @@ const headCells: HeadCell[] = [
   { id: 'segment', label: 'Segment', numeric: false },
   { id: 'areas', label: 'Area', numeric: false },
   { id: 'agent_name', label: 'Agent', numeric: false },
+  { id: 'business_type', label: 'Business Type', numeric: false },
+  { id: 'sub_business_type', label: 'Sub Business Type', numeric: false },
   { id: 'category', label: 'Category', numeric: false },
   { id: '3_month_profit', label: '3 Month Profit', numeric: true },
   { id: 'active_months', label: 'Active Months', numeric: true },
@@ -90,6 +92,8 @@ const StoresTable = ({
   const [areaFilter, setAreaFilter] = useState<string>('');
   const [agentFilter, setAgentFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [businessTypeFilter, setBusinessTypeFilter] = useState<string>('');
+  const [subBusinessTypeFilter, setSubBusinessTypeFilter] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [activeMonthsFilter, setActiveMonthsFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -180,6 +184,8 @@ const StoresTable = ({
       store.areas?.toLowerCase() || '',
       store.agent_name?.toLowerCase() || '',
       store.user_status?.toLowerCase() || '',
+      store.business_type?.toLowerCase() || '',
+      store.sub_business_type?.toLowerCase() || '',
     ];
 
     return searchableFields.some((field) =>
@@ -194,6 +200,8 @@ const StoresTable = ({
       if (areaFilter && s.areas !== areaFilter) return false;
       if (agentFilter && s.agent_name !== agentFilter) return false;
       if (statusFilter && s.user_status !== statusFilter) return false;
+      if (businessTypeFilter && s.business_type !== businessTypeFilter) return false;
+      if (subBusinessTypeFilter && s.sub_business_type !== subBusinessTypeFilter) return false;
       if (categoryFilter && getCategory(s.final_score) !== categoryFilter) return false;
       if (activeMonthsFilter && s.active_months !== parseInt(activeMonthsFilter)) return false;
 
@@ -204,12 +212,12 @@ const StoresTable = ({
 
       return true;
     });
-  }, [stores, segmentFilter, areaFilter, agentFilter, statusFilter, categoryFilter, activeMonthsFilter, searchQuery]);
+  }, [stores, segmentFilter, areaFilter, agentFilter, statusFilter, businessTypeFilter, subBusinessTypeFilter, categoryFilter, activeMonthsFilter, searchQuery]);
 
   // Reset page when local filters change
   useEffect(() => {
     setPage(0);
-  }, [segmentFilter, areaFilter, agentFilter, statusFilter, categoryFilter, activeMonthsFilter, searchQuery]);
+  }, [segmentFilter, areaFilter, agentFilter, statusFilter, businessTypeFilter, subBusinessTypeFilter, categoryFilter, activeMonthsFilter, searchQuery]);
 
   // Notify parent component when filtered stores change
   useEffect(() => {
@@ -223,6 +231,8 @@ const StoresTable = ({
   const uniqueAreas = Array.from(new Set(stores.map((s) => s.areas)));
   const uniqueAgents = Array.from(new Set(stores.map((s) => s.agent_name)));
   const uniqueStatuses = Array.from(new Set(stores.map((s) => s.user_status)));
+  const uniqueBusinessTypes = Array.from(new Set(stores.map((s) => s.business_type)));
+  const uniqueSubBusinessTypes = Array.from(new Set(stores.map((s) => s.sub_business_type)));
   const uniqueActiveMonths = Array.from(new Set(stores.map((s) => s.active_months))).sort((a, b) => a - b);
 
   const sortedStores = [...filteredStores].sort((a, b) => {
@@ -279,6 +289,8 @@ const StoresTable = ({
       'Segment': s.segment,
       'Area': s.areas,
       'Agent': s.agent_name,
+      'Business Type': s.business_type,
+      'Sub Business Type': s.sub_business_type,
       'Category': getCategory(s.final_score),
       'Profit Score': s.profit_score,
       'Owed Score': s.owed_score,
@@ -310,6 +322,8 @@ const StoresTable = ({
       { wch: 15 }, // Segment
       { wch: 15 }, // Area
       { wch: 20 }, // Agent
+      { wch: 20 }, // Business Type
+      { wch: 25 }, // Sub Business Type
       { wch: 10 }, // Category
       { wch: 15 }, // Profit Score
       { wch: 15 }, // Owed Score
@@ -340,6 +354,8 @@ const StoresTable = ({
     setAreaFilter('');
     setAgentFilter('');
     setStatusFilter('');
+    setBusinessTypeFilter('');
+    setSubBusinessTypeFilter('');
     setCategoryFilter('');
     setActiveMonthsFilter('');
     setSearchQuery('');
@@ -408,7 +424,7 @@ const StoresTable = ({
               variant="outlined"
               color="secondary"
               onClick={clearAllFilters}
-              disabled={!segmentFilter && !areaFilter && !agentFilter && !statusFilter && !categoryFilter && !searchQuery}
+              disabled={!segmentFilter && !areaFilter && !agentFilter && !statusFilter && !businessTypeFilter && !subBusinessTypeFilter && !categoryFilter && !activeMonthsFilter && !searchQuery}
             >
               Clear Filters
             </Button>
@@ -571,6 +587,40 @@ const StoresTable = ({
                 </Select>
               </FormControl>
             </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+              <FormControl fullWidth>
+                <InputLabel>Business Type</InputLabel>
+                <Select
+                  value={businessTypeFilter}
+                  label="Business Type"
+                  onChange={(e) => setBusinessTypeFilter(e.target.value)}
+                >
+                  <MenuItem value="">All Business Types</MenuItem>
+                  {uniqueBusinessTypes.map((businessType) => (
+                    <MenuItem key={businessType} value={businessType}>
+                      {businessType}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+              <FormControl fullWidth>
+                <InputLabel>Sub Business Type</InputLabel>
+                <Select
+                  value={subBusinessTypeFilter}
+                  label="Sub Business Type"
+                  onChange={(e) => setSubBusinessTypeFilter(e.target.value)}
+                >
+                  <MenuItem value="">All Sub Business Types</MenuItem>
+                  {uniqueSubBusinessTypes.map((subBusinessType) => (
+                    <MenuItem key={subBusinessType} value={subBusinessType}>
+                      {subBusinessType}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
           </Grid>
         </Box>
 
@@ -667,6 +717,22 @@ const StoresTable = ({
                         />
                       </TableCell>
                       <TableCell>{row.agent_name}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={row.business_type || 'N/A'}
+                          size="small"
+                          variant="outlined"
+                          color="info"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={row.sub_business_type || 'N/A'}
+                          size="small"
+                          variant="outlined"
+                          color="secondary"
+                        />
+                      </TableCell>
                       <TableCell>
                         <Chip
                           label={getCategory(row.final_score)}
