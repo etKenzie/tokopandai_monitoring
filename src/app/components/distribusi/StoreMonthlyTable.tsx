@@ -42,6 +42,9 @@ interface StoreHeadCell {
 const headCells: StoreHeadCell[] = [
   { id: 'store_name', label: 'Store Name', numeric: false },
   { id: 'agent_name', label: 'Agent', numeric: false },
+  { id: 'segment', label: 'Segment', numeric: false },
+  { id: 'business_type', label: 'Business Type', numeric: false },
+  { id: 'sub_business_type', label: 'Sub Business Type', numeric: false },
   { id: 'total_invoice', label: 'Total Invoice', numeric: true },
   { id: 'total_profit', label: 'Total Profit', numeric: true },
   { id: 'margin', label: 'Margin %', numeric: true },
@@ -66,6 +69,9 @@ const StoreMonthlyTable = ({
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [agentFilter, setAgentFilter] = useState<string>('');
+  const [segmentFilter, setSegmentFilter] = useState<string>('');
+  const [businessTypeFilter, setBusinessTypeFilter] = useState<string>('');
+  const [subBusinessTypeFilter, setSubBusinessTypeFilter] = useState<string>('');
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -98,6 +104,9 @@ const StoreMonthlyTable = ({
 
   const clearAllFilters = () => {
     setAgentFilter('');
+    setSegmentFilter('');
+    setBusinessTypeFilter('');
+    setSubBusinessTypeFilter('');
     setSearchQuery('');
     setPage(0);
   };
@@ -108,6 +117,9 @@ const StoreMonthlyTable = ({
     const searchableFields = [
       store.store_name?.toLowerCase() || '',
       store.agent_name?.toLowerCase() || '',
+      store.segment?.toLowerCase() || '',
+      store.business_type?.toLowerCase() || '',
+      store.sub_business_type?.toLowerCase() || '',
     ];
 
     return searchableFields.some((field) =>
@@ -126,11 +138,29 @@ const StoreMonthlyTable = ({
       return false;
     }
     
+    // Apply segment filter
+    if (segmentFilter && store.segment !== segmentFilter) {
+      return false;
+    }
+    
+    // Apply business type filter
+    if (businessTypeFilter && store.business_type !== businessTypeFilter) {
+      return false;
+    }
+    
+    // Apply sub business type filter
+    if (subBusinessTypeFilter && store.sub_business_type !== subBusinessTypeFilter) {
+      return false;
+    }
+    
     return true;
   });
 
-  // Get unique agents for filter dropdown
+  // Get unique values for filter dropdowns
   const uniqueAgents = Array.from(new Set(stores.map((store) => store.agent_name))).sort();
+  const uniqueSegments = Array.from(new Set(stores.map((store) => store.segment))).sort();
+  const uniqueBusinessTypes = Array.from(new Set(stores.map((store) => store.business_type))).sort();
+  const uniqueSubBusinessTypes = Array.from(new Set(stores.map((store) => store.sub_business_type))).sort();
 
   const sortedStores = [...filteredStores].sort((a, b) => {
     const aValue = a[orderBy];
@@ -166,6 +196,9 @@ const StoreMonthlyTable = ({
     const exportData = sortedStores.map((store) => ({
       'Store Name': store.store_name,
       'Agent': store.agent_name,
+      'Segment': store.segment,
+      'Business Type': store.business_type,
+      'Sub Business Type': store.sub_business_type,
       'Total Invoice': store.total_invoice,
       'Total Profit': store.total_profit,
       'Margin %': store.margin,
@@ -186,9 +219,11 @@ const StoreMonthlyTable = ({
       first_order_date: '',
       first_order_month: '',
       user_status: 'Active',
-      segment: '',
+      segment: storeMonthly.segment,
       areas: '',
       agent_name: storeMonthly.agent_name,
+      business_type: storeMonthly.business_type,
+      sub_business_type: storeMonthly.sub_business_type,
       profit_score: 0,
       "3_month_profit": storeMonthly.total_profit,
       owed_score: 0,
@@ -242,7 +277,7 @@ const StoreMonthlyTable = ({
               color="secondary"
               size="small"
               onClick={clearAllFilters}
-              disabled={!agentFilter && !searchQuery}
+              disabled={!agentFilter && !segmentFilter && !businessTypeFilter && !subBusinessTypeFilter && !searchQuery}
             >
               Clear Filters
             </Button>
@@ -288,7 +323,7 @@ const StoreMonthlyTable = ({
         {/* Search and Filters */}
         <Box sx={{ mb: 3 }}>
           <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 8 }}>
+            <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
                 variant="outlined"
@@ -304,7 +339,7 @@ const StoreMonthlyTable = ({
                 }}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
               <FormControl fullWidth>
                 <InputLabel>Agent</InputLabel>
                 <Select
@@ -316,6 +351,57 @@ const StoreMonthlyTable = ({
                   {uniqueAgents.map((agent) => (
                     <MenuItem key={agent} value={agent}>
                       {agent}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+              <FormControl fullWidth>
+                <InputLabel>Segment</InputLabel>
+                <Select
+                  value={segmentFilter}
+                  label="Segment"
+                  onChange={(e) => setSegmentFilter(e.target.value)}
+                >
+                  <MenuItem value="">All Segments</MenuItem>
+                  {uniqueSegments.map((segment) => (
+                    <MenuItem key={segment} value={segment}>
+                      {segment}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+              <FormControl fullWidth>
+                <InputLabel>Business Type</InputLabel>
+                <Select
+                  value={businessTypeFilter}
+                  label="Business Type"
+                  onChange={(e) => setBusinessTypeFilter(e.target.value)}
+                >
+                  <MenuItem value="">All Business Types</MenuItem>
+                  {uniqueBusinessTypes.map((businessType) => (
+                    <MenuItem key={businessType} value={businessType}>
+                      {businessType}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+              <FormControl fullWidth>
+                <InputLabel>Sub Business Type</InputLabel>
+                <Select
+                  value={subBusinessTypeFilter}
+                  label="Sub Business Type"
+                  onChange={(e) => setSubBusinessTypeFilter(e.target.value)}
+                >
+                  <MenuItem value="">All Sub Business Types</MenuItem>
+                  {uniqueSubBusinessTypes.map((subBusinessType) => (
+                    <MenuItem key={subBusinessType} value={subBusinessType}>
+                      {subBusinessType}
                     </MenuItem>
                   ))}
                 </Select>
@@ -387,6 +473,21 @@ const StoreMonthlyTable = ({
                       <TableCell>
                         <Typography variant="body2" color="textSecondary">
                           {store.agent_name}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="textSecondary">
+                          {store.segment || 'N/A'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="textSecondary">
+                          {store.business_type || 'N/A'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="textSecondary">
+                          {store.sub_business_type || 'N/A'}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">

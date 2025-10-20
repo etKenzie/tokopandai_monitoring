@@ -258,6 +258,9 @@ export interface StoreMonthly {
   user_id: string;
   store_name: string;
   agent_name: string;
+  segment: string;
+  business_type: string;
+  sub_business_type: string;
   total_invoice: number;
   total_profit: number;
   margin: number;
