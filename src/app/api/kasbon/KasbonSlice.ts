@@ -574,11 +574,7 @@ export const fetchKasbonSummary = async (params: KasbonSummaryParams): Promise<K
   if (params.year) queryParams.append('year', params.year);
   
   const url = `${baseUrl}/kasbon/summary?${queryParams.toString()}`;
-  
-  console.log('Fetching kasbon summary from:', url);
-  console.log('Query params:', queryParams.toString());
-  console.log('Params received:', params);
-  
+
   const response = await fetch(url, {
     method: 'GET',
     headers: {
@@ -673,8 +669,7 @@ export const fetchKaryawanOverdue = async (params: KaryawanOverdueParams): Promi
   if (params.year) queryParams.append('year', params.year);
   
   const url = `${baseUrl}/kasbon/karyawan-overdue?${queryParams.toString()}`;
-  
-  console.log('Fetching karyawan overdue from:', url);
+
   
   const response = await fetch(url, {
     method: 'GET',
