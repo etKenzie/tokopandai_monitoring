@@ -52,7 +52,7 @@ export const getGoalCashIn = (options: GoalCashInLookupOptions): number => {
       agentSettings: settings.goal_cash_in[agentKey] ? Object.keys(settings.goal_cash_in[agentKey]) : 'No settings for agent'
     });
     
-    // Try exact agent match
+    // Try exact agent match with settings format (capitalized month)
     if (settings.goal_cash_in[agentKey] && settings.goal_cash_in[agentKey][settingsMonthYear]) {
       console.log('Found goal cash-in in settings for agent:', { 
         agentKey, 
@@ -62,7 +62,17 @@ export const getGoalCashIn = (options: GoalCashInLookupOptions): number => {
       return settings.goal_cash_in[agentKey][settingsMonthYear];
     }
     
-    // Try case-insensitive agent match
+    // Try exact agent match with static format (lowercase month) in settings
+    if (settings.goal_cash_in[agentKey] && settings.goal_cash_in[agentKey][staticMonthYear]) {
+      console.log('Found goal cash-in in settings for agent (lowercase month):', { 
+        agentKey, 
+        monthYear: staticMonthYear, 
+        value: settings.goal_cash_in[agentKey][staticMonthYear] 
+      });
+      return settings.goal_cash_in[agentKey][staticMonthYear];
+    }
+    
+    // Try case-insensitive agent match with settings format
     const caseInsensitiveAgent = Object.keys(settings.goal_cash_in).find(
       key => key.toLowerCase() === agentKey.toLowerCase()
     );
@@ -76,13 +86,32 @@ export const getGoalCashIn = (options: GoalCashInLookupOptions): number => {
       return settings.goal_cash_in[caseInsensitiveAgent][settingsMonthYear];
     }
     
-    // Fallback to NATIONAL if agent not found in settings
+    // Try case-insensitive agent match with static format in settings
+    if (caseInsensitiveAgent && settings.goal_cash_in[caseInsensitiveAgent][staticMonthYear]) {
+      console.log('Found goal cash-in in settings (case-insensitive, lowercase month):', { 
+        originalAgent: agentKey,
+        matchedAgent: caseInsensitiveAgent,
+        monthYear: staticMonthYear, 
+        value: settings.goal_cash_in[caseInsensitiveAgent][staticMonthYear] 
+      });
+      return settings.goal_cash_in[caseInsensitiveAgent][staticMonthYear];
+    }
+    
+    // Fallback to NATIONAL if agent not found in settings (try both formats)
     if (settings.goal_cash_in['NATIONAL'] && settings.goal_cash_in['NATIONAL'][settingsMonthYear]) {
       console.log('Using NATIONAL goal cash-in from settings:', { 
         monthYear: settingsMonthYear, 
         value: settings.goal_cash_in['NATIONAL'][settingsMonthYear] 
       });
       return settings.goal_cash_in['NATIONAL'][settingsMonthYear];
+    }
+    
+    if (settings.goal_cash_in['NATIONAL'] && settings.goal_cash_in['NATIONAL'][staticMonthYear]) {
+      console.log('Using NATIONAL goal cash-in from settings (lowercase month):', { 
+        monthYear: staticMonthYear, 
+        value: settings.goal_cash_in['NATIONAL'][staticMonthYear] 
+      });
+      return settings.goal_cash_in['NATIONAL'][staticMonthYear];
     }
   }
   

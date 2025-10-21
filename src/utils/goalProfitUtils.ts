@@ -54,7 +54,7 @@ export const getGoalProfit = (options: GoalLookupOptions): number => {
       agentSettings: settings.goal_profit[agentKey] ? Object.keys(settings.goal_profit[agentKey]) : 'No settings for agent'
     });
     
-    // Try exact agent match
+    // Try exact agent match with settings format (capitalized month)
     if (settings.goal_profit[agentKey] && settings.goal_profit[agentKey][settingsMonthYear]) {
       console.log('Found goal profit in settings for agent:', { 
         agentKey, 
@@ -64,7 +64,17 @@ export const getGoalProfit = (options: GoalLookupOptions): number => {
       return settings.goal_profit[agentKey][settingsMonthYear];
     }
     
-    // Try case-insensitive agent match
+    // Try exact agent match with static format (lowercase month) in settings
+    if (settings.goal_profit[agentKey] && settings.goal_profit[agentKey][staticMonthYear]) {
+      console.log('Found goal profit in settings for agent (lowercase month):', { 
+        agentKey, 
+        monthYear: staticMonthYear, 
+        value: settings.goal_profit[agentKey][staticMonthYear] 
+      });
+      return settings.goal_profit[agentKey][staticMonthYear];
+    }
+    
+    // Try case-insensitive agent match with settings format
     const caseInsensitiveAgent = Object.keys(settings.goal_profit).find(
       key => key.toLowerCase() === agentKey.toLowerCase()
     );
@@ -78,13 +88,32 @@ export const getGoalProfit = (options: GoalLookupOptions): number => {
       return settings.goal_profit[caseInsensitiveAgent][settingsMonthYear];
     }
     
-    // Fallback to NATIONAL if agent not found in settings
+    // Try case-insensitive agent match with static format in settings
+    if (caseInsensitiveAgent && settings.goal_profit[caseInsensitiveAgent][staticMonthYear]) {
+      console.log('Found goal profit in settings (case-insensitive, lowercase month):', { 
+        originalAgent: agentKey,
+        matchedAgent: caseInsensitiveAgent,
+        monthYear: staticMonthYear, 
+        value: settings.goal_profit[caseInsensitiveAgent][staticMonthYear] 
+      });
+      return settings.goal_profit[caseInsensitiveAgent][staticMonthYear];
+    }
+    
+    // Fallback to NATIONAL if agent not found in settings (try both formats)
     if (settings.goal_profit['NATIONAL'] && settings.goal_profit['NATIONAL'][settingsMonthYear]) {
       console.log('Using NATIONAL goal profit from settings:', { 
         monthYear: settingsMonthYear, 
         value: settings.goal_profit['NATIONAL'][settingsMonthYear] 
       });
       return settings.goal_profit['NATIONAL'][settingsMonthYear];
+    }
+    
+    if (settings.goal_profit['NATIONAL'] && settings.goal_profit['NATIONAL'][staticMonthYear]) {
+      console.log('Using NATIONAL goal profit from settings (lowercase month):', { 
+        monthYear: staticMonthYear, 
+        value: settings.goal_profit['NATIONAL'][staticMonthYear] 
+      });
+      return settings.goal_profit['NATIONAL'][staticMonthYear];
     }
   }
   

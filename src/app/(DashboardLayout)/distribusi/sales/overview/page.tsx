@@ -295,8 +295,13 @@ const SalesOverview = () => {
     // Get goal profits from settings first, then fallback to static data
     if (settings?.goal_profit) {
       Object.keys(settings.goal_profit).forEach(agentKey => {
+        // Try settings format (capitalized month) first
         if (settings.goal_profit![agentKey] && settings.goal_profit![agentKey][monthYear]) {
           goalProfitByAgent[agentKey] = settings.goal_profit![agentKey][monthYear];
+        }
+        // Try static format (lowercase month) in settings as fallback
+        else if (settings.goal_profit![agentKey] && settings.goal_profit![agentKey][staticMonthYear]) {
+          goalProfitByAgent[agentKey] = settings.goal_profit![agentKey][staticMonthYear];
         }
       });
     }
