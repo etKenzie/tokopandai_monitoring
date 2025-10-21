@@ -1,4 +1,4 @@
-import { goalProfit } from '@/app/(DashboardLayout)/distribusi/goalProfit';
+// Static goalProfit data removed - only using settings from Supabase
 
 export interface GoalLookupOptions {
   agentKey: string;
@@ -43,7 +43,8 @@ export const getGoalProfit = (options: GoalLookupOptions): number => {
     monthName,
     settingsMonthYear,
     staticMonthYear,
-    hasSettings: !!settings?.goal_profit
+    hasSettings: !!settings?.goal_profit,
+    settingsKeys: settings?.goal_profit ? Object.keys(settings.goal_profit) : 'No settings'
   });
 
   // First try to get from configurable settings
@@ -51,7 +52,10 @@ export const getGoalProfit = (options: GoalLookupOptions): number => {
     console.log('Settings goal_profit structure:', {
       availableAgents: Object.keys(settings.goal_profit),
       agentHasSettings: !!settings.goal_profit[agentKey],
-      agentSettings: settings.goal_profit[agentKey] ? Object.keys(settings.goal_profit[agentKey]) : 'No settings for agent'
+      agentSettings: settings.goal_profit[agentKey] ? Object.keys(settings.goal_profit[agentKey]) : 'No settings for agent',
+      lookingForSettingsFormat: settingsMonthYear,
+      lookingForStaticFormat: staticMonthYear,
+      agentData: settings.goal_profit[agentKey] || 'No data for this agent'
     });
     
     // Try exact agent match with settings format (capitalized month)
@@ -117,52 +121,13 @@ export const getGoalProfit = (options: GoalLookupOptions): number => {
     }
   }
   
-  // Fallback to static goalProfit data if settings not available
-  console.log('Goal Profit Lookup (fallback to static):', { 
-    agentKey, 
-    monthYear: staticMonthYear, 
-    availableAgents: Object.keys(goalProfit),
-    staticDataStructure: goalProfit[agentKey] ? Object.keys(goalProfit[agentKey]) : 'Agent not found'
-  });
-  
-  // Try exact agent match in static data
-  if (goalProfit[agentKey] && goalProfit[agentKey][staticMonthYear]) {
-    console.log('Found goal profit for agent (static):', { 
-      agentKey, 
-      monthYear: staticMonthYear, 
-      value: goalProfit[agentKey][staticMonthYear] 
-    });
-    return goalProfit[agentKey][staticMonthYear];
-  }
-  
-  // Try case-insensitive agent match in static data
-  const caseInsensitiveStaticAgent = Object.keys(goalProfit).find(
-    key => key.toLowerCase() === agentKey.toLowerCase()
-  );
-  if (caseInsensitiveStaticAgent && goalProfit[caseInsensitiveStaticAgent][staticMonthYear]) {
-    console.log('Found goal profit for agent (static, case-insensitive):', { 
-      originalAgent: agentKey,
-      matchedAgent: caseInsensitiveStaticAgent,
-      monthYear: staticMonthYear, 
-      value: goalProfit[caseInsensitiveStaticAgent][staticMonthYear] 
-    });
-    return goalProfit[caseInsensitiveStaticAgent][staticMonthYear];
-  }
-  
-  // Fallback to NATIONAL if agent not found
-  if (goalProfit['NATIONAL'] && goalProfit['NATIONAL'][staticMonthYear]) {
-    console.log('Using NATIONAL goal profit (static):', { 
-      monthYear: staticMonthYear, 
-      value: goalProfit['NATIONAL'][staticMonthYear] 
-    });
-    return goalProfit['NATIONAL'][staticMonthYear];
-  }
+  // No fallback to static data - only use settings from Supabase
+  console.log('No goal profit found in settings, returning 0');
   
   console.warn('No goal profit found for:', { 
     agentKey, 
     monthYear: settingsMonthYear, 
     staticMonthYear, 
-    availableAgents: Object.keys(goalProfit),
     availableSettingsAgents: settings?.goal_profit ? Object.keys(settings.goal_profit) : 'No settings'
   });
   return 0;

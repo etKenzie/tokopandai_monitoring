@@ -15,7 +15,6 @@ import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from '@/config
 import { getGoalProfit, getProfitGoalsForChart } from '@/utils/goalProfitUtils';
 import { Box, FormControl, Grid, InputLabel, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
-import { goalProfit } from '../../goalProfit';
 
 const SalesOverview = () => {
   const { user, roles, refreshRoles } = useAuth();
@@ -34,8 +33,14 @@ const SalesOverview = () => {
   // Log access check result for debugging
   console.log('Sales Overview Access Check:', accessCheck);
   console.log('User roles:', roles);
+  console.log('Restricted roles from config:', restrictedRoles);
   console.log('Has restricted role:', hasRestrictedRole);
   console.log('User role for filtering:', userRoleForFiltering);
+  console.log('Role matching check:', roles.map(role => ({
+    role,
+    isRestricted: restrictedRoles.includes(role),
+    mappedAgent: getAgentNameFromRole(role)
+  })));
   
   const [salesData, setSalesData] = useState<SalesSummaryData | null>(null);
   const [monthlySummaryData, setMonthlySummaryData] = useState<MonthlySummaryData[]>([]);
@@ -255,6 +260,18 @@ const SalesOverview = () => {
     // For users with restricted roles, use their mapped agent name, otherwise use selected agent or default to NATIONAL
     const agentKey = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (filters.agent || 'NATIONAL');
     
+    console.log('Sales Overview - Goal Profit Calculation:', {
+      hasRestrictedRole,
+      userRoleForFiltering,
+      agentKey,
+      filtersMonth: filters.month,
+      filtersYear: filters.year,
+      settingsAvailable: !!settings?.goal_profit,
+      settingsKeys: settings?.goal_profit ? Object.keys(settings.goal_profit) : 'No settings',
+      settingsObject: settings,
+      goalProfitData: settings?.goal_profit
+    });
+    
     return getGoalProfit({
       agentKey,
       month: filters.month,
@@ -306,12 +323,7 @@ const SalesOverview = () => {
       });
     }
     
-    // Fallback to static goalProfit data for any missing agents
-    Object.keys(goalProfit).forEach(agentKey => {
-      if (!goalProfitByAgent[agentKey] && goalProfit[agentKey] && goalProfit[agentKey][staticMonthYear]) {
-        goalProfitByAgent[agentKey] = goalProfit[agentKey][staticMonthYear];
-      }
-    });
+    // No fallback to static data - only use settings from Supabase
     
     console.log('Goal profit by agent:', { monthYear, staticMonthYear, goalProfitByAgent });
     return goalProfitByAgent;
