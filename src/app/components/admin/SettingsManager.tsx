@@ -27,7 +27,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { goalCashIn } from '../../(DashboardLayout)/distribusi/goalCashIn';
-import { goalProfit } from '../../(DashboardLayout)/distribusi/goalProfit';
+// Static goalProfit data removed - only using settings from Supabase
 
 interface GoalProfitEntry {
   agent: string;
@@ -68,8 +68,8 @@ const SettingsManager = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingCashIn, setIsEditingCashIn] = useState(false);
 
-  // Available agents from static data
-  const availableAgents = Object.keys(goalProfit).sort();
+  // Available agents from settings data
+  const availableAgents = settings?.goal_profit ? Object.keys(settings.goal_profit).sort() : [];
 
   // Available months/years
   const availableMonths = [
@@ -345,16 +345,9 @@ const SettingsManager = () => {
     try {
       setSaving(true);
       
-      // Convert the static goalProfit data to the format expected by settings
-      const staticData: AgentGoalProfits = {};
-      Object.entries(goalProfit).forEach(([agent, months]) => {
-        staticData[agent] = Object.assign({}, months);
-      });
+      // Note: Static data import removed - only using settings from Supabase
+      console.log('Static data import is no longer available - using settings from Supabase only');
       
-      setGoalProfitData(staticData);
-      await updateSetting('goal_profit', staticData);
-      
-      console.log('Static goal profit data imported successfully');
     } catch (err) {
       console.error('Failed to import static data:', err);
     } finally {
