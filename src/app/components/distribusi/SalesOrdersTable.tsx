@@ -2,29 +2,29 @@
 
 import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    Chip,
-    CircularProgress,
-    FormControl,
-    Grid,
-    InputAdornment,
-    InputLabel,
-    MenuItem,
-    Paper,
-    Select,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    TableSortLabel,
-    TextField,
-    Typography
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  FormControl,
+  Grid,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TableSortLabel,
+  TextField,
+  Typography
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
@@ -332,25 +332,28 @@ const SalesOrdersTable = ({
     
     fullOrders.forEach((order) => {
       if (order.detail_order && order.detail_order.length > 0) {
-        order.detail_order.forEach((detail) => {
+        order.detail_order.forEach((detail, idx) => {
           data.push({
-            'Order Code': order.order_code,
+            'Order Code': idx === 0 ? order.order_code : '',
+            'User ID': idx === 0 ? order.user_id : '',
             'Order Item ID': detail.order_item_id,
-            'Month': order.month,
-            'Reseller Name': order.reseller_name,
-            'Store Name': order.store_name,
-            'Segment': order.segment,
-            'Area': order.area,
-            'Agent': order.agent_name,
-            'Order Status': order.status_order,
-            'Payment Status': order.status_payment,
-            'Payment Type': order.payment_type,
-            'Order Date': formatDate(order.order_date),
-            'Payment Due Date': getPaymentDueDateDisplay(order.payment_due_date).label,
-            'Total Invoice': order.total_invoice,
-            'Profit': order.profit,
-            'Business Type': order.business_type,
-            'Sub Business Type': order.sub_business_type,
+            'Month': idx === 0 ? order.month : '',
+            'Reseller Name': idx === 0 ? order.reseller_name : '',
+            'Store Name': idx === 0 ? order.store_name : '',
+            'Segment': idx === 0 ? order.segment : '',
+            'Area': idx === 0 ? order.area : '',
+            'Agent': idx === 0 ? order.agent_name : '',
+            'Order Status': idx === 0 ? order.status_order : '',
+            'Payment Status': idx === 0 ? order.status_payment : '',
+            'Payment Type': idx === 0 ? order.payment_type : '',
+            'Order Date': idx === 0 ? formatDate(order.order_date) : '',
+            'Payment Due Date': idx === 0 ? getPaymentDueDateDisplay(order.payment_due_date).label : '',
+            'Total Invoice': detail.total_invoice, // Use total_invoice from detail_order instead of order.total_invoice
+            'Profit': idx === 0 ? order.profit : '',
+            'Business Type': idx === 0 ? order.business_type : '',
+            'Sub Business Type': idx === 0 ? order.sub_business_type : '',
+            'Phone Number': idx === 0 ? order.phone_number : '',
+            'Reseller Code': idx === 0 ? order.reseller_code : '',
             'Product Name': detail.product_name,
             'SKU': detail.sku,
             'Brands': detail.brands,
@@ -366,14 +369,13 @@ const SalesOrdersTable = ({
             'Principle': detail.principle,
             'Hub': detail.hub,
             'Address': detail.alamat,
-            'Phone Number': order.phone_number,
-            'Reseller Code': order.reseller_code,
           });
         });
       } else {
         // If no detail_order, add the main order data
         data.push({
           'Order Code': order.order_code,
+          'User ID': order.user_id,
           'Order Item ID': '',
           'Month': order.month,
           'Reseller Name': order.reseller_name,
@@ -390,6 +392,8 @@ const SalesOrdersTable = ({
           'Profit': order.profit,
           'Business Type': order.business_type,
           'Sub Business Type': order.sub_business_type,
+          'Phone Number': order.phone_number,
+          'Reseller Code': order.reseller_code,
           'Product Name': '',
           'SKU': '',
           'Brands': '',
@@ -405,8 +409,6 @@ const SalesOrdersTable = ({
           'Principle': '',
           'Hub': '',
           'Address': '',
-          'Phone Number': order.phone_number,
-          'Reseller Code': order.reseller_code,
         });
       }
     });
@@ -444,6 +446,7 @@ const SalesOrdersTable = ({
       // Set column widths
       const colWidths = [
         { wch: 15 }, // Order Code
+        { wch: 15 }, // User ID
         { wch: 25 }, // Order Item ID
         { wch: 15 }, // Month
         { wch: 25 }, // Reseller Name
@@ -460,6 +463,8 @@ const SalesOrdersTable = ({
         { wch: 15 }, // Profit
         { wch: 20 }, // Business Type
         { wch: 25 }, // Sub Business Type
+        { wch: 15 }, // Phone Number
+        { wch: 25 }, // Reseller Code
         { wch: 30 }, // Product Name
         { wch: 15 }, // SKU
         { wch: 15 }, // Brands
@@ -475,8 +480,6 @@ const SalesOrdersTable = ({
         { wch: 25 }, // Principle
         { wch: 15 }, // Hub
         { wch: 40 }, // Address
-        { wch: 15 }, // Phone Number
-        { wch: 25 }, // Reseller Code
       ];
       ws['!cols'] = colWidths;
 
