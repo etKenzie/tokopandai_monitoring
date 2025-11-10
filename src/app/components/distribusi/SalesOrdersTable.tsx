@@ -327,33 +327,33 @@ const SalesOrdersTable = ({
     window.URL.revokeObjectURL(url);
   };
 
-  const prepareFullDataForExport = (fullOrders: FullOrder[]) => {
+  const prepareDetailDataForExport = (fullOrders: FullOrder[]) => {
     const data: any[] = [];
     
     fullOrders.forEach((order) => {
       if (order.detail_order && order.detail_order.length > 0) {
-        order.detail_order.forEach((detail, idx) => {
+        order.detail_order.forEach((detail) => {
           data.push({
-            'Order Code': idx === 0 ? order.order_code : '',
-            'User ID': idx === 0 ? order.user_id : '',
+            'Order Code': order.order_code,
+            'User ID': order.user_id,
             'Order Item ID': detail.order_item_id,
-            'Month': idx === 0 ? order.month : '',
-            'Reseller Name': idx === 0 ? order.reseller_name : '',
-            'Store Name': idx === 0 ? order.store_name : '',
-            'Segment': idx === 0 ? order.segment : '',
-            'Area': idx === 0 ? order.area : '',
-            'Agent': idx === 0 ? order.agent_name : '',
-            'Order Status': idx === 0 ? order.status_order : '',
-            'Payment Status': idx === 0 ? order.status_payment : '',
-            'Payment Type': idx === 0 ? order.payment_type : '',
-            'Order Date': idx === 0 ? formatDate(order.order_date) : '',
-            'Payment Due Date': idx === 0 ? getPaymentDueDateDisplay(order.payment_due_date).label : '',
-            'Total Invoice': detail.total_invoice, // Use total_invoice from detail_order instead of order.total_invoice
-            'Profit': idx === 0 ? order.profit : '',
-            'Business Type': idx === 0 ? order.business_type : '',
-            'Sub Business Type': idx === 0 ? order.sub_business_type : '',
-            'Phone Number': idx === 0 ? order.phone_number : '',
-            'Reseller Code': idx === 0 ? order.reseller_code : '',
+            'Month': order.month,
+            'Reseller Name': order.reseller_name,
+            'Store Name': order.store_name,
+            'Segment': order.segment,
+            'Area': order.area,
+            'Agent': order.agent_name,
+            'Order Status': order.status_order,
+            'Payment Status': order.status_payment,
+            'Payment Type': order.payment_type,
+            'Order Date': formatDate(order.order_date),
+            'Payment Due Date': getPaymentDueDateDisplay(order.payment_due_date).label,
+            'Total Invoice': detail.total_invoice, // Use total_invoice from detail_order
+            'Profit': detail.profit, // Use profit from detail_order
+            'Business Type': order.business_type,
+            'Sub Business Type': order.sub_business_type,
+            'Phone Number': order.phone_number,
+            'Reseller Code': order.reseller_code,
             'Product Name': detail.product_name,
             'SKU': detail.sku,
             'Brands': detail.brands,
@@ -365,7 +365,6 @@ const SalesOrdersTable = ({
             'Variant': detail.variant,
             'Variant Value': detail.variant_value,
             'Buy Price': detail.buy_price,
-            'Serve Price': detail.serve_price,
             'Principle': detail.principle,
             'Hub': detail.hub,
             'Address': detail.alamat,
@@ -405,7 +404,6 @@ const SalesOrdersTable = ({
           'Variant': '',
           'Variant Value': '',
           'Buy Price': '',
-          'Serve Price': '',
           'Principle': '',
           'Hub': '',
           'Address': '',
@@ -416,9 +414,9 @@ const SalesOrdersTable = ({
     return data;
   };
 
-  const handleFullDownload = async () => {
+  const handleDetailDownload = async () => {
     if (!filters.month) {
-      alert('Please select a month to download full data');
+      alert('Please select a month to download detail data');
       return;
     }
 
@@ -437,7 +435,7 @@ const SalesOrdersTable = ({
         status_payment: paymentStatusFilter || undefined
       });
 
-      const data = prepareFullDataForExport(response.data);
+      const data = prepareDetailDataForExport(response.data);
       
       // Create workbook and worksheet
       const wb = XLSX.utils.book_new();
@@ -476,7 +474,6 @@ const SalesOrdersTable = ({
         { wch: 15 }, // Variant
         { wch: 15 }, // Variant Value
         { wch: 15 }, // Buy Price
-        { wch: 15 }, // Serve Price
         { wch: 25 }, // Principle
         { wch: 15 }, // Hub
         { wch: 40 }, // Address
@@ -484,7 +481,7 @@ const SalesOrdersTable = ({
       ws['!cols'] = colWidths;
 
       // Add worksheet to workbook
-      XLSX.utils.book_append_sheet(wb, ws, 'Full Sales Orders');
+      XLSX.utils.book_append_sheet(wb, ws, 'Sales Orders Detail');
 
       // Generate Excel file
       const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
@@ -494,12 +491,12 @@ const SalesOrdersTable = ({
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `full-sales-orders-${filters.month.replace(' ', '-').toLowerCase()}.xlsx`;
+      a.download = `sales-orders-detail-${filters.month.replace(' ', '-').toLowerCase()}.xlsx`;
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Failed to download full data:', error);
-      alert('Failed to download full data. Please try again.');
+      console.error('Failed to download detail data:', error);
+      alert('Failed to download detail data. Please try again.');
     } finally {
       setFullDownloadLoading(false);
     }
@@ -586,11 +583,11 @@ const SalesOrdersTable = ({
               variant="outlined"
               color="secondary"
               startIcon={fullDownloadLoading ? <CircularProgress size={16} /> : <DownloadIcon />}
-              onClick={handleFullDownload}
+              onClick={handleDetailDownload}
               disabled={!filters.month || fullDownloadLoading}
               sx={{ mr: 1 }}
             >
-              {fullDownloadLoading ? 'Downloading...' : 'Download Full'}
+              {fullDownloadLoading ? 'Downloading...' : 'Download Detail'}
             </Button>
             <Button
               variant="outlined"
