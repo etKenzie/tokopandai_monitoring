@@ -7,6 +7,7 @@ import { DistribusiFilterValues } from '@/app/components/distribusi/DistribusiFi
 import OrderTypeChart from '@/app/components/distribusi/OrderTypeChart';
 import SalesMonthlyChart from '@/app/components/distribusi/SalesMonthlyChart';
 import StoresMonthlyChart from '@/app/components/distribusi/StoresMonthlyChart';
+import StoresOwedNotice from '@/app/components/distribusi/StoresOwedNotice';
 import SummaryTiles from '@/app/components/shared/SummaryTiles';
 import { useAuth } from '@/app/context/AuthContext';
 import { useSettings } from '@/app/context/SettingsContext';
@@ -678,6 +679,9 @@ const SalesOverview = () => {
             </Grid>
           </Grid>
         </Box>
+
+        {/* Stores Owed Notice */}
+        <StoresOwedNotice agentFilter={hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent} />
 
         {/* Currency Summary Tiles */}
         <Box mb={3}>

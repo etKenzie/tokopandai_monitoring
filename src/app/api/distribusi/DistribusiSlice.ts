@@ -176,6 +176,13 @@ export interface OrderQueryParams {
   area?: string;
 }
 
+export interface OverdueOrdersQueryParams {
+  start_date?: string;
+  end_date?: string;
+  sortTime?: 'asc' | 'desc';
+  agent?: string;
+}
+
 // Get API URL from environment variable with fallback
 const AM_API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -259,6 +266,38 @@ export const fetchOrdersByArea = async (area: string): Promise<OrdersResponse> =
     sortTime: 'desc',
     area: area
   });
+};
+
+// Fetch Overdue Orders
+export const fetchOverdueOrders = async (params: OverdueOrdersQueryParams): Promise<OrdersResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.start_date) queryParams.append('start_date', params.start_date);
+  if (params.end_date) queryParams.append('end_date', params.end_date);
+  if (params.sortTime) queryParams.append('sortTime', params.sortTime);
+  if (params.agent) queryParams.append('agent', params.agent);
+  
+  const url = `${baseUrl}/api/order/overdue?${queryParams.toString()}`;
+  
+  console.log('Fetching overdue orders from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch overdue orders: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
 };
 
 // Fetch order details by order code

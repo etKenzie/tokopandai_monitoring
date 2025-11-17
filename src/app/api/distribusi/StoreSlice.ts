@@ -328,3 +328,45 @@ export const fetchStoreById = async (userId: string): Promise<Store | null> => {
   }
   return null;
 };
+
+// Types for Store Owed API
+export interface StoreOwed {
+  user_id: string;
+  store_name: string;
+  agent_name: string | null;
+  segment: string;
+  areas: string;
+  business_type: string;
+  sub_business_type: string;
+  "3_month_owed_amount": number;
+  total_owed_amount: number;
+}
+
+export interface StoreOwedResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: StoreOwed[];
+}
+
+// Fetch Stores with Owed Amounts
+export const fetchStoresOwed = async (): Promise<StoreOwedResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  const url = `${baseUrl}/api/store/owed`;
+  
+  console.log('Fetching stores with owed amounts from:', url);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch stores with owed amounts: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};

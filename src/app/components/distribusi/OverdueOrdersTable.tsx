@@ -1,34 +1,42 @@
 'use client';
 
-import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
+import { getAgentNameFromRole } from '@/config/roles';
+import { Download as DownloadIcon, Info as InfoIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    Chip,
-    CircularProgress,
-    FormControl,
-    Grid,
-    InputAdornment,
-    InputLabel,
-    MenuItem,
-    Paper,
-    Select,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    TableSortLabel,
-    TextField,
-    Typography
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  Grid,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TableSortLabel,
+  TextField,
+  Typography
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
-import { fetchFullOrders, fetchOrders, FullOrder, Order } from '../../api/distribusi/DistribusiSlice';
+import { fetchOverdueOrders, Order } from '../../api/distribusi/DistribusiSlice';
 import OrderDetailModal from '../shared/OrderDetailModal';
 
 type OrderDirection = 'asc' | 'desc';
@@ -52,28 +60,35 @@ const headCells: HeadCell[] = [
   { id: 'status_payment', label: 'Payment Status', numeric: false },
   { id: 'payment_type', label: 'Payment Type', numeric: false },
   { id: 'order_date', label: 'Order Date', numeric: false },
-  { id: 'payment_due_date', label: 'Payment Due Date', numeric: false },
+  { id: 'payment_due_date', label: 'Due Date', numeric: false },
+  { id: 'overdue_status', label: 'Overdue Status', numeric: false },
   { id: 'total_invoice', label: 'Total Invoice', numeric: true },
   { id: 'profit', label: 'Profit', numeric: true },
+  { id: 'business_type', label: 'Business Type', numeric: false },
+  { id: 'sub_business_type', label: 'Sub Business Type', numeric: false },
 ];
 
-interface SalesOrdersTableProps {
+interface OverdueOrdersTableProps {
   filters: {
-    month?: string;
+    start_date?: string;
+    end_date?: string;
     agent?: string;
-    segment?: string;
-    area?: string;
-    statusPayment?: string;
   };
   title?: string;
-  agentName?: string;
+  // Role-based filtering props
+  hasRestrictedRole?: boolean;
+  userRoleForFiltering?: string;
+  // Callback to update available agents in parent
+  onAgentsUpdate?: (agents: string[]) => void;
 }
 
-const SalesOrdersTable = ({ 
+const OverdueOrdersTable = ({ 
   filters,
-  title = 'Sales Orders',
-  agentName
-}: SalesOrdersTableProps) => {
+  title = 'Overdue Orders',
+  hasRestrictedRole = false,
+  userRoleForFiltering,
+  onAgentsUpdate
+}: OverdueOrdersTableProps) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,49 +104,68 @@ const SalesOrdersTable = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedOrderCode, setSelectedOrderCode] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [fullDownloadLoading, setFullDownloadLoading] = useState(false);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
-  const fetchOrdersData = async () => {
-    // Only fetch data if month is selected
-    if (!filters.month) {
-      setOrders([]);
-      setError('Please select a month to view orders');
+  const fetchOverdueOrdersData = async () => {
+    // Clear existing data immediately when fetching new data
+    setOrders([]);
+    setError(null);
+    
+    // Only fetch data if dates are selected
+    if (!filters.start_date || !filters.end_date) {
+      setError('Please select start date and end date to view overdue orders');
       return;
     }
 
     setLoading(true);
-    setError(null);
     try {
-      const response = await fetchOrders({
+      // For users with restricted roles, use their mapped agent name instead of filter selection
+      const agentName = hasRestrictedRole && userRoleForFiltering 
+        ? getAgentNameFromRole(userRoleForFiltering) 
+        : filters.agent;
+
+      const response = await fetchOverdueOrders({
+        start_date: filters.start_date,
+        end_date: filters.end_date,
         sortTime: 'desc',
-        payment: paymentStatusFilter || undefined,
-        month: filters.month,
-        agent: agentName || filters.agent,
-        segment: filters.segment,
-        area: filters.area
+        agent: agentName
       });
       
-      // Check for duplicate order_ids in the source data
-      const orderIds = response.data.map(order => order.order_id);
-      const uniqueOrderIds = new Set(orderIds);
-      if (orderIds.length !== uniqueOrderIds.size) {
-        console.warn(`Found ${orderIds.length - uniqueOrderIds.size} duplicate orders in API response`);
-      }
-      
       setOrders(response.data);
+      
+      // Update available agents in parent component
+      if (onAgentsUpdate) {
+        const uniqueAgents = Array.from(new Set(response.data.map((o: Order) => o.agent_name).filter(Boolean))) as string[];
+        onAgentsUpdate(uniqueAgents.sort());
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-      console.error('Failed to fetch orders data:', err);
+      console.error('Failed to fetch overdue orders data:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  // Clear data when dates change
   useEffect(() => {
-    fetchOrdersData();
+    setOrders([]);
+    setError(null);
+    setPage(0);
+    // Clear local filters when dates change
+    setSegmentFilter('');
+    setAreaFilter('');
+    setAgentFilter('');
+    setStatusOrderFilter('');
+    setPaymentStatusFilter('');
+    setSearchQuery('');
+  }, [filters.start_date, filters.end_date]);
+
+  useEffect(() => {
+    fetchOverdueOrdersData();
     // Reset pagination when filters change
     setPage(0);
-  }, [filters.month, filters.agent, filters.segment, filters.area, filters.statusPayment, paymentStatusFilter, agentName]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.start_date, filters.end_date, filters.agent, hasRestrictedRole, userRoleForFiltering]);
 
   const handleRequestSort = (property: SortableField) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -168,12 +202,14 @@ const SalesOrdersTable = ({
     }
   };
 
-  const getOverdueStatusColor = (status: string | null) => {
+  const getOverdueStatusColor = (status: string) => {
     if (!status) return 'default';
-    if (status.includes('Current')) return 'success';
-    if (status.includes('B2W') || status.includes('14DPD')) return 'warning';
-    if (status.includes('40DPD') || status.includes('60DPD')) return 'error';
-    if (status.includes('90DPD')) return 'default';
+    if (status.includes('DPD')) {
+      const days = parseInt(status.replace('DPD', '').trim());
+      if (days >= 30) return 'error';
+      if (days >= 14) return 'warning';
+      return 'info';
+    }
     return 'default';
   };
 
@@ -190,6 +226,9 @@ const SalesOrdersTable = ({
       order.status_order?.toLowerCase() || '',
       order.status_payment?.toLowerCase() || '',
       order.payment_type?.toLowerCase() || '',
+      order.business_type?.toLowerCase() || '',
+      order.sub_business_type?.toLowerCase() || '',
+      order.overdue_status?.toLowerCase() || '',
     ];
 
     return searchableFields.some((field) =>
@@ -251,12 +290,88 @@ const SalesOrdersTable = ({
     }
   });
 
-  const totalInvoice = filteredOrders.reduce((sum, o) => sum + Number(o.total_invoice) || 0, 0);
-  const totalProfit = filteredOrders.reduce((sum, o) => sum + Number(o.profit) || 0, 0);
+  const totalInvoice = filteredOrders.reduce((sum, o) => sum + (Number(o.total_invoice) || 0), 0);
+  const totalProfit = filteredOrders.reduce((sum, o) => sum + (Number(o.profit) || 0), 0);
   const totalOrders = filteredOrders.length;
+  
+  // Calculate unique stores based on user_id
+  const uniqueStores = new Set(filteredOrders.map(o => o.user_id));
+  const storeCount = uniqueStores.size;
+
+  // Calculate store details grouped by store
+  const getStoreDetails = () => {
+    interface StoreDetail {
+      userId: string;
+      storeName: string;
+      resellerName: string;
+      agentName: string;
+      businessType: string;
+      subBusinessType: string;
+      segment: string;
+      area: string;
+      totalInvoice: number;
+      totalProfit: number;
+      orderCount: number;
+      overdueStatuses: string[];
+    }
+
+    const storeDetails = new Map<string, StoreDetail>();
+    
+    filteredOrders.forEach(order => {
+      const storeId = order.user_id;
+      if (!storeDetails.has(storeId)) {
+        storeDetails.set(storeId, {
+          userId: storeId,
+          storeName: order.store_name,
+          resellerName: order.reseller_name,
+          agentName: order.agent_name,
+          businessType: order.business_type,
+          subBusinessType: order.sub_business_type,
+          segment: order.segment,
+          area: order.area,
+          totalInvoice: 0,
+          totalProfit: 0,
+          orderCount: 0,
+          overdueStatuses: []
+        });
+      }
+      
+      const store = storeDetails.get(storeId)!;
+      store.totalInvoice += Number(order.total_invoice) || 0;
+      store.totalProfit += Number(order.profit) || 0;
+      store.orderCount += 1;
+      if (order.overdue_status && !store.overdueStatuses.includes(order.overdue_status)) {
+        store.overdueStatuses.push(order.overdue_status);
+      }
+    });
+
+    // Sort by total invoice descending
+    return Array.from(storeDetails.values()).sort((a, b) => b.totalInvoice - a.totalInvoice);
+  };
 
   const prepareDataForExport = (orders: Order[]) => {
-    return orders.map((o) => ({
+    // Add summary row at the beginning
+    const summaryRow = {
+      'Order Code': 'SUMMARY',
+      'Month': '',
+      'Reseller Name': '',
+      'Store Name': '',
+      'Segment': '',
+      'Area': '',
+      'Agent': '',
+      'Order Status': '',
+      'Payment Status': '',
+      'Payment Type': '',
+      'Order Date': '',
+      'Due Date': '',
+      'Overdue Status': '',
+      'Total Invoice': totalInvoice,
+      'Profit': totalProfit,
+      'Business Type': `Stores: ${storeCount} | Total Orders: ${totalOrders}`,
+      'Sub Business Type': '',
+    };
+    
+    const orderData = orders.map((o) => ({
       'Order Code': o.order_code,
       'Month': o.month,
       'Reseller Name': o.reseller_name,
@@ -268,13 +383,15 @@ const SalesOrdersTable = ({
       'Payment Status': o.status_payment,
       'Payment Type': o.payment_type,
       'Order Date': formatDate(o.order_date),
-      'Payment Due Date': getPaymentDueDateDisplay(o.payment_due_date).label,
+      'Due Date': o.payment_due_date ? formatDate(o.payment_due_date) : '',
+      'Overdue Status': o.overdue_status || '',
       'Total Invoice': o.total_invoice,
       'Profit': o.profit,
       'Business Type': o.business_type,
       'Sub Business Type': o.sub_business_type,
-      'Overdue Status': o.overdue_status,
     }));
+    
+    return [summaryRow, ...orderData];
   };
 
   const handleExcelExport = () => {
@@ -302,17 +419,17 @@ const SalesOrdersTable = ({
       { wch: 15 }, // Payment Status
       { wch: 15 }, // Payment Type
       { wch: 15 }, // Order Date
-      { wch: 15 }, // Payment Due Date
+      { wch: 15 }, // Due Date
+      { wch: 15 }, // Overdue Status
       { wch: 15 }, // Total Invoice
       { wch: 15 }, // Profit
       { wch: 20 }, // Business Type
       { wch: 25 }, // Sub Business Type
-      { wch: 15 }, // Overdue Status
     ];
     ws['!cols'] = colWidths;
 
     // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(wb, ws, 'Sales Orders');
+    XLSX.utils.book_append_sheet(wb, ws, 'Overdue Orders');
 
     // Generate Excel file
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
@@ -322,184 +439,9 @@ const SalesOrdersTable = ({
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `sales-orders.xlsx`;
+    a.download = `overdue-orders.xlsx`;
     a.click();
     window.URL.revokeObjectURL(url);
-  };
-
-  const prepareDetailDataForExport = (fullOrders: FullOrder[]) => {
-    const data: any[] = [];
-    
-    fullOrders.forEach((order) => {
-      if (order.detail_order && order.detail_order.length > 0) {
-        order.detail_order.forEach((detail) => {
-          data.push({
-            'Order Code': order.order_code,
-            'User ID': order.user_id,
-            'Order Item ID': detail.order_item_id,
-            'Month': order.month,
-            'Reseller Name': order.reseller_name,
-            'Store Name': order.store_name,
-            'Segment': order.segment,
-            'Area': order.area,
-            'Agent': order.agent_name,
-            'Order Status': order.status_order,
-            'Payment Status': order.status_payment,
-            'Payment Type': order.payment_type,
-            'Order Date': formatDate(order.order_date),
-            'Payment Due Date': getPaymentDueDateDisplay(order.payment_due_date).label,
-            'Total Invoice': detail.total_invoice, // Use total_invoice from detail_order
-            'Profit': detail.profit, // Use profit from detail_order
-            'Business Type': order.business_type,
-            'Sub Business Type': order.sub_business_type,
-            'Phone Number': order.phone_number,
-            'Reseller Code': order.reseller_code,
-            'Product Name': detail.product_name,
-            'SKU': detail.sku,
-            'Brands': detail.brands,
-            'Type Category': detail.type_category,
-            'Sub Category': detail.sub_category,
-            'Price': detail.price,
-            'Order Quantity': detail.order_quantity,
-            'Stock Product': detail.stock_product,
-            'Variant': detail.variant,
-            'Variant Value': detail.variant_value,
-            'Buy Price': detail.buy_price,
-            'Principle': detail.principle,
-            'Hub': detail.hub,
-            'Address': detail.alamat,
-          });
-        });
-      } else {
-        // If no detail_order, add the main order data
-        data.push({
-          'Order Code': order.order_code,
-          'User ID': order.user_id,
-          'Order Item ID': '',
-          'Month': order.month,
-          'Reseller Name': order.reseller_name,
-          'Store Name': order.store_name,
-          'Segment': order.segment,
-          'Area': order.area,
-          'Agent': order.agent_name,
-          'Order Status': order.status_order,
-          'Payment Status': order.status_payment,
-          'Payment Type': order.payment_type,
-          'Order Date': formatDate(order.order_date),
-          'Payment Due Date': getPaymentDueDateDisplay(order.payment_due_date).label,
-          'Total Invoice': order.total_invoice,
-          'Profit': order.profit,
-          'Business Type': order.business_type,
-          'Sub Business Type': order.sub_business_type,
-          'Phone Number': order.phone_number,
-          'Reseller Code': order.reseller_code,
-          'Product Name': '',
-          'SKU': '',
-          'Brands': '',
-          'Type Category': '',
-          'Sub Category': '',
-          'Price': '',
-          'Order Quantity': '',
-          'Stock Product': '',
-          'Variant': '',
-          'Variant Value': '',
-          'Buy Price': '',
-          'Principle': '',
-          'Hub': '',
-          'Address': '',
-        });
-      }
-    });
-    
-    return data;
-  };
-
-  const handleDetailDownload = async () => {
-    if (!filters.month) {
-      alert('Please select a month to download detail data');
-      return;
-    }
-
-    // Only run on client side
-    if (typeof window === 'undefined' || typeof document === 'undefined' || typeof Blob === 'undefined') return;
-
-    try {
-      setFullDownloadLoading(true);
-      
-      const response = await fetchFullOrders({
-        sortTime: 'desc',
-        month: filters.month,
-        agent: agentName || filters.agent,
-        segment: filters.segment,
-        area: filters.area,
-        status_payment: paymentStatusFilter || undefined
-      });
-
-      const data = prepareDetailDataForExport(response.data);
-      
-      // Create workbook and worksheet
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(data);
-
-      // Set column widths
-      const colWidths = [
-        { wch: 15 }, // Order Code
-        { wch: 15 }, // User ID
-        { wch: 25 }, // Order Item ID
-        { wch: 15 }, // Month
-        { wch: 25 }, // Reseller Name
-        { wch: 25 }, // Store Name
-        { wch: 15 }, // Segment
-        { wch: 15 }, // Area
-        { wch: 20 }, // Agent
-        { wch: 15 }, // Order Status
-        { wch: 15 }, // Payment Status
-        { wch: 15 }, // Payment Type
-        { wch: 15 }, // Order Date
-        { wch: 15 }, // Payment Due Date
-        { wch: 15 }, // Total Invoice
-        { wch: 15 }, // Profit
-        { wch: 20 }, // Business Type
-        { wch: 25 }, // Sub Business Type
-        { wch: 15 }, // Phone Number
-        { wch: 25 }, // Reseller Code
-        { wch: 30 }, // Product Name
-        { wch: 15 }, // SKU
-        { wch: 15 }, // Brands
-        { wch: 20 }, // Type Category
-        { wch: 20 }, // Sub Category
-        { wch: 15 }, // Price
-        { wch: 15 }, // Order Quantity
-        { wch: 15 }, // Stock Product
-        { wch: 15 }, // Variant
-        { wch: 15 }, // Variant Value
-        { wch: 15 }, // Buy Price
-        { wch: 25 }, // Principle
-        { wch: 15 }, // Hub
-        { wch: 40 }, // Address
-      ];
-      ws['!cols'] = colWidths;
-
-      // Add worksheet to workbook
-      XLSX.utils.book_append_sheet(wb, ws, 'Sales Orders Detail');
-
-      // Generate Excel file
-      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      
-      // Download file
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `sales-orders-detail-${filters.month.replace(' ', '-').toLowerCase()}.xlsx`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Failed to download detail data:', error);
-      alert('Failed to download detail data. Please try again.');
-    } finally {
-      setFullDownloadLoading(false);
-    }
   };
 
   const clearAllFilters = () => {
@@ -531,22 +473,14 @@ const SalesOrdersTable = ({
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     });
-  };
-
-  const getPaymentDueDateDisplay = (dueDate: string | null) => {
-    if (!dueDate) return { label: 'No Due Date', color: 'default' };
-    
-    return { 
-      label: formatDate(dueDate), 
-      color: 'default' 
-    };
   };
 
   return (
@@ -564,11 +498,20 @@ const SalesOrdersTable = ({
             <Button
               variant="outlined"
               startIcon={<RefreshIcon />}
-              onClick={fetchOrdersData}
+              onClick={fetchOverdueOrdersData}
               disabled={loading}
               sx={{ mr: 1 }}
             >
               Refresh
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<InfoIcon />}
+              onClick={() => setDetailsModalOpen(true)}
+              disabled={filteredOrders.length === 0}
+              sx={{ mr: 1 }}
+            >
+              Overview
             </Button>
             <Button
               variant="outlined"
@@ -578,16 +521,6 @@ const SalesOrdersTable = ({
               sx={{ mr: 1 }}
             >
               Export Excel
-            </Button>
-            <Button
-              variant="outlined"
-              color="secondary"
-              startIcon={fullDownloadLoading ? <CircularProgress size={16} /> : <DownloadIcon />}
-              onClick={handleDetailDownload}
-              disabled={!filters.month || fullDownloadLoading}
-              sx={{ mr: 1 }}
-            >
-              {fullDownloadLoading ? 'Downloading...' : 'Download Detail'}
             </Button>
             <Button
               variant="outlined"
@@ -604,7 +537,23 @@ const SalesOrdersTable = ({
         <Box mb={3} sx={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
           <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
             <Typography variant="h3" color="primary" fontWeight="bold" mb={1}>
-              {!filters.month ? '--' : formatCurrency(totalInvoice)}
+              {!filters.start_date || !filters.end_date ? '--' : storeCount}
+            </Typography>
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              Unique Stores
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
+            <Typography variant="h3" color="secondary" fontWeight="bold" mb={1}>
+              {!filters.start_date || !filters.end_date ? '--' : totalOrders}
+            </Typography>
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              Total Orders
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
+            <Typography variant="h3" color="info.main" fontWeight="bold" mb={1}>
+              {!filters.start_date || !filters.end_date ? '--' : formatCurrency(totalInvoice)}
             </Typography>
             <Typography variant="h6" color="textSecondary" fontWeight="500">
               Total Invoice Amount
@@ -612,26 +561,10 @@ const SalesOrdersTable = ({
           </Box>
           <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
             <Typography variant="h3" color="success.main" fontWeight="bold" mb={1}>
-              {!filters.month ? '--' : formatCurrency(totalProfit)}
+              {!filters.start_date || !filters.end_date ? '--' : formatCurrency(totalProfit)}
             </Typography>
             <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Total Profit
-            </Typography>
-          </Box>
-          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
-            <Typography variant="h3" color="info.main" fontWeight="bold" mb={1}>
-              {!filters.month ? '--' : totalOrders}
-            </Typography>
-            <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Total Orders
-            </Typography>
-          </Box>
-          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
-            <Typography variant="h3" color="warning.main" fontWeight="bold" mb={1}>
-              {!filters.month ? '--' : (totalOrders > 0 ? formatCurrency(Math.round(totalInvoice / totalOrders)) : formatCurrency(0))}
-            </Typography>
-            <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Avg Order Value
+              Total Profit Amount
             </Typography>
           </Box>
         </Box>
@@ -643,7 +576,7 @@ const SalesOrdersTable = ({
               <TextField
                 fullWidth
                 variant="outlined"
-                placeholder="Search orders..."
+                placeholder="Search overdue orders..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 InputProps={{
@@ -696,6 +629,7 @@ const SalesOrdersTable = ({
                   value={agentFilter}
                   label="Agent"
                   onChange={(e) => setAgentFilter(e.target.value)}
+                  disabled={hasRestrictedRole}
                 >
                   <MenuItem value="">All Agents</MenuItem>
                   {uniqueAgents.map((agent) => (
@@ -784,7 +718,7 @@ const SalesOrdersTable = ({
                 <TableRow>
                   <TableCell colSpan={headCells.length} align="center">
                     <Typography variant="body2" color="textSecondary">
-                      {!filters.month ? 'Please select a month to view orders' : 'No orders found'}
+                      {!filters.start_date || !filters.end_date ? 'Please select start date and end date to view overdue orders' : 'No overdue orders found'}
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -845,24 +779,26 @@ const SalesOrdersTable = ({
                       </TableCell>
                       <TableCell>{row.payment_type}</TableCell>
                       <TableCell>{formatDate(row.order_date)}</TableCell>
+                      <TableCell>{formatDate(row.payment_due_date)}</TableCell>
                       <TableCell>
-                        {(() => {
-                          const dueDateDisplay = getPaymentDueDateDisplay(row.payment_due_date);
-                          return (
-                            <Chip
-                              label={dueDateDisplay.label}
-                              color={dueDateDisplay.color as any}
-                              size="small"
-                            />
-                          );
-                        })()}
+                        {row.overdue_status ? (
+                          <Chip
+                            label={row.overdue_status}
+                            color={getOverdueStatusColor(row.overdue_status) as any}
+                            size="small"
+                          />
+                        ) : (
+                          '-'
+                        )}
                       </TableCell>
                       <TableCell align="right" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                        {formatCurrency(row.total_invoice)}
+                        {formatCurrency(Number(row.total_invoice))}
                       </TableCell>
                       <TableCell align="right" sx={{ fontWeight: 'bold', color: 'success.main' }}>
-                        {formatCurrency(row.profit)}
+                        {formatCurrency(Number(row.profit))}
                       </TableCell>
+                      <TableCell>{row.business_type}</TableCell>
+                      <TableCell>{row.sub_business_type}</TableCell>
                     </TableRow>
                   ))
               )}
@@ -886,8 +822,137 @@ const SalesOrdersTable = ({
         onClose={handleCloseModal}
         orderCode={selectedOrderCode}
       />
+
+      {/* Store Details Modal */}
+      <Dialog
+        open={detailsModalOpen}
+        onClose={() => setDetailsModalOpen(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>
+          Overdue Orders by Store
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            {getStoreDetails().map((store, index) => (
+              <Accordion key={index} defaultExpanded>
+                <AccordionSummary>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 2 }}>
+                    <Box>
+                      <Typography variant="h6" fontWeight="bold">
+                        {store.storeName}
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        {store.resellerName} • {store.segment} • {store.area}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                      <Typography variant="body2" color="textSecondary">
+                        Orders: {store.orderCount}
+                      </Typography>
+                      <Typography variant="body2" color="primary.main" fontWeight="bold">
+                        Invoice: {formatCurrency(store.totalInvoice)}
+                      </Typography>
+                      <Typography variant="body2" color="success.main" fontWeight="bold">
+                        Profit: {formatCurrency(store.totalProfit)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" color="textSecondary" gutterBottom>
+                      <strong>Agent:</strong> {store.agentName || '-'} • <strong>Business Type:</strong> {store.businessType} • <strong>Sub Type:</strong> {store.subBusinessType}
+                    </Typography>
+                    {store.overdueStatuses.length > 0 && (
+                      <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Typography variant="body2" color="textSecondary">
+                          <strong>Overdue Statuses:</strong>
+                        </Typography>
+                        {store.overdueStatuses.map((status, idx) => (
+                          <Chip
+                            key={idx}
+                            label={status}
+                            color={getOverdueStatusColor(status) as any}
+                            size="small"
+                          />
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
+                  <TableContainer component={Paper} variant="outlined">
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Order Code</TableCell>
+                          <TableCell>Order Date</TableCell>
+                          <TableCell>Due Date</TableCell>
+                          <TableCell>Overdue Status</TableCell>
+                          <TableCell align="right">Total Invoice</TableCell>
+                          <TableCell align="right">Profit</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {filteredOrders
+                          .filter(o => o.user_id === store.userId)
+                          .map((order) => (
+                            <TableRow key={order.order_id}>
+                              <TableCell>
+                                <Typography variant="body2" fontWeight="medium">
+                                  {order.order_code}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2">
+                                  {formatDate(order.order_date)}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2">
+                                  {formatDate(order.payment_due_date)}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                {order.overdue_status ? (
+                                  <Chip
+                                    label={order.overdue_status}
+                                    color={getOverdueStatusColor(order.overdue_status) as any}
+                                    size="small"
+                                  />
+                                ) : (
+                                  '-'
+                                )}
+                              </TableCell>
+                              <TableCell align="right">
+                                <Typography variant="body2" fontWeight="bold" color="primary.main">
+                                  {formatCurrency(Number(order.total_invoice))}
+                                </Typography>
+                              </TableCell>
+                              <TableCell align="right">
+                                <Typography variant="body2" fontWeight="bold" color="success.main">
+                                  {formatCurrency(Number(order.profit))}
+                                </Typography>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </AccordionDetails>
+              </Accordion>
+            ))}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDetailsModalOpen(false)}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 };
 
-export default SalesOrdersTable;
+export default OverdueOrdersTable;
+

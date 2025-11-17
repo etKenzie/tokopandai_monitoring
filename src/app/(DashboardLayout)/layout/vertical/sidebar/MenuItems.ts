@@ -11,6 +11,7 @@ import {
   IconMenu2,
   IconMenuOrder,
   IconPackage,
+  IconTimeDuration0,
   IconTrendingUp
 } from "@tabler/icons-react";
 import { uniqueId } from "lodash";
@@ -76,6 +77,12 @@ const Menuitems: MenuitemsType[] = [
         title: "Orders",
         icon: IconMenu2,
         href: "/distribusi/sales/orders",
+      },
+      {
+        id: uniqueId(),
+        title: "Overdue",
+        icon: IconTimeDuration0,
+        href: "/distribusi/sales/overdue",
       },
       {
         id: uniqueId(),
