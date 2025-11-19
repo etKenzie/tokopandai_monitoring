@@ -9,12 +9,14 @@ import {
     Chip,
     CircularProgress,
     FormControl,
+    FormControlLabel,
     Grid,
     InputAdornment,
     InputLabel,
     MenuItem,
     Paper,
     Select,
+    Switch,
     Table,
     TableBody,
     TableCell,
@@ -54,6 +56,8 @@ const headCells: HeadCell[] = [
   { id: 'category', label: 'Category', numeric: false },
   { id: '3_month_profit', label: '3 Month Profit', numeric: true },
   { id: 'active_months', label: 'Active Months', numeric: true },
+  { id: 'limit', label: 'Limit', numeric: true },
+  { id: 'termin_day', label: 'Termin Day', numeric: true },
   { id: 'profit_score', label: 'Profit Score', numeric: true },
   { id: 'owed_score', label: 'Owed Score', numeric: true },
   { id: 'activity_score', label: 'Activity Score', numeric: true },
@@ -99,6 +103,7 @@ const StoresTable = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [showScoreColumns, setShowScoreColumns] = useState(false);
   const prevFilteredStoresRef = useRef<Store[]>([]);
 
   const fetchStoresData = async () => {
@@ -245,7 +250,7 @@ const StoresTable = ({
       bValue = getCategory(b.final_score);
     }
 
-    if (orderBy === 'profit_score' || orderBy === 'owed_score' || orderBy === 'activity_score' || orderBy === 'payment_habits_score' || orderBy === 'final_score') {
+    if (orderBy === 'profit_score' || orderBy === 'owed_score' || orderBy === 'activity_score' || orderBy === 'payment_habits_score' || orderBy === 'final_score' || orderBy === 'limit' || orderBy === 'termin_day') {
       aValue = Number(aValue);
       bValue = Number(bValue);
     }
@@ -292,6 +297,8 @@ const StoresTable = ({
       'Business Type': s.business_type,
       'Sub Business Type': s.sub_business_type,
       'Category': getCategory(s.final_score),
+      'Limit': s.limit !== undefined ? s.limit : '',
+      'Termin Day': s.termin_day !== undefined ? s.termin_day : '',
       'Profit Score': s.profit_score,
       'Owed Score': s.owed_score,
       'Activity Score': s.activity_score,
@@ -325,6 +332,10 @@ const StoresTable = ({
       { wch: 20 }, // Business Type
       { wch: 25 }, // Sub Business Type
       { wch: 10 }, // Category
+      { wch: 15 }, // 3 Month Profit
+      { wch: 15 }, // Active Months
+      { wch: 15 }, // Limit
+      { wch: 15 }, // Termin Day
       { wch: 15 }, // Profit Score
       { wch: 15 }, // Owed Score
       { wch: 15 }, // Activity Score
@@ -486,6 +497,18 @@ const StoresTable = ({
                 }}
               />
             </Grid>
+            <Grid size={{ xs: 12 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={showScoreColumns}
+                    onChange={(e) => setShowScoreColumns(e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label="Show Score Columns (Profit Score, Owed Score, Activity Score, Payment Habits Score)"
+              />
+            </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
               <FormControl fullWidth>
                 <InputLabel>Status</InputLabel>
@@ -629,33 +652,41 @@ const StoresTable = ({
           <Table>
             <TableHead>
               <TableRow>
-                {headCells.map((headCell) => (
-                  <TableCell
-                    key={headCell.id}
-                    align={headCell.numeric ? 'right' : 'left'}
-                    sortDirection={orderBy === headCell.id ? order : false}
-                  >
-                    <TableSortLabel
-                      active={orderBy === headCell.id}
-                      direction={orderBy === headCell.id ? order : 'asc'}
-                      onClick={() => handleRequestSort(headCell.id)}
+                {headCells
+                  .filter((headCell) => {
+                    // Hide score columns if toggle is off
+                    if (!showScoreColumns) {
+                      return !['profit_score', 'owed_score', 'activity_score', 'payment_habits_score'].includes(headCell.id);
+                    }
+                    return true;
+                  })
+                  .map((headCell) => (
+                    <TableCell
+                      key={headCell.id}
+                      align={headCell.numeric ? 'right' : 'left'}
+                      sortDirection={orderBy === headCell.id ? order : false}
                     >
-                      {headCell.label}
-                    </TableSortLabel>
-                  </TableCell>
-                ))}
+                      <TableSortLabel
+                        active={orderBy === headCell.id}
+                        direction={orderBy === headCell.id ? order : 'asc'}
+                        onClick={() => handleRequestSort(headCell.id)}
+                      >
+                        {headCell.label}
+                      </TableSortLabel>
+                    </TableCell>
+                  ))}
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={headCells.length} align="center">
+                  <TableCell colSpan={headCells.filter((h) => showScoreColumns || !['profit_score', 'owed_score', 'activity_score', 'payment_habits_score'].includes(h.id)).length} align="center">
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={headCells.length} align="center">
+                  <TableCell colSpan={headCells.filter((h) => showScoreColumns || !['profit_score', 'owed_score', 'activity_score', 'payment_habits_score'].includes(h.id)).length} align="center">
                     <Typography variant="body2" color="error">
                       {error}
                     </Typography>
@@ -663,7 +694,7 @@ const StoresTable = ({
                 </TableRow>
               ) : sortedStores.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={headCells.length} align="center">
+                  <TableCell colSpan={headCells.filter((h) => showScoreColumns || !['profit_score', 'owed_score', 'activity_score', 'payment_habits_score'].includes(h.id)).length} align="center">
                     <Typography variant="body2" color="textSecondary">
                       No stores found
                     </Typography>
@@ -751,33 +782,47 @@ const StoresTable = ({
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
-                        <Chip
-                          label={row.profit_score}
-                          color={getScoreColor(row.profit_score) as any}
-                          size="small"
-                        />
+                        <Typography variant="body2" fontWeight="medium">
+                          {row.limit !== undefined ? formatCurrency(row.limit) : '-'}
+                        </Typography>
                       </TableCell>
                       <TableCell align="right">
-                        <Chip
-                          label={row.owed_score}
-                          color={getScoreColor(row.owed_score) as any}
-                          size="small"
-                        />
+                        <Typography variant="body2" fontWeight="medium">
+                          {row.termin_day !== undefined ? `${row.termin_day} days` : '-'}
+                        </Typography>
                       </TableCell>
-                      <TableCell align="right">
-                        <Chip
-                          label={row.activity_score}
-                          color={getScoreColor(row.activity_score) as any}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Chip
-                          label={row.payment_habits_score}
-                          color={getScoreColor(row.payment_habits_score) as any}
-                          size="small"
-                        />
-                      </TableCell>
+                      {showScoreColumns && (
+                        <>
+                          <TableCell align="right">
+                            <Chip
+                              label={row.profit_score}
+                              color={getScoreColor(row.profit_score) as any}
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell align="right">
+                            <Chip
+                              label={row.owed_score}
+                              color={getScoreColor(row.owed_score) as any}
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell align="right">
+                            <Chip
+                              label={row.activity_score}
+                              color={getScoreColor(row.activity_score) as any}
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell align="right">
+                            <Chip
+                              label={row.payment_habits_score}
+                              color={getScoreColor(row.payment_habits_score) as any}
+                              size="small"
+                            />
+                          </TableCell>
+                        </>
+                      )}
                       <TableCell align="right" sx={{ fontWeight: 'bold' }}>
                         <Chip
                           label={row.final_score}

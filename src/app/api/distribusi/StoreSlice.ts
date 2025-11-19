@@ -20,6 +20,8 @@ export interface Store {
   final_score: number;
   order_this_year: number;
   three_month_profit: number;
+  limit?: number;
+  termin_day?: number;
 }
 
 export interface StoresResponse {
