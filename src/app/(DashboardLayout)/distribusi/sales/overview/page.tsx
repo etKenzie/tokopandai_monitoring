@@ -8,6 +8,7 @@ import OrderTypeChart from '@/app/components/distribusi/OrderTypeChart';
 import SalesMonthlyChart from '@/app/components/distribusi/SalesMonthlyChart';
 import StoresMonthlyChart from '@/app/components/distribusi/StoresMonthlyChart';
 import StoresOwedNotice from '@/app/components/distribusi/StoresOwedNotice';
+import StoreSummaryModal from '@/app/components/distribusi/StoreSummaryModal';
 import SummaryTiles from '@/app/components/shared/SummaryTiles';
 import { useAuth } from '@/app/context/AuthContext';
 import { useSettings } from '@/app/context/SettingsContext';
@@ -52,6 +53,7 @@ const SalesOverview = () => {
   const [availableFilters, setAvailableFilters] = useState<OrderFiltersData | null>(null);
   const [filtersLoading, setFiltersLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [storeSummaryModalOpen, setStoreSummaryModalOpen] = useState(false);
   
   // Initialize filters with empty values to avoid hydration mismatch
   const [filters, setFilters] = useState<DistribusiFilterValues>({
@@ -739,6 +741,7 @@ const SalesOverview = () => {
               year: filters.year,
               status_payment: statusPayment
             }}
+            onViewAllStores={() => setStoreSummaryModalOpen(true)}
           />
         </Box>
 
@@ -757,6 +760,23 @@ const SalesOverview = () => {
               goalProfitByAgent={getGoalProfitByAgent()}
             />
           </Box>
+        )}
+
+        {/* Store Summary Modal */}
+        {filters.month && filters.year && (
+          <StoreSummaryModal
+            open={storeSummaryModalOpen}
+            onClose={() => setStoreSummaryModalOpen(false)}
+            month={(() => {
+              const monthNames = [
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+              ];
+              const monthName = monthNames[parseInt(filters.month) - 1];
+              return `${monthName} ${filters.year}`;
+            })()}
+            agent={hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent}
+          />
         )}
 
       </Box>

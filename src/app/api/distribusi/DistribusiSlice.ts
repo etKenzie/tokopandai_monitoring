@@ -300,6 +300,57 @@ export const fetchOverdueOrders = async (params: OverdueOrdersQueryParams): Prom
   return response.json();
 };
 
+// Types for Store Summary API
+export interface StoreSummaryItem {
+  user_id: string;
+  store_name: string;
+  reseller_code?: string;
+  segment: string;
+  area: string;
+  agent_name: string;
+  phone_number?: string;
+  user_status: string;
+  total_invoice?: number;
+  total_profit?: number;
+}
+
+export interface StoreSummaryResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: {
+    has_order: StoreSummaryItem[];
+    no_order: StoreSummaryItem[];
+  };
+}
+
+// Fetch Store Summary
+export const fetchStoreSummary = async (month: string, agent?: string): Promise<StoreSummaryResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  const queryParams = new URLSearchParams();
+  queryParams.append('month', month);
+  if (agent) queryParams.append('agent', agent);
+  
+  const url = `${baseUrl}/api/order/store-summary?${queryParams.toString()}`;
+  
+  console.log('Fetching store summary from:', url);
+  console.log('Month:', month, 'Agent:', agent);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch store summary: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
 // Fetch order details by order code
 export const fetchOrderDetail = async (orderCode: string): Promise<OrderDetailResponse> => {
   if (!AM_API_URL) {

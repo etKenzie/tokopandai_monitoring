@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, CircularProgress, Grid } from '@mui/material';
+import { Box, Button, CircularProgress, Grid } from '@mui/material';
 import React from 'react';
 import DashboardCard from './DashboardCard';
 
@@ -13,6 +13,10 @@ interface TileDef {
   mdSize?: number; // Individual tile column size
   unit?: string; // Optional unit suffix (e.g., "Days", "%", etc.)
   isLoading?: boolean; // Optional loading state for individual tiles
+  actionButton?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 interface SummaryTilesProps {
@@ -54,11 +58,11 @@ const SummaryTiles: React.FC<SummaryTilesProps> = ({ tiles, md = 4 }) => {
           <Box sx={{ color: tile.color, fontWeight: tile.fontWeight, height: '100%' }}>
             <DashboardCard>
               <Box p={2} sx={{ 
-                height: '120px', 
+                height: tile.actionButton ? 'auto' : '120px', 
+                minHeight: tile.actionButton ? '140px' : '120px',
                 display: 'flex', 
                 flexDirection: 'column', 
                 justifyContent: 'space-between',
-                minHeight: '120px'
               }}>
                 <Box
                   sx={{
@@ -99,6 +103,19 @@ const SummaryTiles: React.FC<SummaryTilesProps> = ({ tiles, md = 4 }) => {
                     formatValue(tile.value, tile.isCurrency) + (tile.unit || '')
                   )}
                 </Box>
+                {tile.actionButton && (
+                  <Box sx={{ mt: 1 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      fullWidth
+                      onClick={tile.actionButton.onClick}
+                      sx={{ fontSize: '0.75rem' }}
+                    >
+                      {tile.actionButton.label}
+                    </Button>
+                  </Box>
+                )}
               </Box>
             </DashboardCard>
           </Box>

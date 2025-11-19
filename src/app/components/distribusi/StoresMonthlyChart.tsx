@@ -3,6 +3,7 @@
 import { TotalStoresMonthlyResponse, fetchTotalStoresMonthly } from '@/app/api/distribusi/DistribusiSlice';
 import {
     Box,
+    Button,
     Card,
     CardContent,
     FormControl,
@@ -26,11 +27,12 @@ interface StoresMonthlyChartProps {
     year?: string;
     status_payment?: string;
   };
+  onViewAllStores?: () => void;
 }
 
 type ChartType = 'stores' | 'activation';
 
-const StoresMonthlyChart = ({ filters }: StoresMonthlyChartProps) => {
+const StoresMonthlyChart = ({ filters, onViewAllStores }: StoresMonthlyChartProps) => {
   const [chartData, setChartData] = useState<TotalStoresMonthlyResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [chartType, setChartType] = useState<ChartType>('stores');
@@ -314,9 +316,20 @@ const StoresMonthlyChart = ({ filters }: StoresMonthlyChartProps) => {
         
         {/* Controls */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-          <Typography variant="h6" sx={{ margin: 0 }}>
-            Stores Monthly Trend
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="h6" sx={{ margin: 0 }}>
+              Stores Monthly Trend
+            </Typography>
+            {onViewAllStores && (
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={onViewAllStores}
+              >
+                View All Stores
+              </Button>
+            )}
+          </Box>
           
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             <FormControl size="small">
