@@ -2,28 +2,28 @@
 
 import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    CircularProgress,
-    FormControl,
-    Grid,
-    InputAdornment,
-    InputLabel,
-    MenuItem,
-    Paper,
-    Select,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    TableSortLabel,
-    TextField,
-    Typography
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CircularProgress,
+  FormControl,
+  Grid,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TableSortLabel,
+  TextField,
+  Typography
 } from '@mui/material';
 import { useState } from 'react';
 import * as XLSX from 'xlsx';
@@ -45,6 +45,7 @@ const headCells: StoreHeadCell[] = [
   { id: 'segment', label: 'Segment', numeric: false },
   { id: 'business_type', label: 'Business Type', numeric: false },
   { id: 'sub_business_type', label: 'Sub Business Type', numeric: false },
+  { id: 'user_status', label: 'User Status', numeric: false },
   { id: 'total_invoice', label: 'Total Invoice', numeric: true },
   { id: 'total_profit', label: 'Total Profit', numeric: true },
   { id: 'margin', label: 'Margin %', numeric: true },
@@ -72,6 +73,7 @@ const StoreMonthlyTable = ({
   const [segmentFilter, setSegmentFilter] = useState<string>('');
   const [businessTypeFilter, setBusinessTypeFilter] = useState<string>('');
   const [subBusinessTypeFilter, setSubBusinessTypeFilter] = useState<string>('');
+  const [userStatusFilter, setUserStatusFilter] = useState<string>('');
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -107,6 +109,7 @@ const StoreMonthlyTable = ({
     setSegmentFilter('');
     setBusinessTypeFilter('');
     setSubBusinessTypeFilter('');
+    setUserStatusFilter('');
     setSearchQuery('');
     setPage(0);
   };
@@ -153,6 +156,11 @@ const StoreMonthlyTable = ({
       return false;
     }
     
+    // Apply user status filter
+    if (userStatusFilter && store.user_status !== userStatusFilter) {
+      return false;
+    }
+    
     return true;
   });
 
@@ -161,6 +169,7 @@ const StoreMonthlyTable = ({
   const uniqueSegments = Array.from(new Set(stores.map((store) => store.segment))).sort();
   const uniqueBusinessTypes = Array.from(new Set(stores.map((store) => store.business_type))).sort();
   const uniqueSubBusinessTypes = Array.from(new Set(stores.map((store) => store.sub_business_type))).sort();
+  const uniqueUserStatuses = Array.from(new Set(stores.map((store) => store.user_status).filter(Boolean))).sort();
 
   const sortedStores = [...filteredStores].sort((a, b) => {
     const aValue = a[orderBy];
@@ -199,6 +208,7 @@ const StoreMonthlyTable = ({
       'Segment': store.segment,
       'Business Type': store.business_type,
       'Sub Business Type': store.sub_business_type,
+      'User Status': store.user_status || 'N/A',
       'Total Invoice': store.total_invoice,
       'Total Profit': store.total_profit,
       'Margin %': store.margin,
@@ -277,7 +287,7 @@ const StoreMonthlyTable = ({
               color="secondary"
               size="small"
               onClick={clearAllFilters}
-              disabled={!agentFilter && !segmentFilter && !businessTypeFilter && !subBusinessTypeFilter && !searchQuery}
+              disabled={!agentFilter && !segmentFilter && !businessTypeFilter && !subBusinessTypeFilter && !userStatusFilter && !searchQuery}
             >
               Clear Filters
             </Button>
@@ -407,6 +417,26 @@ const StoreMonthlyTable = ({
                 </Select>
               </FormControl>
             </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+              <FormControl fullWidth>
+                <InputLabel>User Status</InputLabel>
+                <Select
+                  value={userStatusFilter}
+                  label="User Status"
+                  onChange={(e) => {
+                    setUserStatusFilter(e.target.value);
+                    setPage(0);
+                  }}
+                >
+                  <MenuItem value="">All User Statuses</MenuItem>
+                  {uniqueUserStatuses.map((status) => (
+                    <MenuItem key={status} value={status}>
+                      {status}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
           </Grid>
         </Box>
 
@@ -488,6 +518,11 @@ const StoreMonthlyTable = ({
                       <TableCell>
                         <Typography variant="body2" color="textSecondary">
                           {store.sub_business_type || 'N/A'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="textSecondary">
+                          {store.user_status || 'N/A'}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">

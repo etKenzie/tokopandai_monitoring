@@ -1,7 +1,7 @@
 'use client';
 
 import { getAgentNameFromRole } from '@/config/roles';
-import { Download as DownloadIcon, Info as InfoIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
+import { Download as DownloadIcon, ExpandMore as ExpandMoreIcon, Info as InfoIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
   Accordion,
   AccordionDetails,
@@ -34,13 +34,13 @@ import {
   TextField,
   Typography
 } from '@mui/material';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { fetchOverdueOrders, Order } from '../../api/distribusi/DistribusiSlice';
 import OrderDetailModal from '../shared/OrderDetailModal';
 
 type OrderDirection = 'asc' | 'desc';
-type SortableField = keyof Order;
+type SortableField = keyof Order | 'days_late';
 
 interface HeadCell {
   id: SortableField;
@@ -63,6 +63,7 @@ const headCells: HeadCell[] = [
   { id: 'faktur_date', label: 'Faktur Date', numeric: false },
   { id: 'payment_due_date', label: 'Due Date', numeric: false },
   { id: 'overdue_status', label: 'Overdue Status', numeric: false },
+  { id: 'days_late', label: 'Days Late', numeric: true },
   { id: 'total_invoice', label: 'Total Invoice', numeric: true },
   { id: 'profit', label: 'Profit', numeric: true },
   { id: 'business_type', label: 'Business Type', numeric: false },
@@ -106,17 +107,15 @@ const OverdueOrdersTable = ({
   const [selectedOrderCode, setSelectedOrderCode] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [storeSearchQuery, setStoreSearchQuery] = useState<string>('');
+  const [activeStoreSearchQuery, setActiveStoreSearchQuery] = useState<string>('');
+  const [storePage, setStorePage] = useState(0);
+  const [storeRowsPerPage, setStoreRowsPerPage] = useState(5);
 
   const fetchOverdueOrdersData = async () => {
     // Clear existing data immediately when fetching new data
     setOrders([]);
     setError(null);
-    
-    // Only fetch data if dates are selected
-    if (!filters.start_date || !filters.end_date) {
-      setError('Please select start date and end date to view overdue orders');
-      return;
-    }
 
     setLoading(true);
     try {
@@ -125,12 +124,19 @@ const OverdueOrdersTable = ({
         ? getAgentNameFromRole(userRoleForFiltering) 
         : filters.agent;
 
-      const response = await fetchOverdueOrders({
-        start_date: filters.start_date,
-        end_date: filters.end_date,
+      // Build request parameters - only include dates if they are provided
+      const requestParams: any = {
         sortTime: 'desc',
         agent: agentName
-      });
+      };
+
+      // Only add dates if both are provided
+      if (filters.start_date && filters.end_date) {
+        requestParams.start_date = filters.start_date;
+        requestParams.end_date = filters.end_date;
+      }
+
+      const response = await fetchOverdueOrders(requestParams);
       
       setOrders(response.data);
       
@@ -203,23 +209,38 @@ const OverdueOrdersTable = ({
     }
   };
 
-  // Calculate overdue status based on faktur_date (or order_date if faktur_date is null) and payment_due_date
-  const calculateOverdueStatus = (order: Order): string => {
-    if (!order.payment_due_date) return '';
+  // Calculate days late (how many days past the due date)
+  const calculateDaysLate = (order: Order): number => {
+    if (!order.payment_due_date) return 0;
     
-    // Use faktur_date if available, otherwise fall back to order_date
-    const referenceDate = order.faktur_date || order.order_date;
-    if (!referenceDate) return '';
-    
-    const reference = new Date(referenceDate);
+    const today = new Date();
     const dueDate = new Date(order.payment_due_date);
     
     // Reset time to start of day for accurate day calculation
-    reference.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
     dueDate.setHours(0, 0, 0, 0);
     
-    // Calculate difference in days
-    const diffTime = dueDate.getTime() - reference.getTime();
+    // Calculate difference in days (positive if due date is in the future, negative if past due)
+    const diffTime = dueDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    // Return 0 if not overdue, otherwise return the number of days late
+    return diffDays < 0 ? Math.abs(diffDays) : 0;
+  };
+
+  // Calculate overdue status based on payment_due_date and current date
+  const calculateOverdueStatus = (order: Order): string => {
+    if (!order.payment_due_date) return '';
+    
+    const today = new Date();
+    const dueDate = new Date(order.payment_due_date);
+    
+    // Reset time to start of day for accurate day calculation
+    today.setHours(0, 0, 0, 0);
+    dueDate.setHours(0, 0, 0, 0);
+    
+    // Calculate difference in days (positive if due date is in the future, negative if past due)
+    const diffTime = dueDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     // Determine overdue status based on days past due
@@ -305,8 +326,19 @@ const OverdueOrdersTable = ({
   const uniquePaymentStatuses = Array.from(new Set(orders.map((o) => o.status_payment)));
 
   const sortedOrders = [...filteredOrders].sort((a, b) => {
-    let aValue: any = a[orderBy];
-    let bValue: any = b[orderBy];
+    // Special handling for days_late field - use calculated value
+    if (orderBy === 'days_late') {
+      const aValue = calculateDaysLate(a);
+      const bValue = calculateDaysLate(b);
+      if (order === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      } else {
+        return bValue < aValue ? -1 : bValue > aValue ? 1 : 0;
+      }
+    }
+
+    let aValue: any = a[orderBy as keyof Order];
+    let bValue: any = b[orderBy as keyof Order];
 
     if (orderBy === 'total_invoice' || orderBy === 'profit') {
       aValue = Number(aValue);
@@ -354,29 +386,29 @@ const OverdueOrdersTable = ({
   const uniqueStores = new Set(filteredOrders.map(o => o.user_id));
   const storeCount = uniqueStores.size;
 
-  // Calculate store details grouped by store
-  const getStoreDetails = () => {
-    interface StoreDetail {
-      userId: string;
-      storeName: string;
-      resellerName: string;
-      agentName: string;
-      businessType: string;
-      subBusinessType: string;
-      segment: string;
-      area: string;
-      totalInvoice: number;
-      totalProfit: number;
-      orderCount: number;
-      overdueStatuses: string[];
-    }
+  // Calculate store details grouped by store - memoized for performance
+  interface StoreDetail {
+    userId: string;
+    storeName: string;
+    resellerName: string;
+    agentName: string;
+    businessType: string;
+    subBusinessType: string;
+    segment: string;
+    area: string;
+    totalInvoice: number;
+    totalProfit: number;
+    orderCount: number;
+    overdueStatuses: string[];
+  }
 
-    const storeDetails = new Map<string, StoreDetail>();
+  const storeDetails = useMemo(() => {
+    const storeDetailsMap = new Map<string, StoreDetail>();
     
     filteredOrders.forEach(order => {
       const storeId = order.user_id;
-      if (!storeDetails.has(storeId)) {
-        storeDetails.set(storeId, {
+      if (!storeDetailsMap.has(storeId)) {
+        storeDetailsMap.set(storeId, {
           userId: storeId,
           storeName: order.store_name,
           resellerName: order.reseller_name,
@@ -392,7 +424,7 @@ const OverdueOrdersTable = ({
         });
       }
       
-      const store = storeDetails.get(storeId)!;
+      const store = storeDetailsMap.get(storeId)!;
       store.totalInvoice += Number(order.total_invoice) || 0;
       store.totalProfit += Number(order.profit) || 0;
       store.orderCount += 1;
@@ -403,8 +435,23 @@ const OverdueOrdersTable = ({
     });
 
     // Sort by total invoice descending
-    return Array.from(storeDetails.values()).sort((a, b) => b.totalInvoice - a.totalInvoice);
-  };
+    return Array.from(storeDetailsMap.values()).sort((a, b) => b.totalInvoice - a.totalInvoice);
+  }, [filteredOrders]);
+
+  // Memoize filtered stores for the modal
+  const filteredStoresForModal = useMemo(() => {
+    return storeDetails.filter((store) => {
+      if (!activeStoreSearchQuery) return true;
+      const query = activeStoreSearchQuery.toLowerCase();
+      return (
+        store.storeName.toLowerCase().includes(query) ||
+        store.resellerName.toLowerCase().includes(query) ||
+        store.agentName?.toLowerCase().includes(query) ||
+        store.segment.toLowerCase().includes(query) ||
+        store.area.toLowerCase().includes(query)
+      );
+    });
+  }, [storeDetails, activeStoreSearchQuery]);
 
   const prepareDataForExport = (orders: Order[]) => {
     // Add summary row at the beginning
@@ -423,6 +470,7 @@ const OverdueOrdersTable = ({
       'Faktur Date': '',
       'Due Date': '',
       'Overdue Status': '',
+      'Days Late': '',
       'Total Invoice': totalInvoice,
       'Profit': totalProfit,
       'Business Type': `Stores: ${storeCount} | Total Orders: ${totalOrders}`,
@@ -444,6 +492,7 @@ const OverdueOrdersTable = ({
       'Faktur Date': o.faktur_date ? formatDate(o.faktur_date) : '',
       'Due Date': o.payment_due_date ? formatDate(o.payment_due_date) : '',
       'Overdue Status': calculateOverdueStatus(o) || '',
+      'Days Late': calculateDaysLate(o),
       'Total Invoice': o.total_invoice,
       'Profit': o.profit,
       'Business Type': o.business_type,
@@ -481,6 +530,7 @@ const OverdueOrdersTable = ({
       { wch: 15 }, // Faktur Date
       { wch: 15 }, // Due Date
       { wch: 15 }, // Overdue Status
+      { wch: 12 }, // Days Late
       { wch: 15 }, // Total Invoice
       { wch: 15 }, // Profit
       { wch: 20 }, // Business Type
@@ -597,7 +647,7 @@ const OverdueOrdersTable = ({
         <Box mb={3} sx={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
           <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
             <Typography variant="h3" color="primary" fontWeight="bold" mb={1}>
-              {!filters.start_date || !filters.end_date ? '--' : storeCount}
+              {storeCount}
             </Typography>
             <Typography variant="h6" color="textSecondary" fontWeight="500">
               Unique Stores
@@ -605,7 +655,7 @@ const OverdueOrdersTable = ({
           </Box>
           <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
             <Typography variant="h3" color="secondary" fontWeight="bold" mb={1}>
-              {!filters.start_date || !filters.end_date ? '--' : totalOrders}
+              {totalOrders}
             </Typography>
             <Typography variant="h6" color="textSecondary" fontWeight="500">
               Total Orders
@@ -613,7 +663,7 @@ const OverdueOrdersTable = ({
           </Box>
           <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
             <Typography variant="h3" color="info.main" fontWeight="bold" mb={1}>
-              {!filters.start_date || !filters.end_date ? '--' : formatCurrency(totalInvoice)}
+              {formatCurrency(totalInvoice)}
             </Typography>
             <Typography variant="h6" color="textSecondary" fontWeight="500">
               Total Invoice Amount
@@ -621,7 +671,7 @@ const OverdueOrdersTable = ({
           </Box>
           <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
             <Typography variant="h3" color="success.main" fontWeight="bold" mb={1}>
-              {!filters.start_date || !filters.end_date ? '--' : formatCurrency(totalProfit)}
+              {formatCurrency(totalProfit)}
             </Typography>
             <Typography variant="h6" color="textSecondary" fontWeight="500">
               Total Profit Amount
@@ -778,7 +828,7 @@ const OverdueOrdersTable = ({
                 <TableRow>
                   <TableCell colSpan={headCells.length} align="center">
                     <Typography variant="body2" color="textSecondary">
-                      {!filters.start_date || !filters.end_date ? 'Please select start date and end date to view overdue orders' : 'No overdue orders found'}
+                      {'No overdue orders found'}
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -855,6 +905,24 @@ const OverdueOrdersTable = ({
                           );
                         })()}
                       </TableCell>
+                      <TableCell align="right">
+                        <Typography 
+                          variant="body2" 
+                          fontWeight="bold" 
+                          color={calculateDaysLate(row) > 0 ? 'error.main' : 'text.secondary'}
+                          sx={{
+                            border: '1px solid',
+                            borderColor: calculateDaysLate(row) > 0 ? 'error.main' : 'text.secondary',
+                            borderRadius: '4px',
+                            padding: '4px 8px',
+                            display: 'inline-block',
+                            minWidth: '40px',
+                            textAlign: 'center'
+                          }}
+                        >
+                          {calculateDaysLate(row)}
+                        </Typography>
+                      </TableCell>
                       <TableCell align="right" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                         {formatCurrency(Number(row.total_invoice))}
                       </TableCell>
@@ -890,7 +958,11 @@ const OverdueOrdersTable = ({
       {/* Store Details Modal */}
       <Dialog
         open={detailsModalOpen}
-        onClose={() => setDetailsModalOpen(false)}
+        onClose={() => {
+          setDetailsModalOpen(false);
+          setStoreSearchQuery(''); // Clear search when modal closes
+          setActiveStoreSearchQuery(''); // Clear active search when modal closes
+        }}
         maxWidth="lg"
         fullWidth
       >
@@ -898,10 +970,55 @@ const OverdueOrdersTable = ({
           Overdue Orders by Store
         </DialogTitle>
         <DialogContent>
+          <Box sx={{ mt: 2, mb: 2, display: 'flex', gap: 1 }}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="Search stores by name, reseller, or agent..."
+              value={storeSearchQuery}
+              onChange={(e) => setStoreSearchQuery(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  setActiveStoreSearchQuery(storeSearchQuery);
+                }
+              }}
+              size="small"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <Button
+              variant="contained"
+              startIcon={<SearchIcon />}
+              onClick={() => {
+                setActiveStoreSearchQuery(storeSearchQuery);
+                setStorePage(0); // Reset to first page when searching
+              }}
+              size="small"
+              sx={{ minWidth: '120px' }}
+            >
+              Search
+            </Button>
+          </Box>
           <Box sx={{ mt: 2 }}>
-            {getStoreDetails().map((store, index) => (
-              <Accordion key={index} defaultExpanded>
-                <AccordionSummary>
+            {(() => {
+              const paginatedStores = filteredStoresForModal.slice(
+                storePage * storeRowsPerPage,
+                storePage * storeRowsPerPage + storeRowsPerPage
+              );
+              
+              return (
+                <>
+                  {paginatedStores.map((store, index) => (
+              <Accordion key={index}>
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{ '& .MuiAccordionSummary-content': { margin: '12px 0' } }}
+                >
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 2 }}>
                     <Box>
                       <Typography variant="h6" fontWeight="bold">
@@ -954,6 +1071,7 @@ const OverdueOrdersTable = ({
                           <TableCell>Faktur Date</TableCell>
                           <TableCell>Due Date</TableCell>
                           <TableCell>Overdue Status</TableCell>
+                          <TableCell align="right">Days Late</TableCell>
                           <TableCell align="right">Total Invoice</TableCell>
                           <TableCell align="right">Profit</TableCell>
                         </TableRow>
@@ -998,6 +1116,24 @@ const OverdueOrdersTable = ({
                                 })()}
                               </TableCell>
                               <TableCell align="right">
+                                <Typography 
+                                  variant="body2" 
+                                  fontWeight="bold" 
+                                  color={calculateDaysLate(order) > 0 ? 'error.main' : 'text.secondary'}
+                                  sx={{
+                                    border: '1px solid',
+                                    borderColor: calculateDaysLate(order) > 0 ? 'error.main' : 'text.secondary',
+                                    borderRadius: '4px',
+                                    padding: '4px 8px',
+                                    display: 'inline-block',
+                                    minWidth: '40px',
+                                    textAlign: 'center'
+                                  }}
+                                >
+                                  {calculateDaysLate(order)}
+                                </Typography>
+                              </TableCell>
+                              <TableCell align="right">
                                 <Typography variant="body2" fontWeight="bold" color="primary.main">
                                   {formatCurrency(Number(order.total_invoice))}
                                 </Typography>
@@ -1014,11 +1150,42 @@ const OverdueOrdersTable = ({
                   </TableContainer>
                 </AccordionDetails>
               </Accordion>
-            ))}
+                  ))}
+                  {filteredStoresForModal.length === 0 && (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography variant="body2" color="textSecondary">
+                        No stores found
+                      </Typography>
+                    </Box>
+                  )}
+                </>
+              );
+            })()}
           </Box>
+          
+          {/* Pagination for stores */}
+          {filteredStoresForModal.length > storeRowsPerPage && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 2 }}>
+                <TablePagination
+                  component="div"
+                  count={filteredStoresForModal.length}
+                  rowsPerPage={storeRowsPerPage}
+                  page={storePage}
+                  onPageChange={(event, newPage) => setStorePage(newPage)}
+                  onRowsPerPageChange={(event) => {
+                    setStoreRowsPerPage(parseInt(event.target.value, 10));
+                    setStorePage(0);
+                  }}
+                  rowsPerPageOptions={[5, 10, 25, 50]}
+                />
+              </Box>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDetailsModalOpen(false)}>
+          <Button onClick={() => {
+            setDetailsModalOpen(false);
+            setStorePage(0); // Reset pagination when closing
+          }}>
             Close
           </Button>
         </DialogActions>

@@ -264,6 +264,7 @@ export interface StoreMonthly {
   total_invoice: number;
   total_profit: number;
   margin: number;
+  user_status?: string;
 }
 
 export interface StoreMonthlyResponse {
