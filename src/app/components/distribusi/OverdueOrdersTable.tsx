@@ -60,6 +60,7 @@ const headCells: HeadCell[] = [
   { id: 'status_payment', label: 'Payment Status', numeric: false },
   { id: 'payment_type', label: 'Payment Type', numeric: false },
   { id: 'order_date', label: 'Order Date', numeric: false },
+  { id: 'faktur_date', label: 'Faktur Date', numeric: false },
   { id: 'payment_due_date', label: 'Due Date', numeric: false },
   { id: 'overdue_status', label: 'Overdue Status', numeric: false },
   { id: 'total_invoice', label: 'Total Invoice', numeric: true },
@@ -202,6 +203,44 @@ const OverdueOrdersTable = ({
     }
   };
 
+  // Calculate overdue status based on faktur_date (or order_date if faktur_date is null) and payment_due_date
+  const calculateOverdueStatus = (order: Order): string => {
+    if (!order.payment_due_date) return '';
+    
+    // Use faktur_date if available, otherwise fall back to order_date
+    const referenceDate = order.faktur_date || order.order_date;
+    if (!referenceDate) return '';
+    
+    const reference = new Date(referenceDate);
+    const dueDate = new Date(order.payment_due_date);
+    
+    // Reset time to start of day for accurate day calculation
+    reference.setHours(0, 0, 0, 0);
+    dueDate.setHours(0, 0, 0, 0);
+    
+    // Calculate difference in days
+    const diffTime = dueDate.getTime() - reference.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    // Determine overdue status based on days past due
+    if (diffDays >= 0) {
+      return 'CURRENT';
+    } else {
+      const daysPastDue = Math.abs(diffDays);
+      if (daysPastDue < 14) {
+        return 'B2W';
+      } else if (daysPastDue < 40) {
+        return '14DPD';
+      } else if (daysPastDue < 60) {
+        return '40DPD';
+      } else if (daysPastDue < 90) {
+        return '60DPD';
+      } else {
+        return '90DPD';
+      }
+    }
+  };
+
   const getOverdueStatusColor = (status: string) => {
     if (!status) return 'default';
     if (status.includes('DPD')) {
@@ -210,6 +249,8 @@ const OverdueOrdersTable = ({
       if (days >= 14) return 'warning';
       return 'info';
     }
+    if (status === 'CURRENT') return 'success';
+    if (status === 'B2W') return 'warning';
     return 'default';
   };
 
@@ -228,7 +269,7 @@ const OverdueOrdersTable = ({
       order.payment_type?.toLowerCase() || '',
       order.business_type?.toLowerCase() || '',
       order.sub_business_type?.toLowerCase() || '',
-      order.overdue_status?.toLowerCase() || '',
+      calculateOverdueStatus(order).toLowerCase(),
     ];
 
     return searchableFields.some((field) =>
@@ -272,13 +313,28 @@ const OverdueOrdersTable = ({
       bValue = Number(bValue);
     }
 
-    if (orderBy === 'order_date' || orderBy === 'payment_due_date') {
-      aValue = new Date(aValue).getTime();
-      bValue = new Date(bValue).getTime();
+    if (orderBy === 'order_date' || orderBy === 'faktur_date' || orderBy === 'payment_due_date') {
+      aValue = aValue ? new Date(aValue).getTime() : 0;
+      bValue = bValue ? new Date(bValue).getTime() : 0;
     }
 
-    // Handle string comparisons for other text fields
-    if (typeof aValue === 'string' && typeof bValue === 'string') {
+    // Special handling for overdue_status field - use calculated value
+    if (orderBy === 'overdue_status') {
+      const getOverduePriority = (status: string) => {
+        if (!status) return 6; // null status gets lowest priority
+        if (status === 'CURRENT') return 0;
+        if (status === 'B2W') return 1;
+        if (status.includes('14DPD')) return 2;
+        if (status.includes('40DPD')) return 3;
+        if (status.includes('60DPD')) return 4;
+        if (status.includes('90DPD')) return 5;
+        return 6; // for any other status
+      };
+      
+      aValue = getOverduePriority(calculateOverdueStatus(a));
+      bValue = getOverduePriority(calculateOverdueStatus(b));
+    } else if (typeof aValue === 'string' && typeof bValue === 'string') {
+      // Handle string comparisons for other text fields
       aValue = aValue.toLowerCase();
       bValue = bValue.toLowerCase();
     }
@@ -340,8 +396,9 @@ const OverdueOrdersTable = ({
       store.totalInvoice += Number(order.total_invoice) || 0;
       store.totalProfit += Number(order.profit) || 0;
       store.orderCount += 1;
-      if (order.overdue_status && !store.overdueStatuses.includes(order.overdue_status)) {
-        store.overdueStatuses.push(order.overdue_status);
+      const overdueStatus = calculateOverdueStatus(order);
+      if (overdueStatus && !store.overdueStatuses.includes(overdueStatus)) {
+        store.overdueStatuses.push(overdueStatus);
       }
     });
 
@@ -363,6 +420,7 @@ const OverdueOrdersTable = ({
       'Payment Status': '',
       'Payment Type': '',
       'Order Date': '',
+      'Faktur Date': '',
       'Due Date': '',
       'Overdue Status': '',
       'Total Invoice': totalInvoice,
@@ -383,8 +441,9 @@ const OverdueOrdersTable = ({
       'Payment Status': o.status_payment,
       'Payment Type': o.payment_type,
       'Order Date': formatDate(o.order_date),
+      'Faktur Date': o.faktur_date ? formatDate(o.faktur_date) : '',
       'Due Date': o.payment_due_date ? formatDate(o.payment_due_date) : '',
-      'Overdue Status': o.overdue_status || '',
+      'Overdue Status': calculateOverdueStatus(o) || '',
       'Total Invoice': o.total_invoice,
       'Profit': o.profit,
       'Business Type': o.business_type,
@@ -419,6 +478,7 @@ const OverdueOrdersTable = ({
       { wch: 15 }, // Payment Status
       { wch: 15 }, // Payment Type
       { wch: 15 }, // Order Date
+      { wch: 15 }, // Faktur Date
       { wch: 15 }, // Due Date
       { wch: 15 }, // Overdue Status
       { wch: 15 }, // Total Invoice
@@ -779,17 +839,21 @@ const OverdueOrdersTable = ({
                       </TableCell>
                       <TableCell>{row.payment_type}</TableCell>
                       <TableCell>{formatDate(row.order_date)}</TableCell>
+                      <TableCell>{row.faktur_date ? formatDate(row.faktur_date) : '-'}</TableCell>
                       <TableCell>{formatDate(row.payment_due_date)}</TableCell>
                       <TableCell>
-                        {row.overdue_status ? (
-                          <Chip
-                            label={row.overdue_status}
-                            color={getOverdueStatusColor(row.overdue_status) as any}
-                            size="small"
-                          />
-                        ) : (
-                          '-'
-                        )}
+                        {(() => {
+                          const overdueStatus = calculateOverdueStatus(row);
+                          return overdueStatus ? (
+                            <Chip
+                              label={overdueStatus}
+                              color={getOverdueStatusColor(overdueStatus) as any}
+                              size="small"
+                            />
+                          ) : (
+                            '-'
+                          );
+                        })()}
                       </TableCell>
                       <TableCell align="right" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                         {formatCurrency(Number(row.total_invoice))}
@@ -887,6 +951,7 @@ const OverdueOrdersTable = ({
                         <TableRow>
                           <TableCell>Order Code</TableCell>
                           <TableCell>Order Date</TableCell>
+                          <TableCell>Faktur Date</TableCell>
                           <TableCell>Due Date</TableCell>
                           <TableCell>Overdue Status</TableCell>
                           <TableCell align="right">Total Invoice</TableCell>
@@ -910,19 +975,27 @@ const OverdueOrdersTable = ({
                               </TableCell>
                               <TableCell>
                                 <Typography variant="body2">
+                                  {order.faktur_date ? formatDate(order.faktur_date) : '-'}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2">
                                   {formatDate(order.payment_due_date)}
                                 </Typography>
                               </TableCell>
                               <TableCell>
-                                {order.overdue_status ? (
-                                  <Chip
-                                    label={order.overdue_status}
-                                    color={getOverdueStatusColor(order.overdue_status) as any}
-                                    size="small"
-                                  />
-                                ) : (
-                                  '-'
-                                )}
+                                {(() => {
+                                  const overdueStatus = calculateOverdueStatus(order);
+                                  return overdueStatus ? (
+                                    <Chip
+                                      label={overdueStatus}
+                                      color={getOverdueStatusColor(overdueStatus) as any}
+                                      size="small"
+                                    />
+                                  ) : (
+                                    '-'
+                                  );
+                                })()}
                               </TableCell>
                               <TableCell align="right">
                                 <Typography variant="body2" fontWeight="bold" color="primary.main">
