@@ -1213,6 +1213,15 @@ export const fetchCompareData = async (params: CompareQueryParams): Promise<Comp
 };
 
 // Types for Product Summary API
+export interface ProductVariant {
+  variant_name: string;
+  average_buy_price: number;
+  average_sale_price: number;
+  total_invoice: number;
+  total_quantity: number;
+  profit?: number;
+}
+
 export interface ProductSummaryData {
   product_id: string;
   product_name: string;
@@ -1220,12 +1229,13 @@ export interface ProductSummaryData {
   brands: string;
   type_category: string;
   sub_category: string;
-  total_invoice: number;
-  average_buy_price: number;
-  order_count: number;
-  total_quantity: number;
-  active_stores: number;
-  profit: number;
+  total_invoice?: number;
+  average_buy_price?: number;
+  order_count?: number;
+  total_quantity?: number;
+  active_stores?: number;
+  profit?: number;
+  variants?: ProductVariant[];
 }
 
 export interface ProductSummaryResponse {

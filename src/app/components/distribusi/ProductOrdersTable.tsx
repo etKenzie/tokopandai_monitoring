@@ -41,19 +41,24 @@ interface HeadCell {
 
 const headCells: HeadCell[] = [
   { id: 'order_code', label: 'Order Code', numeric: false },
+  { id: 'variant_name', label: 'Variant', numeric: false },
   { id: 'reseller_name', label: 'Reseller Name', numeric: false },
   { id: 'store_name', label: 'Store Name', numeric: false },
   { id: 'segment', label: 'Segment', numeric: false },
   { id: 'area', label: 'Area', numeric: false },
+  { id: 'order_quantity', label: 'Quantity', numeric: true },
+  { id: 'price', label: 'Price', numeric: true },
+  { id: 'total_invoice', label: 'Item Invoice', numeric: true },
+  { id: 'order_total_invoice', label: 'Order Invoice', numeric: true },
   { id: 'status_order', label: 'Order Status', numeric: false },
   { id: 'status_payment', label: 'Payment Status', numeric: false },
   { id: 'payment_type', label: 'Payment Type', numeric: false },
   { id: 'order_date', label: 'Order Date', numeric: false },
   { id: 'payment_due_date', label: 'Due Date', numeric: false },
-  { id: 'total_invoice', label: 'Total Invoice', numeric: true },
   { id: 'agent_name', label: 'Agent', numeric: false },
   { id: 'business_type', label: 'Business Type', numeric: false },
-  { id: 'profit', label: 'Profit', numeric: true },
+  { id: 'profit', label: 'Item Profit', numeric: true },
+  { id: 'order_profit', label: 'Order Profit', numeric: true },
   { id: 'overdue_status', label: 'Overdue Status', numeric: false },
 ];
 
@@ -131,6 +136,7 @@ const ProductOrdersTable = ({
 
     const searchableFields = [
       order.order_code?.toLowerCase() || '',
+      order.variant_name?.toLowerCase() || '',
       order.reseller_name?.toLowerCase() || '',
       order.store_name?.toLowerCase() || '',
       order.segment?.toLowerCase() || '',
@@ -195,9 +201,11 @@ const ProductOrdersTable = ({
     let bValue: any = b[orderBy];
 
     // Handle numeric fields
-    if (orderBy === 'total_invoice' || orderBy === 'profit') {
-      aValue = typeof aValue === 'string' ? parseFloat(aValue) : Number(aValue);
-      bValue = typeof bValue === 'string' ? parseFloat(bValue) : Number(bValue);
+    if (orderBy === 'total_invoice' || orderBy === 'order_total_invoice' || 
+        orderBy === 'profit' || orderBy === 'order_profit' || 
+        orderBy === 'order_quantity' || orderBy === 'price') {
+      aValue = typeof aValue === 'string' ? parseFloat(aValue) : Number(aValue || 0);
+      bValue = typeof bValue === 'string' ? parseFloat(bValue) : Number(bValue || 0);
     }
 
     // Handle date fields
@@ -219,27 +227,32 @@ const ProductOrdersTable = ({
     }
   });
 
-  const totalValue = filteredOrders.reduce((sum, order) => sum + (typeof order.total_invoice === 'string' ? parseFloat(order.total_invoice) : order.total_invoice), 0);
-  const totalProfit = filteredOrders.reduce((sum, order) => sum + order.profit, 0);
+  const totalValue = filteredOrders.reduce((sum, order) => sum + (order.total_invoice || 0), 0);
+  const totalProfit = filteredOrders.reduce((sum, order) => sum + (order.profit || 0), 0);
   const totalOrders = filteredOrders.length;
   const paidOrders = filteredOrders.filter(o => o.status_payment === 'LUNAS').length;
 
   const prepareDataForExport = (orders: ProductOrder[]) => {
     return orders.map((o) => ({
       'Order Code': o.order_code,
+      'Variant': o.variant_name,
       'Reseller Name': o.reseller_name,
       'Store Name': o.store_name,
       'Segment': o.segment,
       'Area': o.area,
+      'Quantity': o.order_quantity || 0,
+      'Price': o.price || 0,
+      'Item Invoice': o.total_invoice || 0,
+      'Order Invoice': o.order_total_invoice || 0,
       'Order Status': o.status_order,
       'Payment Status': o.status_payment,
       'Payment Type': o.payment_type,
       'Order Date': formatDate(o.order_date),
       'Due Date': formatDate(o.payment_due_date),
-      'Total Invoice': o.total_invoice,
       'Agent': o.agent_name,
       'Business Type': o.business_type,
-      'Profit': o.profit,
+      'Item Profit': o.profit || 0,
+      'Order Profit': o.order_profit || 0,
       'Overdue Status': o.overdue_status,
     }));
   };
@@ -259,19 +272,24 @@ const ProductOrdersTable = ({
     // Set column widths
     const colWidths = [
       { wch: 15 }, // Order Code
+      { wch: 12 }, // Variant
       { wch: 25 }, // Reseller Name
       { wch: 25 }, // Store Name
       { wch: 15 }, // Segment
       { wch: 15 }, // Area
+      { wch: 12 }, // Quantity
+      { wch: 12 }, // Price
+      { wch: 15 }, // Item Invoice
+      { wch: 15 }, // Order Invoice
       { wch: 15 }, // Order Status
       { wch: 15 }, // Payment Status
       { wch: 15 }, // Payment Type
       { wch: 15 }, // Order Date
       { wch: 15 }, // Due Date
-      { wch: 15 }, // Total Invoice
       { wch: 20 }, // Agent
       { wch: 20 }, // Business Type
-      { wch: 15 }, // Profit
+      { wch: 15 }, // Item Profit
+      { wch: 15 }, // Order Profit
       { wch: 15 }, // Overdue Status
     ];
     ws['!cols'] = colWidths;
@@ -536,6 +554,14 @@ const ProductOrdersTable = ({
                         </Typography>
                       </TableCell>
                       <TableCell>
+                        <Chip
+                          label={order.variant_name}
+                          size="small"
+                          variant="outlined"
+                          color="secondary"
+                        />
+                      </TableCell>
+                      <TableCell>
                         <Typography variant="body2">
                           {order.reseller_name}
                         </Typography>
@@ -559,6 +585,26 @@ const ProductOrdersTable = ({
                           size="small"
                           variant="outlined"
                         />
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2">
+                          {order.order_quantity || 0}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2">
+                          {formatCurrency(order.price || 0)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2" fontWeight="medium">
+                          {formatCurrency(order.total_invoice || 0)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2" fontWeight="bold" color="primary">
+                          {formatCurrency(order.order_total_invoice || 0)}
+                        </Typography>
                       </TableCell>
                       <TableCell>
                         <Chip
@@ -589,11 +635,6 @@ const ProductOrdersTable = ({
                           {formatDate(order.payment_due_date)}
                         </Typography>
                       </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="body2" fontWeight="medium">
-                          {formatCurrency(order.total_invoice)}
-                        </Typography>
-                      </TableCell>
                       <TableCell>
                         <Typography variant="body2">
                           {order.agent_name}
@@ -610,7 +651,16 @@ const ProductOrdersTable = ({
                           fontWeight="medium"
                           color={order.profit >= 0 ? 'success.main' : 'error.main'}
                         >
-                          {formatCurrency(order.profit)}
+                          {formatCurrency(order.profit || 0)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography 
+                          variant="body2" 
+                          fontWeight="bold"
+                          color={order.order_profit >= 0 ? 'success.main' : 'error.main'}
+                        >
+                          {formatCurrency(order.order_profit || 0)}
                         </Typography>
                       </TableCell>
                       <TableCell>

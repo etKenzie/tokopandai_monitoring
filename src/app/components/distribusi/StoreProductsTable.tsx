@@ -9,12 +9,14 @@ import {
   Chip,
   CircularProgress,
   FormControl,
+  FormControlLabel,
   Grid,
   InputAdornment,
   InputLabel,
   MenuItem,
   Paper,
   Select,
+  Switch,
   Table,
   TableBody,
   TableCell,
@@ -32,7 +34,7 @@ import { ProductSummaryData } from '../../api/distribusi/DistribusiSlice';
 import ProductDetailModal from './ProductDetailModal';
 
 type ProductDirection = 'asc' | 'desc';
-type SortableProductField = keyof ProductSummaryData;
+type SortableProductField = keyof ProductSummaryData | 'average_sale_price';
 
 interface ProductHeadCell {
   id: SortableProductField;
@@ -48,11 +50,37 @@ const headCells: ProductHeadCell[] = [
   { id: 'sub_category', label: 'Sub Category', numeric: false },
   { id: 'total_invoice', label: 'Total Invoice', numeric: true },
   { id: 'average_buy_price', label: 'Avg Buy Price', numeric: true },
+  { id: 'average_sale_price', label: 'Avg Sale Price', numeric: true },
   { id: 'order_count', label: 'Order Count', numeric: true },
   { id: 'total_quantity', label: 'Total Quantity', numeric: true },
   { id: 'active_stores', label: 'Active Stores', numeric: true },
   { id: 'profit', label: 'Profit', numeric: true },
 ];
+
+// Variant columns for price view
+const variantTypes = ['PACK', 'CARTON', 'GRAM'];
+
+interface VariantHeadCell {
+  variant: string;
+  type: 'buy_price' | 'sale_price' | 'invoice' | 'quantity';
+  label: string;
+  numeric: boolean;
+}
+
+const getVariantHeadCells = (): VariantHeadCell[] => {
+  const cells: VariantHeadCell[] = [];
+  variantTypes.forEach(variant => {
+    cells.push(
+      { variant, type: 'buy_price', label: `${variant} Buy Price`, numeric: true },
+      { variant, type: 'sale_price', label: `${variant} Sale Price`, numeric: true },
+      { variant, type: 'invoice', label: `${variant} Invoice`, numeric: true },
+      { variant, type: 'quantity', label: `${variant} Quantity`, numeric: true }
+    );
+  });
+  return cells;
+};
+
+const variantHeadCells = getVariantHeadCells();
 
 interface StoreProductsTableProps {
   products: ProductSummaryData[];
@@ -77,6 +105,7 @@ const StoreProductsTable = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedProduct, setSelectedProduct] = useState<ProductSummaryData | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [showPriceView, setShowPriceView] = useState(false);
 
   const handleRequestSort = (property: SortableProductField) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -142,6 +171,95 @@ const StoreProductsTable = ({
     }).format(amount);
   };
 
+  // Helper function to calculate product totals from variants
+  const calculateProductTotals = (product: ProductSummaryData) => {
+    // Use product-level values if available (new API format)
+    if (product.order_count !== undefined || product.profit !== undefined || product.active_stores !== undefined) {
+      const totalInvoice = product.total_invoice !== undefined 
+        ? product.total_invoice 
+        : (product.variants?.reduce((sum, v) => sum + (v.total_invoice || 0), 0) || 0);
+      const totalQuantity = product.total_quantity !== undefined
+        ? product.total_quantity
+        : (product.variants?.reduce((sum, v) => sum + (v.total_quantity || 0), 0) || 0);
+      
+      // Calculate weighted average buy price from variants if needed
+      let averageBuyPrice = product.average_buy_price || 0;
+      if (!averageBuyPrice && product.variants && product.variants.length > 0) {
+        const weightedBuyPrice = product.variants.reduce((sum, v) => {
+          const quantity = v.total_quantity || 0;
+          const buyPrice = v.average_buy_price || 0;
+          return sum + (quantity * buyPrice);
+        }, 0);
+        averageBuyPrice = totalQuantity > 0 ? weightedBuyPrice / totalQuantity : 0;
+      }
+      
+      // Average sale price is total_invoice / total_quantity
+      const averageSalePrice = totalQuantity > 0 ? totalInvoice / totalQuantity : 0;
+      
+      return {
+        total_invoice: totalInvoice,
+        total_quantity: totalQuantity,
+        average_buy_price: averageBuyPrice,
+        average_sale_price: averageSalePrice,
+        order_count: product.order_count || 0,
+        active_stores: product.active_stores || 0,
+        profit: product.profit || 0,
+      };
+    }
+    
+    // Otherwise, calculate from variants (old API format)
+    if (product.variants && Array.isArray(product.variants) && product.variants.length > 0) {
+      const totalInvoice = product.variants.reduce((sum, v) => sum + (v.total_invoice || 0), 0);
+      const totalQuantity = product.variants.reduce((sum, v) => sum + (v.total_quantity || 0), 0);
+      const totalProfit = product.variants.reduce((sum, v) => sum + (v.profit || 0), 0);
+      
+      // Calculate weighted average buy price
+      const weightedBuyPrice = product.variants.reduce((sum, v) => {
+        const quantity = v.total_quantity || 0;
+        const buyPrice = v.average_buy_price || 0;
+        return sum + (quantity * buyPrice);
+      }, 0);
+      const averageBuyPrice = totalQuantity > 0 ? weightedBuyPrice / totalQuantity : 0;
+      
+      // Average sale price is total_invoice / total_quantity
+      const averageSalePrice = totalQuantity > 0 ? totalInvoice / totalQuantity : 0;
+      
+      return {
+        total_invoice: totalInvoice,
+        total_quantity: totalQuantity,
+        average_buy_price: averageBuyPrice,
+        average_sale_price: averageSalePrice,
+        order_count: product.order_count || 0,
+        active_stores: product.active_stores || 0,
+        profit: totalProfit || product.profit || 0,
+      };
+    }
+    
+    // Fallback to 0 if no data
+    return {
+      total_invoice: 0,
+      total_quantity: 0,
+      average_buy_price: 0,
+      average_sale_price: 0,
+      order_count: 0,
+      active_stores: 0,
+      profit: 0,
+    };
+  };
+
+  const calculateAverageSalePrice = (product: ProductSummaryData): number => {
+    const totals = calculateProductTotals(product);
+    return totals.average_sale_price;
+  };
+
+  // Helper function to get variant data
+  const getVariantData = (product: ProductSummaryData, variantName: string) => {
+    if (!product.variants || !Array.isArray(product.variants)) {
+      return null;
+    }
+    return product.variants.find(v => v.variant_name === variantName) || null;
+  };
+
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'FROZEN': return 'info';
@@ -153,14 +271,37 @@ const StoreProductsTable = ({
   };
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
-    let aValue: any = a[orderBy];
-    let bValue: any = b[orderBy];
+    // Get calculated totals for sorting
+    const aTotals = calculateProductTotals(a);
+    const bTotals = calculateProductTotals(b);
+    
+    let aValue: any;
+    let bValue: any;
+
+    // Handle calculated fields
+    if (orderBy === 'average_sale_price') {
+      aValue = aTotals.average_sale_price;
+      bValue = bTotals.average_sale_price;
+    } else if (orderBy === 'total_invoice') {
+      aValue = aTotals.total_invoice;
+      bValue = bTotals.total_invoice;
+    } else if (orderBy === 'average_buy_price') {
+      aValue = aTotals.average_buy_price;
+      bValue = bTotals.average_buy_price;
+    } else if (orderBy === 'total_quantity') {
+      aValue = aTotals.total_quantity;
+      bValue = bTotals.total_quantity;
+    } else {
+      // For other fields, use direct value or from totals
+      aValue = a[orderBy] !== undefined ? a[orderBy] : (aTotals as any)[orderBy];
+      bValue = b[orderBy] !== undefined ? b[orderBy] : (bTotals as any)[orderBy];
+    }
 
     // Handle numeric fields
-    if (orderBy === 'total_invoice' || orderBy === 'average_buy_price' || 
+    if (orderBy === 'total_invoice' || orderBy === 'average_buy_price' || orderBy === 'average_sale_price' ||
         orderBy === 'order_count' || orderBy === 'total_quantity' || orderBy === 'active_stores' || orderBy === 'profit') {
-      aValue = Number(aValue);
-      bValue = Number(bValue);
+      aValue = Number(aValue) || 0;
+      bValue = Number(bValue) || 0;
     }
 
     // Handle string comparisons for other text fields
@@ -176,24 +317,56 @@ const StoreProductsTable = ({
     }
   });
 
-  const totalValue = filteredProducts.reduce((sum, product) => sum + Number(product.total_invoice) || 0, 0);
-  const totalProfit = filteredProducts.reduce((sum, product) => sum + product.profit, 0);
+  const totalValue = filteredProducts.reduce((sum, product) => {
+    const totals = calculateProductTotals(product);
+    return sum + totals.total_invoice;
+  }, 0);
+  const totalProfit = filteredProducts.reduce((sum, product) => {
+    const totals = calculateProductTotals(product);
+    return sum + totals.profit;
+  }, 0);
   const margin = totalValue > 0 ? (totalProfit / totalValue) * 100 : 0;
 
   const prepareDataForExport = (products: ProductSummaryData[]) => {
-    return products.map((p) => ({
-      'Product Name': p.product_name,
-      'SKU': p.sku,
-      'Brand': p.brands,
-      'Type Category': p.type_category,
-      'Sub Category': p.sub_category,
-      'Total Invoice': p.total_invoice,
-      'Average Buy Price': p.average_buy_price,
-      'Order Count': p.order_count,
-      'Total Quantity': p.total_quantity,
-      'Active Stores': p.active_stores,
-      'Profit': p.profit,
-    }));
+    if (showPriceView) {
+      // Export with variant columns
+      return products.map((p) => {
+        const baseData: any = {
+          'Product Name': p.product_name,
+          'SKU': p.sku,
+          'Brand': p.brands,
+          'Type Category': p.type_category,
+          'Sub Category': p.sub_category,
+        };
+        
+        // Add variant data
+        variantTypes.forEach(variantName => {
+          const variant = getVariantData(p, variantName);
+          baseData[`${variantName} Buy Price`] = variant ? variant.average_buy_price : '';
+          baseData[`${variantName} Sale Price`] = variant ? variant.average_sale_price : '';
+          baseData[`${variantName} Invoice`] = variant ? variant.total_invoice : '';
+          baseData[`${variantName} Quantity`] = variant ? variant.total_quantity : '';
+        });
+        
+        return baseData;
+      });
+    } else {
+      // Standard export
+      return products.map((p) => ({
+        'Product Name': p.product_name,
+        'SKU': p.sku,
+        'Brand': p.brands,
+        'Type Category': p.type_category,
+        'Sub Category': p.sub_category,
+        'Total Invoice': p.total_invoice || 0,
+        'Average Buy Price': p.average_buy_price || 0,
+        'Average Sale Price': calculateAverageSalePrice(p),
+        'Order Count': p.order_count || 0,
+        'Total Quantity': p.total_quantity || 0,
+        'Active Stores': p.active_stores || 0,
+        'Profit': p.profit || 0,
+      }));
+    }
   };
 
   const handleExcelExport = () => {
@@ -209,20 +382,33 @@ const StoreProductsTable = ({
     const ws = XLSX.utils.json_to_sheet(data);
 
     // Set column widths
-    const colWidths = [
-      { wch: 30 }, // Product Name
-      { wch: 15 }, // SKU
-      { wch: 20 }, // Brand
-      { wch: 20 }, // Type Category
-      { wch: 25 }, // Sub Category
-      { wch: 15 }, // Total Invoice
-      { wch: 15 }, // Average Buy Price
-      { wch: 15 }, // Order Count
-      { wch: 15 }, // Total Quantity
-      { wch: 15 }, // Active Stores
-      { wch: 15 }, // Profit
-    ];
-    ws['!cols'] = colWidths;
+    if (showPriceView) {
+      const colWidths = [
+        { wch: 30 }, // Product Name
+        { wch: 15 }, // SKU
+        { wch: 20 }, // Brand
+        { wch: 20 }, // Type Category
+        { wch: 25 }, // Sub Category
+        ...variantHeadCells.map(() => ({ wch: 15 })) // Variant columns
+      ];
+      ws['!cols'] = colWidths;
+    } else {
+      const colWidths = [
+        { wch: 30 }, // Product Name
+        { wch: 15 }, // SKU
+        { wch: 20 }, // Brand
+        { wch: 20 }, // Type Category
+        { wch: 25 }, // Sub Category
+        { wch: 15 }, // Total Invoice
+        { wch: 15 }, // Average Buy Price
+        { wch: 15 }, // Average Sale Price
+        { wch: 15 }, // Order Count
+        { wch: 15 }, // Total Quantity
+        { wch: 15 }, // Active Stores
+        { wch: 15 }, // Profit
+      ];
+      ws['!cols'] = colWidths;
+    }
 
     // Add worksheet to workbook
     XLSX.utils.book_append_sheet(wb, ws, 'Product Performance');
@@ -264,11 +450,21 @@ const StoreProductsTable = ({
         <Box
           sx={{
             display: 'flex',
-            justifyContent: 'flex-end',
+            justifyContent: 'space-between',
             alignItems: 'center',
             mb: 3,
           }}
         >
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showPriceView}
+                onChange={(e) => setShowPriceView(e.target.checked)}
+                color="primary"
+              />
+            }
+            label="Price View (Show Variants)"
+          />
           <Box>
             {onRefresh && (
               <Button
@@ -415,7 +611,8 @@ const StoreProductsTable = ({
         <Table>
           <TableHead>
             <TableRow>
-              {headCells.map((headCell) => (
+              {/* Base columns (always shown) */}
+              {headCells.slice(0, 5).map((headCell) => (
                 <TableCell
                   key={headCell.id}
                   align={headCell.numeric ? 'right' : 'left'}
@@ -430,18 +627,47 @@ const StoreProductsTable = ({
                   </TableSortLabel>
                 </TableCell>
               ))}
+              {/* Conditional columns based on toggle */}
+              {!showPriceView ? (
+                // Standard columns
+                headCells.slice(5).map((headCell) => (
+                  <TableCell
+                    key={headCell.id}
+                    align={headCell.numeric ? 'right' : 'left'}
+                    sortDirection={orderBy === headCell.id ? order : false}
+                  >
+                    <TableSortLabel
+                      active={orderBy === headCell.id}
+                      direction={orderBy === headCell.id ? order : 'asc'}
+                      onClick={() => handleRequestSort(headCell.id)}
+                    >
+                      {headCell.label}
+                    </TableSortLabel>
+                  </TableCell>
+                ))
+              ) : (
+                // Variant columns
+                variantHeadCells.map((headCell, index) => (
+                  <TableCell
+                    key={`${headCell.variant}-${headCell.type}-${index}`}
+                    align="right"
+                  >
+                    {headCell.label}
+                  </TableCell>
+                ))
+              )}
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={headCells.length} align="center">
+                <TableCell colSpan={showPriceView ? 5 + variantHeadCells.length : headCells.length} align="center">
                   <CircularProgress />
                 </TableCell>
               </TableRow>
             ) : sortedProducts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={headCells.length} align="center">
+                <TableCell colSpan={showPriceView ? 5 + variantHeadCells.length : headCells.length} align="center">
                   <Typography variant="body2" color="textSecondary">
                     No products found
                   </Typography>
@@ -494,36 +720,72 @@ const StoreProductsTable = ({
                         variant="outlined"
                       />
                     </TableCell>
-                    <TableCell align="right">
-                      <Typography variant="body2" fontWeight="medium">
-                        {formatCurrency(product.total_invoice)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Typography variant="body2">
-                        {formatCurrency(product.average_buy_price)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Typography variant="body2">
-                        {product.order_count}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Typography variant="body2" fontWeight="medium">
-                        {product.total_quantity}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Typography variant="body2">
-                        {product.active_stores}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Typography variant="body2" fontWeight="medium" color="success.main">
-                        {formatCurrency(product.profit)}
-                      </Typography>
-                    </TableCell>
+                    {!showPriceView ? (
+                      // Standard columns - calculate from variants if needed
+                      (() => {
+                        const totals = calculateProductTotals(product);
+                        return (
+                          <>
+                            <TableCell align="right">
+                              <Typography variant="body2" fontWeight="medium">
+                                {formatCurrency(totals.total_invoice)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              <Typography variant="body2">
+                                {formatCurrency(totals.average_buy_price)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              <Typography variant="body2">
+                                {formatCurrency(totals.average_sale_price)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              <Typography variant="body2">
+                                {totals.order_count}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              <Typography variant="body2" fontWeight="medium">
+                                {totals.total_quantity}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              <Typography variant="body2">
+                                {totals.active_stores}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              <Typography variant="body2" fontWeight="medium" color="success.main">
+                                {formatCurrency(totals.profit)}
+                              </Typography>
+                            </TableCell>
+                          </>
+                        );
+                      })()
+                    ) : (
+                      // Variant columns
+                      variantHeadCells.map((headCell, index) => {
+                        const variant = getVariantData(product, headCell.variant);
+                        return (
+                          <TableCell key={`${headCell.variant}-${headCell.type}-${index}`} align="right">
+                            {variant ? (
+                              <Typography variant="body2">
+                                {headCell.type === 'buy_price' && formatCurrency(variant.average_buy_price)}
+                                {headCell.type === 'sale_price' && formatCurrency(variant.average_sale_price)}
+                                {headCell.type === 'invoice' && formatCurrency(variant.total_invoice)}
+                                {headCell.type === 'quantity' && variant.total_quantity}
+                              </Typography>
+                            ) : (
+                              <Typography variant="body2" color="textSecondary">
+                                -
+                              </Typography>
+                            )}
+                          </TableCell>
+                        );
+                      })
+                    )}
                   </TableRow>
                 ))
             )}

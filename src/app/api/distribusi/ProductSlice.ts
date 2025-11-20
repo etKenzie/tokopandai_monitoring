@@ -14,6 +14,16 @@ export interface Product {
 }
 
 export interface ProductOrder {
+  product_id: string;
+  product_name: string;
+  sku: string;
+  variant_name: string;
+  order_quantity: number;
+  price: number;
+  total_invoice: number;
+  buy_price: number;
+  serve_price: number;
+  profit: number;
   order_id: string;
   order_code: string;
   user_id: string;
@@ -34,12 +44,12 @@ export interface ProductOrder {
   order_type: string;
   month: string;
   payment_date: string | null;
-  total_invoice: string;
+  order_total_invoice: number;
   agent_name: string;
   admin_name: string;
   business_type: string;
   sub_business_type: string;
-  profit: number;
+  order_profit: number;
   overdue_status: string;
 }
 
