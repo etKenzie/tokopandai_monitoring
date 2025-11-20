@@ -56,7 +56,7 @@ const headCells: HeadCell[] = [
   { id: 'category', label: 'Category', numeric: false },
   { id: '3_month_profit', label: '3 Month Profit', numeric: true },
   { id: 'active_months', label: 'Active Months', numeric: true },
-  { id: 'limit', label: 'Limit', numeric: true },
+  { id: 'remaining_limit', label: 'Remaining Limit', numeric: true },
   { id: 'termin_day', label: 'Termin Day', numeric: true },
   { id: 'profit_score', label: 'Profit Score', numeric: true },
   { id: 'owed_score', label: 'Owed Score', numeric: true },
@@ -250,7 +250,7 @@ const StoresTable = ({
       bValue = getCategory(b.final_score);
     }
 
-    if (orderBy === 'profit_score' || orderBy === 'owed_score' || orderBy === 'activity_score' || orderBy === 'payment_habits_score' || orderBy === 'final_score' || orderBy === 'limit' || orderBy === 'termin_day') {
+    if (orderBy === 'profit_score' || orderBy === 'owed_score' || orderBy === 'activity_score' || orderBy === 'payment_habits_score' || orderBy === 'final_score' || orderBy === 'remaining_limit' || orderBy === 'termin_day') {
       aValue = Number(aValue);
       bValue = Number(bValue);
     }
@@ -297,7 +297,7 @@ const StoresTable = ({
       'Business Type': s.business_type,
       'Sub Business Type': s.sub_business_type,
       'Category': getCategory(s.final_score),
-      'Limit': s.limit !== undefined ? s.limit : '',
+      'Remaining Limit': s.remaining_limit !== undefined ? s.remaining_limit : '',
       'Termin Day': s.termin_day !== undefined ? s.termin_day : '',
       'Profit Score': s.profit_score,
       'Owed Score': s.owed_score,
@@ -334,7 +334,7 @@ const StoresTable = ({
       { wch: 10 }, // Category
       { wch: 15 }, // 3 Month Profit
       { wch: 15 }, // Active Months
-      { wch: 15 }, // Limit
+      { wch: 15 }, // Remaining Limit
       { wch: 15 }, // Termin Day
       { wch: 15 }, // Profit Score
       { wch: 15 }, // Owed Score
@@ -783,7 +783,7 @@ const StoresTable = ({
                       </TableCell>
                       <TableCell align="right">
                         <Typography variant="body2" fontWeight="medium">
-                          {row.limit !== undefined ? formatCurrency(row.limit) : '-'}
+                          {row.remaining_limit !== undefined ? formatCurrency(row.remaining_limit) : '-'}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
