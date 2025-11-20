@@ -322,8 +322,8 @@ const SalesOverview = () => {
         // Try static format (lowercase month) in settings as fallback
         else if (settings.goal_profit![agentKey] && settings.goal_profit![agentKey][staticMonthYear]) {
           goalProfitByAgent[agentKey] = settings.goal_profit![agentKey][staticMonthYear];
-        }
-      });
+      }
+    });
     }
     
     // No fallback to static data - only use settings from Supabase

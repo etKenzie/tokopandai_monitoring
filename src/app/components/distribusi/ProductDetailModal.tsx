@@ -113,7 +113,7 @@ const ProductDetailModal = ({ open, onClose, product }: ProductDetailModalProps)
   // Calculate metrics from productOrders, but prefer product-level values if available
   const calculateMetrics = () => {
     // Use product-level values if available (new API format)
-    if (product && (product.order_count !== undefined || product.profit !== undefined || product.active_stores !== undefined)) {
+    if (product && (product.order_count !== undefined || product.active_stores !== undefined)) {
       let totalInvoice = product.total_invoice;
       let totalQuantity = product.total_quantity;
       

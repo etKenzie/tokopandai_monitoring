@@ -5,6 +5,7 @@ import ProtectedRoute from '@/app/components/auth/ProtectedRoute';
 import PageContainer from '@/app/components/container/PageContainer';
 import ProductTypeMonthlyChart from '@/app/components/distribusi/ProductTypeMonthlyChart';
 import StoreProductsTable from '@/app/components/distribusi/StoreProductsTable';
+import SubCategoryChart from '@/app/components/distribusi/SubCategoryChart';
 import { useAuth } from '@/app/context/AuthContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from '@/config/roles';
@@ -318,6 +319,19 @@ const ProductPage = () => {
         {/* Product Type Monthly Chart */}
         <Box mb={3}>
           <ProductTypeMonthlyChart 
+            filters={{
+              agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent,
+              area: filters.area,
+              segment: filters.segment,
+              month: filters.month,
+              year: filters.year,
+            }}
+          />
+        </Box>
+
+        {/* Sub Category Chart */}
+        <Box mb={3}>
+          <SubCategoryChart 
             filters={{
               agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent,
               area: filters.area,

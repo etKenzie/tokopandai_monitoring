@@ -31,6 +31,7 @@ import {
 import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { ProductSummaryData } from '../../api/distribusi/DistribusiSlice';
+import { Product } from '../../api/distribusi/ProductSlice';
 import ProductDetailModal from './ProductDetailModal';
 
 type ProductDirection = 'asc' | 'desc';
@@ -106,6 +107,25 @@ const StoreProductsTable = ({
   const [selectedProduct, setSelectedProduct] = useState<ProductSummaryData | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [showPriceView, setShowPriceView] = useState(false);
+
+  // Convert ProductSummaryData to Product for the modal
+  const convertToProduct = (productData: ProductSummaryData | null): Product | null => {
+    if (!productData) return null;
+    
+    return {
+      product_id: productData.product_id,
+      product_name: productData.product_name,
+      sku: productData.sku,
+      brands: productData.brands,
+      type_category: productData.type_category,
+      sub_category: productData.sub_category,
+      total_invoice: productData.total_invoice ?? 0,
+      average_buy_price: productData.average_buy_price ?? 0,
+      order_count: productData.order_count ?? 0,
+      total_quantity: productData.total_quantity ?? 0,
+      active_stores: productData.active_stores ?? 0,
+    };
+  };
 
   const handleRequestSort = (property: SortableProductField) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -807,7 +827,7 @@ const StoreProductsTable = ({
       <ProductDetailModal
         open={modalOpen}
         onClose={handleCloseModal}
-        product={selectedProduct}
+        product={convertToProduct(selectedProduct)}
       />
     </Card>
   );
