@@ -8,27 +8,16 @@ import {
     Typography
 } from '@mui/material';
 import dynamic from "next/dynamic";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { fetchProductSummary, ProductSummaryData } from '@/app/api/distribusi/DistribusiSlice';
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
-interface SubCategoryData {
-  type_name: string;
-  total_orders: number;
-  active_stores: number;
+interface SubCategoryAggregatedData {
+  sub_category: string;
   total_invoice: number;
   total_profit: number;
-  margin: number;
-  avg_order_value: number;
-  paid_invoice: number;
-  unpaid_invoice: number;
-}
-
-interface SubCategoryResponse {
-  code: number;
-  status: string;
-  message: string;
-  data: SubCategoryData[];
+  product_count: number;
 }
 
 interface SubCategoryChartProps {
@@ -42,7 +31,7 @@ interface SubCategoryChartProps {
 }
 
 const SubCategoryChart = ({ filters }: SubCategoryChartProps) => {
-  const [chartData, setChartData] = useState<SubCategoryData[]>([]);
+  const [products, setProducts] = useState<ProductSummaryData[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchChartData = async () => {
@@ -62,45 +51,61 @@ const SubCategoryChart = ({ filters }: SubCategoryChartProps) => {
       const monthName = monthNames[monthIndex];
       const formattedMonth = `${monthName} ${filters.year}`;
 
-      const params = new URLSearchParams({
+      const response = await fetchProductSummary({
         month: formattedMonth,
-        group_by: 'sub_business_type'
+        agent: filters.agent,
+        area: filters.area,
+        segment: filters.segment,
       });
-
-      // Add optional filters if provided
-      if (filters.agent) {
-        params.append('agent_name', filters.agent);
-      }
-      if (filters.area) {
-        params.append('area', filters.area);
-      }
-      if (filters.segment) {
-        params.append('segment', filters.segment);
-      }
-
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/order/type?${params.toString()}`;
-      console.log('SubCategoryChart: Fetching data from:', apiUrl);
-      console.log('SubCategoryChart: Filters:', filters);
-
-      const response = await fetch(apiUrl);
-      const result: SubCategoryResponse = await response.json();
       
-      console.log('SubCategoryChart: API Response:', result);
+      console.log('SubCategoryChart: API Response:', response);
       
-      if (result.code === 200) {
-        console.log('SubCategoryChart: Data received:', result.data);
-        setChartData(result.data);
+      if (response.code === 200) {
+        console.log('SubCategoryChart: Products received:', response.data);
+        setProducts(response.data || []);
       } else {
-        console.error('Failed to fetch sub category data:', result.message);
-        setChartData([]);
+        console.error('Failed to fetch product data:', response.message);
+        setProducts([]);
       }
     } catch (error) {
-      console.error('Failed to fetch sub category data:', error);
-      setChartData([]);
+      console.error('Failed to fetch product data:', error);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
   };
+
+  // Aggregate products by sub_category
+  const chartData = useMemo(() => {
+    if (!products || products.length === 0) return [];
+
+    const aggregated = products.reduce((acc, product) => {
+      const subCategory = product.sub_category || 'Unknown';
+      
+      if (!acc[subCategory]) {
+        acc[subCategory] = {
+          sub_category: subCategory,
+          total_invoice: 0,
+          total_profit: 0,
+          product_count: 0,
+        };
+      }
+      
+      // Calculate totals from product or variants
+      const productInvoice = product.total_invoice || 
+        (product.variants?.reduce((sum, v) => sum + (v.total_invoice || 0), 0) || 0);
+      const productProfit = product.profit || 0;
+      
+      acc[subCategory].total_invoice += productInvoice;
+      acc[subCategory].total_profit += productProfit;
+      acc[subCategory].product_count += 1;
+      
+      return acc;
+    }, {} as Record<string, SubCategoryAggregatedData>);
+
+    // Convert to array and sort by total_invoice descending
+    return Object.values(aggregated).sort((a, b) => b.total_invoice - a.total_invoice);
+  }, [products]);
 
   // Fetch data when filters change
   useEffect(() => {
@@ -155,7 +160,7 @@ const SubCategoryChart = ({ filters }: SubCategoryChartProps) => {
       colors: ['transparent'],
     },
     xaxis: {
-      categories: chartData.map(item => item.type_name),
+      categories: chartData.map(item => item.sub_category),
       labels: {
         style: {
           fontSize: '12px',
@@ -244,7 +249,7 @@ const SubCategoryChart = ({ filters }: SubCategoryChartProps) => {
         </Typography>
         
         <Typography variant="body2" color="textSecondary" mb={3}>
-          Distribution of orders by sub business type showing total invoice and total profit
+          Distribution of products by sub category showing total invoice and total profit
         </Typography>
         
         <Box>
@@ -264,8 +269,7 @@ const SubCategoryChart = ({ filters }: SubCategoryChartProps) => {
             Total sub categories: {chartData.length} | 
             Total invoice: {formatCurrency(chartData.reduce((sum, item) => sum + Number(item.total_invoice) || 0, 0))} | 
             Total profit: {formatCurrency(chartData.reduce((sum, item) => sum + Number(item.total_profit) || 0, 0))} | 
-            Total orders: {formatNumber(chartData.reduce((sum, item) => sum + item.total_orders, 0))} |
-            Total active stores: {formatNumber(chartData.reduce((sum, item) => sum + item.active_stores, 0))}
+            Total products: {formatNumber(chartData.reduce((sum, item) => sum + item.product_count, 0))}
           </Typography>
         </Box>
       </CardContent>
