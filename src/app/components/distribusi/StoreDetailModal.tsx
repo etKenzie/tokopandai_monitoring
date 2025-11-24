@@ -188,7 +188,7 @@ const StoreDetailModal = ({ open, onClose, store }: StoreDetailModalProps) => {
             {/* Store Information Header */}
             <Box mb={3}>
               <Grid container spacing={2}>
-                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="h4" color="primary" fontWeight="bold">
                       {storeMetadata ? formatDate(storeMetadata.first_order_date) : formatDate(store.first_order_date)}
@@ -198,7 +198,7 @@ const StoreDetailModal = ({ open, onClose, store }: StoreDetailModalProps) => {
                     </Typography>
                   </Paper>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="h4" color="success.main" fontWeight="bold">
                       {formatCurrency(storeMetadata?.["3_month_profit"] || store["3_month_profit"] || 0)}
@@ -208,7 +208,7 @@ const StoreDetailModal = ({ open, onClose, store }: StoreDetailModalProps) => {
                     </Typography>
                   </Paper>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="h4" color="info.main" fontWeight="bold">
                       {storeMetadata?.active_months || store.active_months || 0}
@@ -218,7 +218,7 @@ const StoreDetailModal = ({ open, onClose, store }: StoreDetailModalProps) => {
                     </Typography>
                   </Paper>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="h4" color="info.main" fontWeight="bold">
                       {storeMetadata?.user_status || store.user_status}
@@ -228,10 +228,20 @@ const StoreDetailModal = ({ open, onClose, store }: StoreDetailModalProps) => {
                     </Typography>
                   </Paper>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="h4" color="info.main" fontWeight="bold">
-                      {storeMetadata?.agent_name || store.user_status}
+                      {store.payment_status || 'N/A'}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Payment Status
+                    </Typography>
+                  </Paper>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Paper sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="h4" color="info.main" fontWeight="bold">
+                      {storeMetadata?.agent_name || store.agent_name}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
                       Agent Name

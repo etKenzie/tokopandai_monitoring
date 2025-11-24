@@ -22,6 +22,7 @@ export interface Store {
   three_month_profit: number;
   remaining_limit?: number;
   termin_day?: number;
+  payment_status?: string;
 }
 
 export interface StoresResponse {

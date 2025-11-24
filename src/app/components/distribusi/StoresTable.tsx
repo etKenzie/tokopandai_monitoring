@@ -2,31 +2,31 @@
 
 import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    Chip,
-    CircularProgress,
-    FormControl,
-    FormControlLabel,
-    Grid,
-    InputAdornment,
-    InputLabel,
-    MenuItem,
-    Paper,
-    Select,
-    Switch,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    TableSortLabel,
-    TextField,
-    Typography
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  FormControl,
+  FormControlLabel,
+  Grid,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TableSortLabel,
+  TextField,
+  Typography
 } from '@mui/material';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
@@ -43,11 +43,11 @@ interface HeadCell {
 }
 
 const headCells: HeadCell[] = [
-  { id: 'reseller_name', label: 'Reseller Name', numeric: false },
   { id: 'store_name', label: 'Store Name', numeric: false },
   { id: 'first_order_date', label: 'First Order Date', numeric: false },
   { id: 'first_order_month', label: 'First Order Month', numeric: false },
   { id: 'user_status', label: 'Status', numeric: false },
+  { id: 'payment_status', label: 'Payment Status', numeric: false },
   { id: 'segment', label: 'Segment', numeric: false },
   { id: 'areas', label: 'Area', numeric: false },
   { id: 'agent_name', label: 'Agent', numeric: false },
@@ -96,6 +96,7 @@ const StoresTable = ({
   const [areaFilter, setAreaFilter] = useState<string>('');
   const [agentFilter, setAgentFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('');
   const [businessTypeFilter, setBusinessTypeFilter] = useState<string>('');
   const [subBusinessTypeFilter, setSubBusinessTypeFilter] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
@@ -158,6 +159,43 @@ const StoresTable = ({
     }
   };
 
+  const getPaymentStatusColor = (status?: string) => {
+    if (!status) return 'default';
+    const statusLower = status.toLowerCase();
+    
+    // Best statuses (green)
+    if (statusLower === 'current' || statusLower === 'paid' || statusLower === 'up to date') {
+      return 'success';
+    }
+    
+    // 30 DPD (yellow/orange warning)
+    if (statusLower.includes('30') && statusLower.includes('dpd')) {
+      return 'warning';
+    }
+    
+    // 60 DPD (orange/red)
+    if (statusLower.includes('60') && statusLower.includes('dpd')) {
+      return 'warning';
+    }
+    
+    // Worst statuses (red)
+    if (statusLower.includes('90') && statusLower.includes('dpd')) {
+      return 'error';
+    }
+    
+    // Other overdue/unpaid statuses (red)
+    if (statusLower === 'unpaid' || statusLower === 'overdue' || statusLower.includes('overdue')) {
+      return 'error';
+    }
+    
+    // Partial payment (orange)
+    if (statusLower === 'partial' || statusLower.includes('partial')) {
+      return 'warning';
+    }
+    
+    return 'default';
+  };
+
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'success';
     if (score >= 60) return 'warning';
@@ -189,6 +227,7 @@ const StoresTable = ({
       store.areas?.toLowerCase() || '',
       store.agent_name?.toLowerCase() || '',
       store.user_status?.toLowerCase() || '',
+      store.payment_status?.toLowerCase() || '',
       store.business_type?.toLowerCase() || '',
       store.sub_business_type?.toLowerCase() || '',
     ];
@@ -205,6 +244,7 @@ const StoresTable = ({
       if (areaFilter && s.areas !== areaFilter) return false;
       if (agentFilter && s.agent_name !== agentFilter) return false;
       if (statusFilter && s.user_status !== statusFilter) return false;
+      if (paymentStatusFilter && s.payment_status !== paymentStatusFilter) return false;
       if (businessTypeFilter && s.business_type !== businessTypeFilter) return false;
       if (subBusinessTypeFilter && s.sub_business_type !== subBusinessTypeFilter) return false;
       if (categoryFilter && getCategory(s.final_score) !== categoryFilter) return false;
@@ -217,12 +257,12 @@ const StoresTable = ({
 
       return true;
     });
-  }, [stores, segmentFilter, areaFilter, agentFilter, statusFilter, businessTypeFilter, subBusinessTypeFilter, categoryFilter, activeMonthsFilter, searchQuery]);
+  }, [stores, segmentFilter, areaFilter, agentFilter, statusFilter, paymentStatusFilter, businessTypeFilter, subBusinessTypeFilter, categoryFilter, activeMonthsFilter, searchQuery]);
 
   // Reset page when local filters change
   useEffect(() => {
     setPage(0);
-  }, [segmentFilter, areaFilter, agentFilter, statusFilter, businessTypeFilter, subBusinessTypeFilter, categoryFilter, activeMonthsFilter, searchQuery]);
+  }, [segmentFilter, areaFilter, agentFilter, statusFilter, paymentStatusFilter, businessTypeFilter, subBusinessTypeFilter, categoryFilter, activeMonthsFilter, searchQuery]);
 
   // Notify parent component when filtered stores change
   useEffect(() => {
@@ -236,6 +276,7 @@ const StoresTable = ({
   const uniqueAreas = Array.from(new Set(stores.map((s) => s.areas)));
   const uniqueAgents = Array.from(new Set(stores.map((s) => s.agent_name)));
   const uniqueStatuses = Array.from(new Set(stores.map((s) => s.user_status)));
+  const uniquePaymentStatuses = Array.from(new Set(stores.map((s) => s.payment_status).filter(Boolean))).sort();
   const uniqueBusinessTypes = Array.from(new Set(stores.map((s) => s.business_type)));
   const uniqueSubBusinessTypes = Array.from(new Set(stores.map((s) => s.sub_business_type)));
   const uniqueActiveMonths = Array.from(new Set(stores.map((s) => s.active_months))).sort((a, b) => a - b);
@@ -286,11 +327,11 @@ const StoresTable = ({
 
   const prepareDataForExport = (stores: Store[]) => {
     return stores.map((s) => ({
-      'Reseller Name': s.reseller_name,
       'Store Name': s.store_name,
       'First Order Date': formatDate(s.first_order_date),
       'First Order Month': s.first_order_month,
       'Status': s.user_status,
+      'Payment Status': s.payment_status || '',
       'Segment': s.segment,
       'Area': s.areas,
       'Agent': s.agent_name,
@@ -321,11 +362,11 @@ const StoresTable = ({
 
     // Set column widths
     const colWidths = [
-      { wch: 25 }, // Reseller Name
       { wch: 25 }, // Store Name
       { wch: 15 }, // First Order Date
       { wch: 15 }, // First Order Month
       { wch: 15 }, // Status
+      { wch: 15 }, // Payment Status
       { wch: 15 }, // Segment
       { wch: 15 }, // Area
       { wch: 20 }, // Agent
@@ -365,6 +406,7 @@ const StoresTable = ({
     setAreaFilter('');
     setAgentFilter('');
     setStatusFilter('');
+    setPaymentStatusFilter('');
     setBusinessTypeFilter('');
     setSubBusinessTypeFilter('');
     setCategoryFilter('');
@@ -435,7 +477,7 @@ const StoresTable = ({
               variant="outlined"
               color="secondary"
               onClick={clearAllFilters}
-              disabled={!segmentFilter && !areaFilter && !agentFilter && !statusFilter && !businessTypeFilter && !subBusinessTypeFilter && !categoryFilter && !activeMonthsFilter && !searchQuery}
+              disabled={!segmentFilter && !areaFilter && !agentFilter && !statusFilter && !paymentStatusFilter && !businessTypeFilter && !subBusinessTypeFilter && !categoryFilter && !activeMonthsFilter && !searchQuery}
             >
               Clear Filters
             </Button>
@@ -515,12 +557,35 @@ const StoresTable = ({
                 <Select
                   value={statusFilter}
                   label="Status"
-                  onChange={(e) => setStatusFilter(e.target.value)}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setPage(0);
+                  }}
                 >
                   <MenuItem value="">All Statuses</MenuItem>
                   {uniqueStatuses.map((status) => (
                     <MenuItem key={status} value={status}>
                       {status}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+              <FormControl fullWidth>
+                <InputLabel>Payment Status</InputLabel>
+                <Select
+                  value={paymentStatusFilter}
+                  label="Payment Status"
+                  onChange={(e) => {
+                    setPaymentStatusFilter(e.target.value);
+                    setPage(0);
+                  }}
+                >
+                  <MenuItem value="">All Payment Statuses</MenuItem>
+                  {uniquePaymentStatuses.map((paymentStatus) => (
+                    <MenuItem key={paymentStatus} value={paymentStatus}>
+                      {paymentStatus}
                     </MenuItem>
                   ))}
                 </Select>
@@ -715,7 +780,6 @@ const StoresTable = ({
                         }
                       }}
                     >
-                      <TableCell>{row.reseller_name}</TableCell>
                       <TableCell>{row.store_name}</TableCell>
                       <TableCell>{formatDate(row.first_order_date)}</TableCell>
                       <TableCell>
@@ -730,6 +794,13 @@ const StoresTable = ({
                         <Chip
                           label={row.user_status}
                           color={getUserStatusColor(row.user_status) as any}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={row.payment_status || 'N/A'}
+                          color={getPaymentStatusColor(row.payment_status) as any}
                           size="small"
                         />
                       </TableCell>
