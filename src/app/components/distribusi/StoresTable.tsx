@@ -56,6 +56,7 @@ const headCells: HeadCell[] = [
   { id: 'category', label: 'Category', numeric: false },
   { id: '3_month_profit', label: '3 Month Profit', numeric: true },
   { id: 'active_months', label: 'Active Months', numeric: true },
+  { id: 'dso', label: 'DSO', numeric: true },
   { id: 'remaining_limit', label: 'Remaining Limit', numeric: true },
   { id: 'termin_day', label: 'Termin Day', numeric: true },
   { id: 'profit_score', label: 'Profit Score', numeric: true },
@@ -291,7 +292,7 @@ const StoresTable = ({
       bValue = getCategory(b.final_score);
     }
 
-    if (orderBy === 'profit_score' || orderBy === 'owed_score' || orderBy === 'activity_score' || orderBy === 'payment_habits_score' || orderBy === 'final_score' || orderBy === 'remaining_limit' || orderBy === 'termin_day') {
+    if (orderBy === 'profit_score' || orderBy === 'owed_score' || orderBy === 'activity_score' || orderBy === 'payment_habits_score' || orderBy === 'final_score' || orderBy === 'remaining_limit' || orderBy === 'termin_day' || orderBy === 'dso') {
       aValue = Number(aValue);
       bValue = Number(bValue);
     }
@@ -338,6 +339,8 @@ const StoresTable = ({
       'Business Type': s.business_type,
       'Sub Business Type': s.sub_business_type,
       'Category': getCategory(s.final_score),
+      'Active Months': s.active_months,
+      'DSO': s.dso !== undefined ? s.dso : '',
       'Remaining Limit': s.remaining_limit !== undefined ? s.remaining_limit : '',
       'Termin Day': s.termin_day !== undefined ? s.termin_day : '',
       'Profit Score': s.profit_score,
@@ -375,6 +378,7 @@ const StoresTable = ({
       { wch: 10 }, // Category
       { wch: 15 }, // 3 Month Profit
       { wch: 15 }, // Active Months
+      { wch: 15 }, // DSO
       { wch: 15 }, // Remaining Limit
       { wch: 15 }, // Termin Day
       { wch: 15 }, // Profit Score
@@ -850,6 +854,11 @@ const StoresTable = ({
                       <TableCell align="right">
                         <Typography variant="body2" fontWeight="medium">
                           {row.active_months}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2" fontWeight="medium">
+                          {typeof row.dso === 'number' ? row.dso.toFixed(2) : '-'}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">

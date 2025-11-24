@@ -211,10 +211,10 @@ const StoreDetailModal = ({ open, onClose, store }: StoreDetailModalProps) => {
                 <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                   <Paper sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="h4" color="info.main" fontWeight="bold">
-                      {storeMetadata?.active_months || store.active_months || 0}
+                      {typeof store.dso === 'number' ? store.dso.toFixed(2) : 'N/A'}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
-                      Active Months
+                      DSO (Days Sales Outstanding)
                     </Typography>
                   </Paper>
                 </Grid>

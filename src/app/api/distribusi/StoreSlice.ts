@@ -23,6 +23,7 @@ export interface Store {
   remaining_limit?: number;
   termin_day?: number;
   payment_status?: string;
+  dso?: number;
 }
 
 export interface StoresResponse {
