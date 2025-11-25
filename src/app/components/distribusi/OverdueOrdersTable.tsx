@@ -1,7 +1,7 @@
 'use client';
 
 import { getAgentNameFromRole } from '@/config/roles';
-import { Download as DownloadIcon, ExpandMore as ExpandMoreIcon, Info as InfoIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
+import { ArrowForward as ArrowForwardIcon, Download as DownloadIcon, ExpandLess as ExpandLessIcon, ExpandMore as ExpandMoreIcon, Info as InfoIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
   Accordion,
   AccordionDetails,
@@ -103,6 +103,7 @@ const OverdueOrdersTable = ({
   const [agentFilter, setAgentFilter] = useState<string>('');
   const [statusOrderFilter, setStatusOrderFilter] = useState<string>('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('');
+  const [overdueStatusFilter, setOverdueStatusFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedOrderCode, setSelectedOrderCode] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -111,6 +112,7 @@ const OverdueOrdersTable = ({
   const [activeStoreSearchQuery, setActiveStoreSearchQuery] = useState<string>('');
   const [storePage, setStorePage] = useState(0);
   const [storeRowsPerPage, setStoreRowsPerPage] = useState(5);
+  const [showTransitionedOrders, setShowTransitionedOrders] = useState(false);
 
   const fetchOverdueOrdersData = async () => {
     // Clear existing data immediately when fetching new data
@@ -164,6 +166,7 @@ const OverdueOrdersTable = ({
     setAgentFilter('');
     setStatusOrderFilter('');
     setPaymentStatusFilter('');
+    setOverdueStatusFilter('');
     setSearchQuery('');
   }, [filters.start_date, filters.end_date]);
 
@@ -305,6 +308,10 @@ const OverdueOrdersTable = ({
     if (agentFilter && o.agent_name !== agentFilter) return false;
     if (statusOrderFilter && o.status_order !== statusOrderFilter) return false;
     if (paymentStatusFilter && o.status_payment !== paymentStatusFilter) return false;
+    if (overdueStatusFilter) {
+      const overdueStatus = calculateOverdueStatus(o);
+      if (overdueStatus !== overdueStatusFilter) return false;
+    }
 
     // Search functionality
     if (searchQuery) {
@@ -317,13 +324,14 @@ const OverdueOrdersTable = ({
   // Reset page when local filters change
   useEffect(() => {
     setPage(0);
-  }, [segmentFilter, areaFilter, agentFilter, statusOrderFilter, paymentStatusFilter, searchQuery]);
+  }, [segmentFilter, areaFilter, agentFilter, statusOrderFilter, paymentStatusFilter, overdueStatusFilter, searchQuery]);
 
   const uniqueSegments = Array.from(new Set(orders.map((o) => o.segment)));
   const uniqueAreas = Array.from(new Set(orders.map((o) => o.area)));
   const uniqueAgents = Array.from(new Set(orders.map((o) => o.agent_name)));
   const uniqueStatusOrders = Array.from(new Set(orders.map((o) => o.status_order)));
   const uniquePaymentStatuses = Array.from(new Set(orders.map((o) => o.status_payment)));
+  const uniqueOverdueStatuses = Array.from(new Set(orders.map((o) => calculateOverdueStatus(o)).filter(Boolean))).sort();
 
   const sortedOrders = [...filteredOrders].sort((a, b) => {
     // Special handling for days_late field - use calculated value
@@ -593,9 +601,182 @@ const OverdueOrdersTable = ({
     });
   };
 
+  // Calculate days past due for a specific reference date
+  const calculateDaysPastDueForDate = (order: Order, referenceDate: Date): number => {
+    if (!order.payment_due_date) return 0;
+    
+    const today = new Date(referenceDate);
+    const dueDate = new Date(order.payment_due_date);
+    
+    // Reset time to start of day for accurate day calculation
+    today.setHours(0, 0, 0, 0);
+    dueDate.setHours(0, 0, 0, 0);
+    
+    // Calculate difference in days (positive if due date is in the future, negative if past due)
+    const diffTime = dueDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    // Return 0 if not overdue, otherwise return the number of days past due
+    return diffDays < 0 ? Math.abs(diffDays) : 0;
+  };
+
+  // Find orders that transitioned from 30DPD to 60DPD in the last 10 days
+  // These are orders that are currently 60-70 days late
+  // (These orders just entered the 60DPD range in the last 10 days)
+  const ordersTransitionedTo60DPD = useMemo(() => {
+    const result = filteredOrders.filter(order => {
+      if (!order.payment_due_date) return false;
+      
+      // Calculate days past due today
+      const daysPastDueToday = calculateDaysLate(order);
+      
+      // Orders that are currently 60-70 days late
+      // These orders just entered the 60DPD range (60-89 days) in the last 10 days
+      return daysPastDueToday >= 60 && daysPastDueToday <= 70;
+    });
+    
+    // Debug logging
+    console.log('Orders transitioned to 60DPD:', result.length);
+    console.log('Sample orders:', result.slice(0, 3).map(o => ({
+      order_code: o.order_code,
+      days_late: calculateDaysLate(o),
+      payment_due_date: o.payment_due_date
+    })));
+    
+    return result;
+  }, [filteredOrders]);
+
+  const transitionedTotalInvoice = ordersTransitionedTo60DPD.reduce((sum, o) => sum + (Number(o.total_invoice) || 0), 0);
+  const transitionedTotalProfit = ordersTransitionedTo60DPD.reduce((sum, o) => sum + (Number(o.profit) || 0), 0);
+  const transitionedOrderCount = ordersTransitionedTo60DPD.length;
+
   return (
     <Card>
       <CardContent>
+        {/* Recap Section: Orders Transitioned from 30DPD to 60DPD */}
+        <Box
+          sx={{
+            mb: 3,
+            p: 2,
+            backgroundColor: transitionedOrderCount > 0 ? 'error.light' : 'grey.100',
+            borderRadius: 2,
+            border: '2px solid',
+            borderColor: transitionedOrderCount > 0 ? 'error.main' : 'grey.300',
+          }}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography variant="h6" fontWeight="bold" color={transitionedOrderCount > 0 ? 'error.main' : 'text.secondary'}>
+              ⚠️ Order yang Naik dari 30DPD ke 60DPD (10 Hari Terakhir)
+            </Typography>
+            {transitionedOrderCount > 0 && (
+              <Button
+                variant="outlined"
+                size="small"
+                endIcon={showTransitionedOrders ? <ExpandLessIcon /> : <ArrowForwardIcon />}
+                onClick={() => setShowTransitionedOrders(!showTransitionedOrders)}
+                sx={{ minWidth: '150px' }}
+              >
+                {showTransitionedOrders ? 'Sembunyikan' : 'Lihat Order'}
+              </Button>
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap', mt: 2 }}>
+            <Box>
+              <Typography variant="h4" color={transitionedOrderCount > 0 ? 'error.main' : 'text.secondary'} fontWeight="bold">
+                {transitionedOrderCount}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Order (60-70 hari terlambat)
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="h5" color={transitionedOrderCount > 0 ? 'error.main' : 'text.secondary'} fontWeight="bold">
+                {formatCurrency(transitionedTotalInvoice)}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Total Invoice
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="h5" color={transitionedOrderCount > 0 ? 'error.main' : 'text.secondary'} fontWeight="bold">
+                {formatCurrency(transitionedTotalProfit)}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Total Profit
+              </Typography>
+            </Box>
+          </Box>
+          <Typography variant="body2" color="textSecondary" sx={{ mt: 2, fontStyle: 'italic' }}>
+            {transitionedOrderCount > 0 
+              ? 'Order-order ini saat ini 60-70 hari terlambat dan baru saja masuk ke kategori 60DPD dalam 10 hari terakhir.'
+              : 'Tidak ada order yang ditemukan dengan 60-70 hari terlambat. Ini adalah order yang baru saja masuk ke kategori 60DPD.'}
+          </Typography>
+          
+          {/* Expanded Orders List */}
+          {showTransitionedOrders && transitionedOrderCount > 0 && (
+            <Box sx={{ mt: 3 }}>
+              <TableContainer component={Paper} variant="outlined">
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Order Code</TableCell>
+                      <TableCell>Store Name</TableCell>
+                      <TableCell>Agent</TableCell>
+                      <TableCell>Due Date</TableCell>
+                      <TableCell align="right">Days Late</TableCell>
+                      <TableCell align="right">Total Invoice</TableCell>
+                      <TableCell align="right">Profit</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {ordersTransitionedTo60DPD.map((order) => (
+                      <TableRow 
+                        key={order.order_id}
+                        hover
+                        onClick={() => handleRowClick(order.order_code)}
+                        sx={{ cursor: 'pointer' }}
+                      >
+                        <TableCell>
+                          <Typography variant="body2" fontWeight="medium">
+                            {order.order_code}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>{order.store_name}</TableCell>
+                        <TableCell>{order.agent_name}</TableCell>
+                        <TableCell>{formatDate(order.payment_due_date)}</TableCell>
+                        <TableCell align="right">
+                          <Typography 
+                            variant="body2" 
+                            fontWeight="bold" 
+                            color="error.main"
+                            sx={{
+                              border: '1px solid',
+                              borderColor: 'error.main',
+                              borderRadius: '4px',
+                              padding: '4px 8px',
+                              display: 'inline-block',
+                              minWidth: '40px',
+                              textAlign: 'center'
+                            }}
+                          >
+                            {calculateDaysLate(order)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                          {formatCurrency(Number(order.total_invoice))}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'success.main' }}>
+                          {formatCurrency(Number(order.profit))}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          )}
+        </Box>
+
         <Box
           sx={{
             display: 'flex',
@@ -636,7 +817,7 @@ const OverdueOrdersTable = ({
               variant="outlined"
               color="secondary"
               onClick={clearAllFilters}
-              disabled={!segmentFilter && !areaFilter && !agentFilter && !statusOrderFilter && !paymentStatusFilter && !searchQuery}
+              disabled={!segmentFilter && !areaFilter && !agentFilter && !statusOrderFilter && !paymentStatusFilter && !overdueStatusFilter && !searchQuery}
             >
               Clear Filters
             </Button>
@@ -725,6 +906,26 @@ const OverdueOrdersTable = ({
                 >
                   <MenuItem value="">All Payment Statuses</MenuItem>
                   {uniquePaymentStatuses.map((status) => (
+                    <MenuItem key={status} value={status}>
+                      {status}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <FormControl fullWidth>
+                <InputLabel>Overdue Status</InputLabel>
+                <Select
+                  value={overdueStatusFilter}
+                  label="Overdue Status"
+                  onChange={(e) => {
+                    setOverdueStatusFilter(e.target.value);
+                    setPage(0);
+                  }}
+                >
+                  <MenuItem value="">All Overdue Statuses</MenuItem>
+                  {uniqueOverdueStatuses.map((status) => (
                     <MenuItem key={status} value={status}>
                       {status}
                     </MenuItem>

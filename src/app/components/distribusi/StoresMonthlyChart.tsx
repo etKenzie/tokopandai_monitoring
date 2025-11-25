@@ -14,7 +14,7 @@ import {
     Typography
 } from '@mui/material';
 import dynamic from "next/dynamic";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -67,7 +67,7 @@ const StoresMonthlyChart = ({ filters, onViewAllStores }: StoresMonthlyChartProp
   useEffect(() => {
     console.log('Filters changed, updating month range:', filters);
     updateMonthRange();
-  }, [filters.month, filters.year, filters.agent, filters.area, filters.status_payment]);
+  }, [filters.month, filters.year, filters.agent, filters.area, filters.segment, filters.status_payment]);
 
   const updateMonthRange = () => {
     console.log('Updating month range with filters:', filters);
@@ -124,55 +124,128 @@ const StoresMonthlyChart = ({ filters, onViewAllStores }: StoresMonthlyChartProp
     }
   };
 
-  const fetchChartData = async () => {
-    if (!startMonthYear || !endMonthYear) {
-      console.log('Missing month/year values:', { startMonthYear, endMonthYear });
+  // Use ref to track the latest filters to avoid stale closures
+  const filtersRef = useRef(filters);
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  // Use ref to track the latest month range to avoid stale closures
+  const monthRangeRef = useRef({ startMonthYear, endMonthYear });
+  useEffect(() => {
+    monthRangeRef.current = { startMonthYear, endMonthYear };
+  }, [startMonthYear, endMonthYear]);
+
+  const fetchChartData = async (signal?: AbortSignal) => {
+    // Get latest values from refs to avoid stale closures
+    const currentFilters = filtersRef.current;
+    const currentMonthRange = monthRangeRef.current;
+    
+    if (!currentMonthRange.startMonthYear || !currentMonthRange.endMonthYear) {
+      console.log('Missing month/year values:', currentMonthRange);
       return;
     }
     
-    console.log('Fetching stores chart data for range:', { startMonthYear, endMonthYear });
+    console.log('Fetching stores chart data for range:', currentMonthRange);
     setLoading(true);
     try {
       console.log('API call parameters:', {
-        start_month: startMonthYear,
-        end_month: endMonthYear,
-        agent_name: filters.agent,
-        area: filters.area,
-        status_payment: filters.status_payment
+        start_month: currentMonthRange.startMonthYear,
+        end_month: currentMonthRange.endMonthYear,
+        agent_name: currentFilters.agent,
+        area: currentFilters.area,
+        segment: currentFilters.segment,
+        status_payment: currentFilters.status_payment
       });
 
       const response = await fetchTotalStoresMonthly({
-        start_month: startMonthYear,
-        end_month: endMonthYear,
-        agent_name: filters.agent || undefined,
-        area: filters.area || undefined,
-        status_payment: filters.status_payment || undefined,
-      });
+        start_month: currentMonthRange.startMonthYear,
+        end_month: currentMonthRange.endMonthYear,
+        agent_name: currentFilters.agent || undefined,
+        area: currentFilters.area || undefined,
+        segment: currentFilters.segment || undefined,
+        status_payment: currentFilters.status_payment || undefined,
+      }, signal);
+      
+      // Check if request was aborted before updating state
+      if (signal?.aborted) {
+        console.log('Request was aborted, ignoring response');
+        return;
+      }
       
       console.log('Stores chart data response:', response);
       setChartData(response);
-    } catch (error) {
+    } catch (error: any) {
+      // Ignore abort errors
+      if (error?.name === 'AbortError' || signal?.aborted) {
+        console.log('Request was aborted');
+        return;
+      }
       console.error('Failed to fetch stores chart data:', error);
     } finally {
-      setLoading(false);
+      // Only update loading state if request wasn't aborted
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
   };
 
-  // Fetch data when month range changes - with better dependency management
-  useEffect(() => {
-    if (startMonthYear && endMonthYear) {
-      console.log('Month range changed, fetching new data:', { startMonthYear, endMonthYear });
-      fetchChartData();
-    }
-  }, [startMonthYear, endMonthYear]); // Remove filters from dependency to prevent unnecessary re-fetches
+  // Use ref to track in-flight requests and prevent race conditions
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Separate effect for filter changes that should trigger month range updates
+  // Fetch data when month range or filters change with debouncing
   useEffect(() => {
-    if (filters.agent || filters.area || filters.status_payment) {
-      console.log('Filter changed, re-fetching data');
-      fetchChartData();
+    if (!startMonthYear || !endMonthYear) {
+      return;
     }
-  }, [filters.agent, filters.area, filters.status_payment]);
+
+    // Clear any existing debounce timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Cancel any in-flight request
+    if (abortControllerRef.current) {
+      console.log('Cancelling previous request due to filter change');
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+
+    // Debounce the fetch to avoid too many rapid requests
+    debounceTimeoutRef.current = setTimeout(() => {
+      console.log('Month range or filters changed, fetching new data:', { 
+        startMonthYear, 
+        endMonthYear,
+        agent: filters.agent,
+        area: filters.area,
+        segment: filters.segment,
+        status_payment: filters.status_payment
+      });
+
+      // Create new abort controller for this request
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+
+      fetchChartData(abortController.signal).finally(() => {
+        // Only clear the ref if this is still the current request
+        if (abortControllerRef.current === abortController) {
+          abortControllerRef.current = null;
+        }
+      });
+    }, 300); // 300ms debounce delay
+
+    // Cleanup function
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
+  }, [startMonthYear, endMonthYear, filters.agent, filters.area, filters.segment, filters.status_payment]);
 
   const handleChartTypeChange = (event: SelectChangeEvent<ChartType>) => {
     setChartType(event.target.value as ChartType);

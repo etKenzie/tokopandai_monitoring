@@ -2,31 +2,31 @@
 
 import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  FormControl,
-  FormControlLabel,
-  Grid,
-  InputAdornment,
-  InputLabel,
-  MenuItem,
-  Paper,
-  Select,
-  Switch,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TableSortLabel,
-  TextField,
-  Typography
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    CircularProgress,
+    FormControl,
+    FormControlLabel,
+    Grid,
+    InputAdornment,
+    InputLabel,
+    MenuItem,
+    Paper,
+    Select,
+    Switch,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TablePagination,
+    TableRow,
+    TableSortLabel,
+    TextField,
+    Typography
 } from '@mui/material';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
@@ -47,7 +47,7 @@ const headCells: HeadCell[] = [
   { id: 'first_order_date', label: 'First Order Date', numeric: false },
   { id: 'first_order_month', label: 'First Order Month', numeric: false },
   { id: 'user_status', label: 'Status', numeric: false },
-  { id: 'payment_status', label: 'Payment Status', numeric: false },
+  { id: 'payment_status', label: 'Overdue Status', numeric: false },
   { id: 'segment', label: 'Segment', numeric: false },
   { id: 'areas', label: 'Area', numeric: false },
   { id: 'agent_name', label: 'Agent', numeric: false },
@@ -332,7 +332,7 @@ const StoresTable = ({
       'First Order Date': formatDate(s.first_order_date),
       'First Order Month': s.first_order_month,
       'Status': s.user_status,
-      'Payment Status': s.payment_status || '',
+      'Overdue Status': s.payment_status || '',
       'Segment': s.segment,
       'Area': s.areas,
       'Agent': s.agent_name,
@@ -577,16 +577,16 @@ const StoresTable = ({
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
               <FormControl fullWidth>
-                <InputLabel>Payment Status</InputLabel>
+                <InputLabel>Overdue Status</InputLabel>
                 <Select
                   value={paymentStatusFilter}
-                  label="Payment Status"
+                  label="Overdue Status"
                   onChange={(e) => {
                     setPaymentStatusFilter(e.target.value);
                     setPage(0);
                   }}
                 >
-                  <MenuItem value="">All Payment Statuses</MenuItem>
+                  <MenuItem value="">All Overdue Statuses</MenuItem>
                   {uniquePaymentStatuses.map((paymentStatus) => (
                     <MenuItem key={paymentStatus} value={paymentStatus}>
                       {paymentStatus}

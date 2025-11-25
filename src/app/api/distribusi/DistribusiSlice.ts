@@ -867,11 +867,15 @@ export interface TotalStoresMonthlyQueryParams {
   end_month?: string;
   agent_name?: string;
   area?: string;
+  segment?: string;
   status_payment?: string;
 }
 
 // Fetch Total Stores Monthly Data
-export const fetchTotalStoresMonthly = async (params: TotalStoresMonthlyQueryParams): Promise<TotalStoresMonthlyResponse> => {
+export const fetchTotalStoresMonthly = async (
+  params: TotalStoresMonthlyQueryParams,
+  signal?: AbortSignal
+): Promise<TotalStoresMonthlyResponse> => {
   const baseUrl = AM_API_URL;
   
   // Build query string from parameters
@@ -881,6 +885,7 @@ export const fetchTotalStoresMonthly = async (params: TotalStoresMonthlyQueryPar
   if (params.end_month) queryParams.append('end_month', params.end_month);
   if (params.agent_name) queryParams.append('agent_name', params.agent_name);
   if (params.area) queryParams.append('area', params.area);
+  if (params.segment) queryParams.append('segment', params.segment);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
   const url = `${baseUrl}/api/order/total-stores-monthly?${queryParams.toString()}`;
@@ -894,6 +899,7 @@ export const fetchTotalStoresMonthly = async (params: TotalStoresMonthlyQueryPar
     headers: {
       'Content-Type': 'application/json',
     },
+    signal, // Pass abort signal to fetch
   });
   
   if (!response.ok) {
