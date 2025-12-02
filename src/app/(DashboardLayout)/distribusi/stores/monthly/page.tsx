@@ -132,7 +132,10 @@ const StoresMonthlyPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetchStoreMonthly(selectedMonth);
+      // For users with restricted roles, use their mapped agent name
+      const agentName = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : undefined;
+      
+      const response = await fetchStoreMonthly(selectedMonth, agentName);
       setStores(response.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch store monthly data');
@@ -140,7 +143,7 @@ const StoresMonthlyPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedMonth]);
+  }, [selectedMonth, hasRestrictedRole, userRoleForFiltering]);
 
   // Fetch stores without orders
   const fetchNoOrderStores = useCallback(async () => {
@@ -299,6 +302,11 @@ const StoresMonthlyPage = () => {
           <Typography variant="body1" color="textSecondary">
             View store performance metrics for a specific month
           </Typography>
+          {hasRestrictedRole && (
+            <Typography variant="body2" color="info.main" sx={{ mt: 1, fontStyle: 'italic' }}>
+              Showing data for {getAgentNameFromRole(userRoleForFiltering!)} only
+            </Typography>
+          )}
         </Box>
 
         {/* Month Filter */}

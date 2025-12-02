@@ -279,16 +279,20 @@ export interface StoreMonthlyResponse {
 }
 
 // Fetch Store Monthly data
-export const fetchStoreMonthly = async (month: string): Promise<StoreMonthlyResponse> => {
+export const fetchStoreMonthly = async (month: string, agent_name?: string): Promise<StoreMonthlyResponse> => {
   const baseUrl = AM_API_URL;
   
   const queryParams = new URLSearchParams();
   queryParams.append('month', month);
+  if (agent_name) {
+    queryParams.append('agent_name', agent_name);
+  }
   
   const url = `${baseUrl}/api/store/monthly?${queryParams.toString()}`;
   
   console.log('Fetching store monthly from:', url);
   console.log('Month:', month);
+  console.log('Agent Name:', agent_name);
   
   const response = await fetch(url, {
     method: 'GET',
