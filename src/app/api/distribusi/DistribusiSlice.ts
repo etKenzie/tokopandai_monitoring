@@ -171,6 +171,7 @@ export interface OrderQueryParams {
   sortTime?: 'asc' | 'desc';
   payment?: string;
   month?: string;
+  payment_month?: string;
   agent?: string;
   segment?: string;
   area?: string;
@@ -196,6 +197,7 @@ export const fetchOrders = async (params: OrderQueryParams): Promise<OrdersRespo
   if (params.sortTime) queryParams.append('sortTime', params.sortTime);
   if (params.payment) queryParams.append('payment', params.payment);
   if (params.month) queryParams.append('month', params.month);
+  if (params.payment_month) queryParams.append('payment_month', params.payment_month);
   if (params.agent) queryParams.append('agent', params.agent);
   if (params.segment) queryParams.append('segment', params.segment);
   if (params.area) queryParams.append('area', params.area);
@@ -371,6 +373,41 @@ export const fetchOrderDetail = async (orderCode: string): Promise<OrderDetailRe
   }
 
   const data: OrderDetailResponse = await response.json();
+  return data;
+};
+
+// Update payment date for an order
+export interface UpdatePaymentDateRequest {
+  order_code: string;
+  payment_date: string; // Format: YYYY-MM-DD
+}
+
+export interface UpdatePaymentDateResponse {
+  code: number;
+  status: string;
+  message: string;
+}
+
+export const updateOrderPaymentDate = async (updateData: UpdatePaymentDateRequest): Promise<UpdatePaymentDateResponse> => {
+  if (!AM_API_URL) {
+    throw new Error('API URL is not configured');
+  }
+
+  const url = `${AM_API_URL}/api/order/payment-date`;
+  
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(updateData),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const data: UpdatePaymentDateResponse = await response.json();
   return data;
 };
 
@@ -1350,6 +1387,7 @@ export const fetchProductTypeMonthly = async (params: ProductTypeMonthlyQueryPar
 export interface FullOrdersQueryParams {
   sortTime?: 'asc' | 'desc';
   month?: string;
+  payment_month?: string;
   agent?: string;
   segment?: string;
   area?: string;
@@ -1365,6 +1403,7 @@ export const fetchFullOrders = async (params: FullOrdersQueryParams): Promise<Fu
   
   if (params.sortTime) queryParams.append('sortTime', params.sortTime);
   if (params.month) queryParams.append('month', params.month);
+  if (params.payment_month) queryParams.append('payment_month', params.payment_month);
   if (params.agent) queryParams.append('agent', params.agent);
   if (params.segment) queryParams.append('segment', params.segment);
   if (params.area) queryParams.append('area', params.area);

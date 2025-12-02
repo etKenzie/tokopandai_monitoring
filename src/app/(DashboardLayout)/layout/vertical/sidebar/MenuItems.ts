@@ -124,6 +124,12 @@ const Menuitems: MenuitemsType[] = [
       },
       {
         id: uniqueId(),
+        title: "Orders",
+        icon: IconMenu2,
+        href: "/distribusi/cash-in/orders",
+      },
+      {
+        id: uniqueId(),
         title: "Overdue List",
         icon: IconClockCancel,
         href: "/distribusi/cash-in/overdue",

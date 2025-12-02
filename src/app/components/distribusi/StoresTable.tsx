@@ -447,6 +447,17 @@ const StoresTable = ({
     setSelectedStore(null);
   };
 
+  // Calculate total remaining limit from filtered stores
+  const totalRemainingLimit = filteredStores.reduce((sum, store) => {
+    return sum + (store.remaining_limit || 0);
+  }, 0);
+
+  // Calculate average DSO from filtered stores
+  const storesWithDSO = filteredStores.filter(store => typeof store.dso === 'number' && !isNaN(store.dso));
+  const avgDSO = storesWithDSO.length > 0 
+    ? storesWithDSO.reduce((sum, store) => sum + (store.dso || 0), 0) / storesWithDSO.length 
+    : 0;
+
   return (
     <Card>
       <CardContent>
@@ -520,6 +531,22 @@ const StoresTable = ({
             </Typography>
             <Typography variant="h6" color="textSecondary" fontWeight="500">
               Avg Profit Score
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
+            <Typography variant="h3" color="success.main" fontWeight="bold" mb={1}>
+              {formatCurrency(totalRemainingLimit)}
+            </Typography>
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              Total Remaining Limit
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
+            <Typography variant="h3" color="error.main" fontWeight="bold" mb={1}>
+              {avgDSO.toFixed(2)}
+            </Typography>
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              Avg DSO
             </Typography>
           </Box>
         </Box>

@@ -20,10 +20,11 @@ import {
     TableContainer,
     TableHead,
     TableRow,
+    TextField,
     Typography
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { fetchOrderDetail, OrderDetailItem } from '../../api/distribusi/DistribusiSlice';
+import { fetchOrderDetail, OrderDetailItem, updateOrderPaymentDate } from '../../api/distribusi/DistribusiSlice';
 import OrderItemUpdateModal from './OrderItemUpdateModal';
 
 interface OrderDetailModalProps {
@@ -38,6 +39,10 @@ const OrderDetailModal = ({ open, onClose, orderCode }: OrderDetailModalProps) =
   const [error, setError] = useState<string | null>(null);
   const [selectedOrderItem, setSelectedOrderItem] = useState<OrderDetailItem | null>(null);
   const [itemUpdateModalOpen, setItemUpdateModalOpen] = useState(false);
+  const [paymentDate, setPaymentDate] = useState<string>('');
+  const [updatingPaymentDate, setUpdatingPaymentDate] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
 
   useEffect(() => {
     if (open && orderCode) {
@@ -106,6 +111,42 @@ const OrderDetailModal = ({ open, onClose, orderCode }: OrderDetailModalProps) =
     // Refresh the order details when an item is updated
     if (orderCode) {
       fetchOrderDetails();
+    }
+  };
+
+  const handleUpdatePaymentDate = async () => {
+    if (!orderCode || !paymentDate) {
+      setUpdateError('Please select a payment date');
+      return;
+    }
+
+    setUpdatingPaymentDate(true);
+    setUpdateError(null);
+    setUpdateSuccess(false);
+
+    try {
+      await updateOrderPaymentDate({
+        order_code: orderCode,
+        payment_date: paymentDate
+      });
+      
+      setUpdateSuccess(true);
+      setPaymentDate('');
+      
+      // Refresh order details after successful update
+      if (orderCode) {
+        fetchOrderDetails();
+      }
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setUpdateSuccess(false);
+      }, 3000);
+    } catch (err) {
+      setUpdateError(err instanceof Error ? err.message : 'Failed to update payment date');
+      console.error('Failed to update payment date:', err);
+    } finally {
+      setUpdatingPaymentDate(false);
     }
   };
 
@@ -382,6 +423,54 @@ const OrderDetailModal = ({ open, onClose, orderCode }: OrderDetailModalProps) =
                 </Typography>
               </Box>
             )}
+
+            {/* Update Payment Date Section */}
+            <Divider sx={{ my: 3 }} />
+            <Box mt={3}>
+              <Typography variant="h6" gutterBottom>
+                Update Payment Date
+              </Typography>
+              <Paper sx={{ p: 2 }}>
+                <Grid container spacing={2} alignItems="center">
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <TextField
+                      fullWidth
+                      label="Payment Date"
+                      type="date"
+                      value={paymentDate}
+                      onChange={(e) => setPaymentDate(e.target.value)}
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                      inputProps={{
+                        max: new Date().toISOString().split('T')[0], // Prevent future dates
+                      }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleUpdatePaymentDate}
+                      disabled={!paymentDate || updatingPaymentDate}
+                      startIcon={updatingPaymentDate ? <CircularProgress size={16} /> : null}
+                    >
+                      {updatingPaymentDate ? 'Updating...' : 'Update Payment Date'}
+                    </Button>
+                  </Grid>
+                </Grid>
+                {updateError && (
+                  <Alert severity="error" sx={{ mt: 2 }}>
+                    {updateError}
+                  </Alert>
+                )}
+                {updateSuccess && (
+                  <Alert severity="success" sx={{ mt: 2 }}>
+                    Payment date updated successfully!
+                  </Alert>
+                )}
+              </Paper>
+            </Box>
           </Box>
         )}
       </DialogContent>
