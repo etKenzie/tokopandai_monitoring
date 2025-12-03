@@ -285,7 +285,8 @@ export const fetchStoreMonthly = async (month: string, agent_name?: string): Pro
   const queryParams = new URLSearchParams();
   queryParams.append('month', month);
   if (agent_name) {
-    queryParams.append('agent_name', agent_name);
+    // API accepts 'agent' parameter
+    queryParams.append('agent', agent_name);
   }
   
   const url = `${baseUrl}/api/store/monthly?${queryParams.toString()}`;

@@ -159,6 +159,12 @@ const Menuitems: MenuitemsType[] = [
         icon: IconGitCompare,
         href: "/distribusi/stores/monthly",
       },
+      {
+        id: uniqueId(),
+        title: "Compare",
+        icon: IconGitCompare,
+        href: "/distribusi/stores/compare",
+      },
       
       
     ],
