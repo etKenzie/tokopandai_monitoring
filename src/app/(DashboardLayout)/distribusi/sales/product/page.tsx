@@ -3,13 +3,14 @@
 import { fetchOrderFilters, fetchProductSummary, OrderFiltersData, ProductSummaryData } from '@/app/api/distribusi/DistribusiSlice';
 import ProtectedRoute from '@/app/components/auth/ProtectedRoute';
 import PageContainer from '@/app/components/container/PageContainer';
+import CategoryDistributionChart from '@/app/components/distribusi/CategoryDistributionChart';
 import ProductTypeMonthlyChart from '@/app/components/distribusi/ProductTypeMonthlyChart';
 import StoreProductsTable from '@/app/components/distribusi/StoreProductsTable';
 import SubCategoryChart from '@/app/components/distribusi/SubCategoryChart';
 import { useAuth } from '@/app/context/AuthContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from '@/config/roles';
-import { Box, FormControl, Grid, InputLabel, MenuItem, Select, Typography } from '@mui/material';
+import { Box, FormControl, FormControlLabel, Grid, InputLabel, MenuItem, Select, Switch, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 
 interface ProductFilters {
@@ -44,6 +45,7 @@ const ProductPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [availableFilters, setAvailableFilters] = useState<OrderFiltersData | null>(null);
   const [filtersLoading, setFiltersLoading] = useState(false);
+  const [showCategoryChart, setShowCategoryChart] = useState(false);
   
   // Filter options extracted from product data
   const [filterOptions, setFilterOptions] = useState<{
@@ -316,17 +318,41 @@ const ProductPage = () => {
           </Grid>
         </Box>
 
-        {/* Product Type Monthly Chart */}
+        {/* Product Type Monthly Chart / Category Distribution Chart with Toggle */}
         <Box mb={3}>
-          <ProductTypeMonthlyChart 
-            filters={{
-              agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent,
-              area: filters.area,
-              segment: filters.segment,
-              month: filters.month,
-              year: filters.year,
-            }}
-          />
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={showCategoryChart}
+                  onChange={(e) => setShowCategoryChart(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label={showCategoryChart ? 'Category Distribution' : 'Product Type Monthly Trend'}
+            />
+          </Box>
+          {showCategoryChart ? (
+            <CategoryDistributionChart 
+              filters={{
+                agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent,
+                area: filters.area,
+                segment: filters.segment,
+                month: filters.month,
+                year: filters.year,
+              }}
+            />
+          ) : (
+            <ProductTypeMonthlyChart 
+              filters={{
+                agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent,
+                area: filters.area,
+                segment: filters.segment,
+                month: filters.month,
+                year: filters.year,
+              }}
+            />
+          )}
         </Box>
 
         {/* Sub Category Chart */}
