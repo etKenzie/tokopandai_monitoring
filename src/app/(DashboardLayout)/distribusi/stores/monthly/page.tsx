@@ -2,8 +2,10 @@
 
 import { fetchStoreSummary, StoreSummaryItem } from "@/app/api/distribusi/DistribusiSlice";
 import { fetchStoreMonthly, StoreMonthly } from "@/app/api/distribusi/StoreSlice";
+import { Store } from "@/app/api/distribusi/StoreSlice";
 import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import PageContainer from "@/app/components/container/PageContainer";
+import StoreDetailModal from "@/app/components/distribusi/StoreDetailModal";
 import StoreMonthlyTable from "@/app/components/distribusi/StoreMonthlyTable";
 import { useAuth } from "@/app/context/AuthContext";
 import { useCheckRoles } from "@/app/hooks/useCheckRoles";
@@ -94,6 +96,10 @@ const StoresMonthlyPage = () => {
   const [noOrderAgentFilter, setNoOrderAgentFilter] = useState<string>('');
   const [noOrderSegmentFilter, setNoOrderSegmentFilter] = useState<string>('');
   const [noOrderUserStatusFilter, setNoOrderUserStatusFilter] = useState<string>('');
+  const [noOrderBusinessTypeFilter, setNoOrderBusinessTypeFilter] = useState<string>('');
+  const [noOrderPaymentStatusFilter, setNoOrderPaymentStatusFilter] = useState<string>('');
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   // Generate month options for the last 12 months
   const generateMonthOptions = () => {
@@ -185,6 +191,8 @@ const StoresMonthlyPage = () => {
     setNoOrderAgentFilter('');
     setNoOrderSegmentFilter('');
     setNoOrderUserStatusFilter('');
+    setNoOrderBusinessTypeFilter('');
+    setNoOrderPaymentStatusFilter('');
   }, [selectedMonth, fetchStoresData]);
 
   // Fetch no order stores when month is set (on page load and when month changes)
@@ -218,7 +226,9 @@ const StoresMonthlyPage = () => {
           store.segment.toLowerCase().includes(query) ||
           store.area.toLowerCase().includes(query) ||
           store.agent_name.toLowerCase().includes(query) ||
-          store.user_status.toLowerCase().includes(query);
+          store.user_status.toLowerCase().includes(query) ||
+          (store.business_type && store.business_type.toLowerCase().includes(query)) ||
+          (store.payment_status && store.payment_status.toLowerCase().includes(query));
         if (!matchesSearch) return false;
       }
       
@@ -237,9 +247,19 @@ const StoresMonthlyPage = () => {
         return false;
       }
       
+      // Apply business type filter
+      if (noOrderBusinessTypeFilter && store.business_type !== noOrderBusinessTypeFilter) {
+        return false;
+      }
+      
+      // Apply payment status filter
+      if (noOrderPaymentStatusFilter && store.payment_status !== noOrderPaymentStatusFilter) {
+        return false;
+      }
+      
       return true;
     });
-  }, [noOrderStores, noOrderSearchQuery, noOrderAgentFilter, noOrderSegmentFilter, noOrderUserStatusFilter]);
+  }, [noOrderStores, noOrderSearchQuery, noOrderAgentFilter, noOrderSegmentFilter, noOrderUserStatusFilter, noOrderBusinessTypeFilter, noOrderPaymentStatusFilter]);
 
   // Get unique values for filters
   const uniqueNoOrderAgents = useMemo(() => {
@@ -252,6 +272,14 @@ const StoresMonthlyPage = () => {
 
   const uniqueNoOrderUserStatuses = useMemo(() => {
     return Array.from(new Set(noOrderStores.map(store => store.user_status).filter(Boolean))).sort();
+  }, [noOrderStores]);
+
+  const uniqueNoOrderBusinessTypes = useMemo(() => {
+    return Array.from(new Set(noOrderStores.map(store => store.business_type).filter(Boolean))).sort();
+  }, [noOrderStores]);
+
+  const uniqueNoOrderPaymentStatuses = useMemo(() => {
+    return Array.from(new Set(noOrderStores.map(store => store.payment_status).filter(Boolean))).sort();
   }, [noOrderStores]);
 
   const paginatedNoOrderStores = filteredNoOrderStores.slice(
@@ -269,6 +297,8 @@ const StoresMonthlyPage = () => {
     setNoOrderAgentFilter('');
     setNoOrderSegmentFilter('');
     setNoOrderUserStatusFilter('');
+    setNoOrderBusinessTypeFilter('');
+    setNoOrderPaymentStatusFilter('');
     setNoOrderPage(0);
   };
 
@@ -279,12 +309,48 @@ const StoresMonthlyPage = () => {
       'Area': store.area,
       'Agent': store.agent_name,
       'User Status': store.user_status,
+      'Business Type': store.business_type || '',
+      'Payment Status': store.payment_status || '',
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Stores Without Orders');
     XLSX.writeFile(wb, `stores-without-orders-${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const handleRowClick = (storeSummary: StoreSummaryItem) => {
+    // Create a minimal store object from store summary data
+    const minimalStore: Store = {
+      user_id: storeSummary.user_id,
+      reseller_name: storeSummary.store_name,
+      store_name: storeSummary.store_name,
+      first_order_date: '',
+      first_order_month: '',
+      user_status: storeSummary.user_status,
+      segment: storeSummary.segment,
+      areas: storeSummary.area,
+      agent_name: storeSummary.agent_name,
+      business_type: storeSummary.business_type || '',
+      sub_business_type: '',
+      profit_score: 0,
+      "3_month_profit": storeSummary.total_profit || 0,
+      owed_score: 0,
+      activity_score: 0,
+      active_months: 0,
+      payment_habits_score: 0,
+      final_score: 0,
+      order_this_year: 0,
+      three_month_profit: storeSummary.total_profit || 0,
+      payment_status: storeSummary.payment_status,
+    };
+    setSelectedStore(minimalStore);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedStore(null);
   };
 
   const handleMonthChange = (event: any) => {
@@ -419,7 +485,7 @@ const StoresMonthlyPage = () => {
                       color="secondary"
                       size="small"
                       onClick={handleNoOrderClearFilters}
-                      disabled={!noOrderSearchQuery && !noOrderAgentFilter && !noOrderSegmentFilter && !noOrderUserStatusFilter}
+                      disabled={!noOrderSearchQuery && !noOrderAgentFilter && !noOrderSegmentFilter && !noOrderUserStatusFilter && !noOrderBusinessTypeFilter && !noOrderPaymentStatusFilter}
                     >
                       Clear Filters
                     </Button>
@@ -517,6 +583,46 @@ const StoresMonthlyPage = () => {
                         </Select>
                       </FormControl>
                     </Grid>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                      <FormControl fullWidth>
+                        <InputLabel>Business Type</InputLabel>
+                        <Select
+                          value={noOrderBusinessTypeFilter}
+                          label="Business Type"
+                          onChange={(e) => {
+                            setNoOrderBusinessTypeFilter(e.target.value);
+                            setNoOrderPage(0);
+                          }}
+                        >
+                          <MenuItem value="">All Business Types</MenuItem>
+                          {uniqueNoOrderBusinessTypes.map((businessType) => (
+                            <MenuItem key={businessType} value={businessType}>
+                              {businessType}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                      <FormControl fullWidth>
+                        <InputLabel>Payment Status</InputLabel>
+                        <Select
+                          value={noOrderPaymentStatusFilter}
+                          label="Payment Status"
+                          onChange={(e) => {
+                            setNoOrderPaymentStatusFilter(e.target.value);
+                            setNoOrderPage(0);
+                          }}
+                        >
+                          <MenuItem value="">All Payment Statuses</MenuItem>
+                          {uniqueNoOrderPaymentStatuses.map((paymentStatus) => (
+                            <MenuItem key={paymentStatus} value={paymentStatus}>
+                              {paymentStatus}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
                   </Grid>
                 </Box>
 
@@ -543,7 +649,12 @@ const StoresMonthlyPage = () => {
                         </TableRow>
                       ) : (
                         paginatedNoOrderStores.map((store) => (
-                          <TableRow key={store.user_id} hover>
+                          <TableRow 
+                            key={store.user_id} 
+                            hover
+                            onClick={() => handleRowClick(store)}
+                            sx={{ cursor: 'pointer' }}
+                          >
                             <TableCell>
                               <Typography variant="body2" fontWeight="medium">
                                 {store.store_name}
@@ -590,6 +701,13 @@ const StoresMonthlyPage = () => {
             </Card>
           )}
         </TabPanel>
+
+        {/* Store Detail Modal */}
+        <StoreDetailModal
+          open={modalOpen}
+          onClose={handleCloseModal}
+          store={selectedStore}
+        />
       </Box>
     </PageContainer>
   );

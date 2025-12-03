@@ -312,6 +312,8 @@ export interface StoreSummaryItem {
   agent_name: string;
   phone_number?: string;
   user_status: string;
+  business_type?: string;
+  payment_status?: string;
   total_invoice?: number;
   total_profit?: number;
 }
