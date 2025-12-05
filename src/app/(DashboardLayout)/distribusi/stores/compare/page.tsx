@@ -273,20 +273,24 @@ const StoresComparePage = () => {
         up: {
           count: storesWithInvoiceUp.length,
           stores: storesWithInvoiceUp,
-          label: 'Stores with Invoice Up'
+          label: 'Stores with Invoice Up',
+          total: storesWithInvoiceUp.reduce((sum, store) => sum + (store.invoiceChange || 0), 0)
         },
         down: {
           count: storesWithInvoiceDown.length,
           stores: storesWithInvoiceDown,
-          label: 'Stores with Invoice Down'
+          label: 'Stores with Invoice Down',
+          total: storesWithInvoiceDown.reduce((sum, store) => sum + Math.abs(store.invoiceChange || 0), 0)
         },
         noOrderThisMonth: {
           count: storesNoOrderThisMonth.length,
-          stores: storesNoOrderThisMonth
+          stores: storesNoOrderThisMonth,
+          total: storesNoOrderThisMonth.reduce((sum, store) => sum + (store.lastMonthInvoice || 0), 0)
         },
         newThisMonth: {
           count: storesNewThisMonth.length,
-          stores: storesNewThisMonth
+          stores: storesNewThisMonth,
+          total: storesNewThisMonth.reduce((sum, store) => sum + (store.total_invoice || 0), 0)
         },
       };
     } else {
@@ -310,20 +314,24 @@ const StoresComparePage = () => {
         up: {
           count: storesWithProfitUp.length,
           stores: storesWithProfitUp,
-          label: 'Stores with Profit Up'
+          label: 'Stores with Profit Up',
+          total: storesWithProfitUp.reduce((sum, store) => sum + (store.profitChange || 0), 0)
         },
         down: {
           count: storesWithProfitDown.length,
           stores: storesWithProfitDown,
-          label: 'Stores with Profit Down'
+          label: 'Stores with Profit Down',
+          total: storesWithProfitDown.reduce((sum, store) => sum + Math.abs(store.profitChange || 0), 0)
         },
         noOrderThisMonth: {
           count: storesNoOrderThisMonth.length,
-          stores: storesNoOrderThisMonth
+          stores: storesNoOrderThisMonth,
+          total: storesNoOrderThisMonth.reduce((sum, store) => sum + (store.lastMonthInvoice || 0), 0)
         },
         newThisMonth: {
           count: storesNewThisMonth.length,
-          stores: storesNewThisMonth
+          stores: storesNewThisMonth,
+          total: storesNewThisMonth.reduce((sum, store) => sum + (store.total_invoice || 0), 0)
         },
       };
     }
@@ -539,8 +547,11 @@ const StoresComparePage = () => {
                     <Typography variant="body2" color="textSecondary" gutterBottom>
                       {summaryStats.up.label}
                     </Typography>
-                    <Typography variant="h4" fontWeight="bold" color="success.main">
+                    <Typography variant="h4" fontWeight="bold" color="success.main" gutterBottom>
                       {summaryStats.up.count}
+                    </Typography>
+                    <Typography variant="h5" fontWeight="bold" color="success.main">
+                      {formatCurrency(summaryStats.up.total || 0)}
                     </Typography>
                   </Box>
                   <TrendingUp sx={{ fontSize: 40, color: 'success.main' }} />
@@ -587,8 +598,11 @@ const StoresComparePage = () => {
                     <Typography variant="body2" color="textSecondary" gutterBottom>
                       {summaryStats.down.label}
                     </Typography>
-                    <Typography variant="h4" fontWeight="bold" color="error.main">
+                    <Typography variant="h4" fontWeight="bold" color="error.main" gutterBottom>
                       {summaryStats.down.count}
+                    </Typography>
+                    <Typography variant="h5" fontWeight="bold" color="error.main">
+                      {formatCurrency(summaryStats.down.total || 0)}
                     </Typography>
                   </Box>
                   <TrendingDown sx={{ fontSize: 40, color: 'error.main' }} />
@@ -635,8 +649,11 @@ const StoresComparePage = () => {
                     <Typography variant="body2" color="textSecondary" gutterBottom>
                       No Order This Month
                     </Typography>
-                    <Typography variant="h4" fontWeight="bold" color="warning.main">
+                    <Typography variant="h4" fontWeight="bold" color="warning.main" gutterBottom>
                       {summaryStats.noOrderThisMonth.count}
+                    </Typography>
+                    <Typography variant="h5" fontWeight="bold" color="warning.main">
+                      {formatCurrency(summaryStats.noOrderThisMonth.total || 0)}
                     </Typography>
                   </Box>
                   <ArrowDownward sx={{ fontSize: 40, color: 'warning.main' }} />
@@ -671,8 +688,11 @@ const StoresComparePage = () => {
                     <Typography variant="body2" color="textSecondary" gutterBottom>
                       New This Month
                     </Typography>
-                    <Typography variant="h4" fontWeight="bold" color="info.main">
+                    <Typography variant="h4" fontWeight="bold" color="info.main" gutterBottom>
                       {summaryStats.newThisMonth.count}
+                    </Typography>
+                    <Typography variant="h5" fontWeight="bold" color="info.main">
+                      {formatCurrency(summaryStats.newThisMonth.total || 0)}
                     </Typography>
                   </Box>
                   <ArrowUpward sx={{ fontSize: 40, color: 'info.main' }} />
