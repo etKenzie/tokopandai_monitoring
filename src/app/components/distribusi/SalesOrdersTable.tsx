@@ -172,7 +172,7 @@ const SalesOrdersTable = ({
     if (!status) return 'default';
     if (status.includes('Current')) return 'success';
     if (status.includes('B2W') || status.includes('14DPD')) return 'warning';
-    if (status.includes('40DPD') || status.includes('60DPD')) return 'error';
+    if (status.includes('30DPD') || status.includes('60DPD')) return 'error';
     if (status.includes('90DPD')) return 'default';
     return 'default';
   };

@@ -149,7 +149,7 @@ const DistribusiOverdueTable = ({
     if (!status) return 'default';
     if (status.includes('Current')) return 'success';
     if (status.includes('B2W') || status.includes('14DPD')) return 'warning';
-    if (status.includes('40DPD') || status.includes('60DPD')) return 'error';
+    if (status.includes('30DPD') || status.includes('60DPD')) return 'error';
     if (status.includes('90DPD')) return 'default';
     return 'default';
   };
@@ -233,7 +233,7 @@ const DistribusiOverdueTable = ({
          if (status.includes('CURRENT')) return 0;
          if (status.includes('B2W')) return 1;
          if (status.includes('14DPD')) return 2;
-         if (status.includes('40DPD')) return 3;
+         if (status.includes('30DPD')) return 3;
          if (status.includes('60DPD')) return 4;
          if (status.includes('90DPD')) return 5;
          return 6; // for any other status

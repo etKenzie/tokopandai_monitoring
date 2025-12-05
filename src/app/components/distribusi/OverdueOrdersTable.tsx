@@ -253,10 +253,10 @@ const OverdueOrdersTable = ({
       const daysPastDue = Math.abs(diffDays);
       if (daysPastDue < 14) {
         return 'B2W';
-      } else if (daysPastDue < 40) {
+      } else if (daysPastDue < 30) {
         return '14DPD';
       } else if (daysPastDue < 60) {
-        return '40DPD';
+        return '30DPD';
       } else if (daysPastDue < 90) {
         return '60DPD';
       } else {
@@ -365,7 +365,7 @@ const OverdueOrdersTable = ({
         if (status === 'CURRENT') return 0;
         if (status === 'B2W') return 1;
         if (status.includes('14DPD')) return 2;
-        if (status.includes('40DPD')) return 3;
+        if (status.includes('30DPD')) return 3;
         if (status.includes('60DPD')) return 4;
         if (status.includes('90DPD')) return 5;
         return 6; // for any other status
