@@ -35,6 +35,7 @@ interface OrderDetailModalProps {
 
 const OrderDetailModal = ({ open, onClose, orderCode }: OrderDetailModalProps) => {
   const [orderDetails, setOrderDetails] = useState<OrderDetailItem[]>([]);
+  const [orderPaymentDate, setOrderPaymentDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedOrderItem, setSelectedOrderItem] = useState<OrderDetailItem | null>(null);
@@ -58,6 +59,11 @@ const OrderDetailModal = ({ open, onClose, orderCode }: OrderDetailModalProps) =
     try {
       const response = await fetchOrderDetail(orderCode);
       setOrderDetails(response.data.details);
+      // Extract payment_date from response if available (check both data level and first detail item)
+      const paymentDate = (response.data as any).payment_date || 
+                          (response.data.details.length > 0 && (response.data.details[0] as any).payment_date) || 
+                          null;
+      setOrderPaymentDate(paymentDate);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch order details');
       console.error('Failed to fetch order details:', err);
@@ -415,12 +421,17 @@ const OrderDetailModal = ({ open, onClose, orderCode }: OrderDetailModalProps) =
               </Table>
             </TableContainer>
 
-            {/* Order Date */}
+            {/* Order Date and Payment Date */}
             {orderDetails.length > 0 && (
-              <Box mt={2}>
+              <Box mt={2} sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
                 <Typography variant="body2" color="textSecondary">
                   Order Date: {formatDate(orderDetails[0].order_date)}
                 </Typography>
+                {orderPaymentDate && (
+                  <Typography variant="body2" color="textSecondary">
+                    Payment Date: {formatDate(orderPaymentDate)}
+                  </Typography>
+                )}
               </Box>
             )}
 
