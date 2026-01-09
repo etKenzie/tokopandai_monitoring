@@ -436,6 +436,63 @@ export const fetchOverdueSnapshotMonthly = async (params: OverdueSnapshotMonthly
   return response.json();
 };
 
+// Types for Overdue Snapshot List API
+export interface OverdueSnapshotListItem {
+  id: number;
+  snapshot_month: string;
+  order_code: string;
+  order_id: string;
+  reseller_name: string;
+  store_name: string;
+  agent_name: string;
+  total_invoice: number;
+  profit: number;
+  status_payment: string;
+  overdue_status: string;
+  payment_due_date: string;
+  created_at: string;
+}
+
+export interface OverdueSnapshotListResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: OverdueSnapshotListItem[];
+}
+
+export interface OverdueSnapshotListQueryParams {
+  month: string; // Format: YYYY-MM
+  agent?: string;
+}
+
+// Fetch Overdue Snapshot List
+export const fetchOverdueSnapshotList = async (params: OverdueSnapshotListQueryParams): Promise<OverdueSnapshotListResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  const queryParams = new URLSearchParams();
+  queryParams.append('month', params.month);
+  if (params.agent) {
+    queryParams.append('agent', params.agent);
+  }
+  
+  const url = `${baseUrl}/api/order/overdue-snapshot/list?${queryParams.toString()}`;
+  
+  console.log('Fetching overdue snapshot list from:', url);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch overdue snapshot list: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
 // Types for Store Summary API
 export interface StoreSummaryItem {
   user_id: string;

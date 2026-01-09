@@ -4,6 +4,7 @@ import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import PageContainer from "@/app/components/container/PageContainer";
 import { fetchOverdueSnapshot, fetchOrderFilters, OverdueSnapshotResponse, OrderFiltersData } from "@/app/api/distribusi/DistribusiSlice";
 import OverdueSnapshotMonthlyChart from "@/app/components/distribusi/OverdueSnapshotMonthlyChart";
+import OverdueSnapshotListTable from "@/app/components/distribusi/OverdueSnapshotListTable";
 import SummaryTiles from "@/app/components/shared/SummaryTiles";
 import { getPageRoles, getRestrictedRoles, getAgentNameFromRole } from "@/config/roles";
 import { useAuth } from "@/app/context/AuthContext";
@@ -400,6 +401,14 @@ const OverdueSnapshotPage = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+
+            {/* Overdue Snapshot List Table */}
+            <OverdueSnapshotListTable
+              selectedMonth={selectedMonth}
+              selectedAgent={selectedAgent}
+              hasRestrictedRole={hasRestrictedRole}
+              userRoleForFiltering={userRoleForFiltering}
+            />
           </>
         )}
       </Box>
