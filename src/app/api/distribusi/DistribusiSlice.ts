@@ -302,6 +302,140 @@ export const fetchOverdueOrders = async (params: OverdueOrdersQueryParams): Prom
   return response.json();
 };
 
+// Types for Overdue Snapshot API
+export interface OverdueSnapshotBreakdown {
+  overdue_status: string;
+  count: number;
+  count_previous_month: number;
+  count_change: number;
+  count_change_percentage: string;
+  total_invoice: number;
+  invoice_previous_month: number;
+  invoice_change: number;
+  invoice_change_percentage: string;
+  total_profit: number;
+  profit_previous_month: number;
+  profit_change: number;
+  profit_change_percentage: string;
+}
+
+export interface OverdueSnapshotPreviousTotals {
+  total_count: number;
+  total_invoice: number;
+  total_profit: number;
+}
+
+export interface OverdueSnapshotTotals {
+  total_count: number;
+  total_invoice: number;
+  total_profit: number;
+  previous_totals: OverdueSnapshotPreviousTotals;
+  count_change: number;
+  count_change_percentage: string;
+  invoice_change: number;
+  invoice_change_percentage: string;
+  profit_change: number;
+  profit_change_percentage: string;
+}
+
+export interface OverdueSnapshotResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: {
+    snapshot_month: string;
+    previous_month: string;
+    totals: OverdueSnapshotTotals;
+    breakdown: OverdueSnapshotBreakdown[];
+  };
+}
+
+export interface OverdueSnapshotQueryParams {
+  month: string;
+  agent?: string;
+}
+
+// Fetch Overdue Snapshot
+export const fetchOverdueSnapshot = async (params: OverdueSnapshotQueryParams): Promise<OverdueSnapshotResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.month) queryParams.append('month', params.month);
+  if (params.agent) queryParams.append('agent', params.agent);
+  
+  const url = `${baseUrl}/api/order/overdue-snapshot?${queryParams.toString()}`;
+  
+  console.log('Fetching overdue snapshot from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch overdue snapshot: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+// Types for Overdue Snapshot Monthly API
+export interface OverdueSnapshotMonthlyItem {
+  snapshot_month: string;
+  totals: OverdueSnapshotTotals;
+  breakdown: OverdueSnapshotBreakdown[];
+}
+
+export interface OverdueSnapshotMonthlyResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: OverdueSnapshotMonthlyItem[];
+}
+
+export interface OverdueSnapshotMonthlyQueryParams {
+  start_month: string; // Format: YYYY-MM
+  end_month: string; // Format: YYYY-MM
+  agent?: string;
+}
+
+// Fetch Overdue Snapshot Monthly
+export const fetchOverdueSnapshotMonthly = async (params: OverdueSnapshotMonthlyQueryParams): Promise<OverdueSnapshotMonthlyResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.start_month) queryParams.append('start_month', params.start_month);
+  if (params.end_month) queryParams.append('end_month', params.end_month);
+  if (params.agent) queryParams.append('agent', params.agent);
+  
+  const url = `${baseUrl}/api/order/overdue-snapshot-monthly?${queryParams.toString()}`;
+  
+  console.log('Fetching overdue snapshot monthly from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch overdue snapshot monthly: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
 // Types for Store Summary API
 export interface StoreSummaryItem {
   user_id: string;

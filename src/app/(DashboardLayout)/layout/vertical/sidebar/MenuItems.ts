@@ -80,12 +80,6 @@ const Menuitems: MenuitemsType[] = [
       },
       {
         id: uniqueId(),
-        title: "Overdue",
-        icon: IconTimeDuration0,
-        href: "/distribusi/sales/overdue",
-      },
-      {
-        id: uniqueId(),
         title: "NOO",
         icon: IconMapPlus,
         href: "/distribusi/sales/noo",
@@ -107,6 +101,27 @@ const Menuitems: MenuitemsType[] = [
     ],
   },
    
+  {
+    id: uniqueId(),
+    title: "Overdue",
+    icon: IconTimeDuration0,
+    href: "/overdue",
+    
+    children: [
+      {
+        id: uniqueId(),
+        title: "Current",
+        icon: IconTimeDuration0,
+        href: "/distribusi/overdue/current",
+      },
+      {
+        id: uniqueId(),
+        title: "Snapshot",
+        icon: IconDashboard,
+        href: "/distribusi/overdue/snapshot",
+      },
+    ],
+  },
   {
     id: uniqueId(),
     title: "Cash In",
