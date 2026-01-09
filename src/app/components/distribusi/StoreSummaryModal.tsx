@@ -219,7 +219,7 @@ const StoreSummaryModal = ({ open, onClose, month, agent }: StoreSummaryModalPro
             </Box>
             {activeSearchQuery && (
               <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
-                Showing {currentStores.length} result{currentStores.length !== 1 ? 's' : ''} for "{activeSearchQuery}"
+                Showing {currentStores.length} result{currentStores.length !== 1 ? 's' : ''} for &quot;{activeSearchQuery}&quot;
               </Typography>
             )}
 

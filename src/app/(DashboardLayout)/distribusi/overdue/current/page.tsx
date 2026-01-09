@@ -79,7 +79,7 @@ const OverduePage = () => {
             Overdue Orders
           </Typography>
           <Typography variant="body1" color="textSecondary">
-            View and analyze overdue orders. Select "All" to view all overdue orders or "Custom" to filter by date range.
+            View and analyze overdue orders. Select &quot;All&quot; to view all overdue orders or &quot;Custom&quot; to filter by date range.
           </Typography>
           {hasRestrictedRole && (
             <Typography variant="body2" color="info.main" sx={{ mt: 1, fontStyle: 'italic' }}>
