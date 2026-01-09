@@ -4,6 +4,7 @@ import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import PageContainer from "@/app/components/container/PageContainer";
 import { fetchOverdueSnapshot, fetchOrderFilters, OverdueSnapshotResponse, OrderFiltersData } from "@/app/api/distribusi/DistribusiSlice";
 import OverdueSnapshotMonthlyChart from "@/app/components/distribusi/OverdueSnapshotMonthlyChart";
+import SummaryTiles from "@/app/components/shared/SummaryTiles";
 import { getPageRoles, getRestrictedRoles, getAgentNameFromRole } from "@/config/roles";
 import { useAuth } from "@/app/context/AuthContext";
 import {
@@ -143,8 +144,49 @@ const OverdueSnapshotPage = () => {
   const getChangeColor = (change: number | string) => {
     const num = typeof change === 'string' ? parseFloat(change) : change;
     if (num > 0) return 'error'; // Red for increase (bad for overdue)
-    if (num < 0) return 'success'; // Green for decrease (good for overdue)
+    if (num < 0) return 'info'; // Blue for decrease (good for overdue)
     return 'default';
+  };
+
+  // Prepare summary tiles data similar to sales overview
+  const getSummaryTiles = () => {
+    if (!snapshotData) return [];
+
+    return [
+      {
+        title: 'Total Invoice',
+        value: snapshotData.data.totals.total_invoice,
+        isCurrency: true,
+        mdSize: 4,
+        isLoading: loading && !snapshotData,
+        changeIndicator: snapshotData.data.totals.invoice_change_percentage ? {
+          value: parseFloat(snapshotData.data.totals.invoice_change_percentage),
+          isPercentage: true
+        } : undefined
+      },
+      {
+        title: 'Total Count',
+        value: snapshotData.data.totals.total_count,
+        isCurrency: false,
+        mdSize: 4,
+        isLoading: loading && !snapshotData,
+        changeIndicator: snapshotData.data.totals.count_change !== undefined ? {
+          value: snapshotData.data.totals.count_change,
+          isPercentage: false
+        } : undefined
+      },
+      {
+        title: 'Total Profit',
+        value: snapshotData.data.totals.total_profit,
+        isCurrency: true,
+        mdSize: 4,
+        isLoading: loading && !snapshotData,
+        changeIndicator: snapshotData.data.totals.profit_change_percentage ? {
+          value: parseFloat(snapshotData.data.totals.profit_change_percentage),
+          isPercentage: true
+        } : undefined
+      }
+    ];
   };
 
   const ChangeIndicator = ({ change, isPercentage = false, isCurrency = false }: { change: number | string; isPercentage?: boolean; isCurrency?: boolean }) => {
@@ -165,13 +207,13 @@ const OverdueSnapshotPage = () => {
         {isPositive ? (
           <ArrowUpward sx={{ fontSize: 16, color: 'error.main' }} />
         ) : num < 0 ? (
-          <ArrowDownward sx={{ fontSize: 16, color: 'success.main' }} />
+          <ArrowDownward sx={{ fontSize: 16, color: 'info.main' }} />
         ) : null}
         <Typography 
           variant="caption" 
           sx={{ 
             color: getChangeColor(change) === 'error' ? 'error.main' : 
-                   getChangeColor(change) === 'success' ? 'success.main' : 'text.secondary',
+                   getChangeColor(change) === 'info' ? 'info.main' : 'text.secondary',
             fontWeight: 600
           }}
         >
@@ -182,12 +224,12 @@ const OverdueSnapshotPage = () => {
   };
 
   return (
-    <PageContainer title="Overdue Snapshot" description="View overdue snapshot by month">
+    <PageContainer title="Overdue" description="View overdue by month">
       <Box>
         {/* Header */}
         <Box mb={3}>
           <Typography variant="h3" fontWeight="bold" mb={1}>
-            Overdue Snapshot
+            Overdue
           </Typography>
           <Typography variant="body1" color="textSecondary">
             View monthly snapshot of overdue orders with totals and breakdown by overdue status.
@@ -260,107 +302,19 @@ const OverdueSnapshotPage = () => {
         {/* Data Display */}
         {!loading && !error && snapshotData && (
           <>
-            {/* Totals - Most Important: Invoice, then Count, then Profit */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-              {/* Total Invoice - Most Important */}
-              <Grid size={{ xs: 12, md: 5 }}>
-                <Card sx={{ 
-                  height: '100%', 
-                  bgcolor: 'primary.main', 
-                  color: 'primary.contrastText',
-                  boxShadow: 4
-                }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom sx={{ opacity: 0.9, fontWeight: 600 }}>
-                      Total Invoice
-                    </Typography>
-                    <Typography variant="h3" fontWeight="bold">
-                      {formatCurrency(snapshotData.data.totals.total_invoice)}
-                    </Typography>
-                    {snapshotData.data.totals.invoice_change_percentage && (
-                      <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        {parseFloat(snapshotData.data.totals.invoice_change_percentage) > 0 ? (
-                          <ArrowUpward sx={{ fontSize: 20, opacity: 0.9 }} />
-                        ) : parseFloat(snapshotData.data.totals.invoice_change_percentage) < 0 ? (
-                          <ArrowDownward sx={{ fontSize: 20, opacity: 0.9 }} />
-                        ) : null}
-                        <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 600 }}>
-                          {formatPercentage(snapshotData.data.totals.invoice_change_percentage)}
-                        </Typography>
-                      </Box>
-                    )}
-                  </CardContent>
-                </Card>
-              </Grid>
+            {/* Summary Tiles */}
+            <Box mb={4}>
+              <SummaryTiles tiles={getSummaryTiles()} />
+            </Box>
 
-              {/* Total Count - Second Most Important */}
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Card sx={{ height: '100%', bgcolor: 'secondary.main', color: 'secondary.contrastText' }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom sx={{ opacity: 0.9 }}>
-                      Total Count
-                    </Typography>
-                    <Typography variant="h3" fontWeight="bold">
-                      {snapshotData.data.totals.total_count.toLocaleString()}
-                    </Typography>
-                    {snapshotData.data.totals.count_change !== undefined && (
-                      <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        {snapshotData.data.totals.count_change > 0 ? (
-                          <ArrowUpward sx={{ fontSize: 18, opacity: 0.9 }} />
-                        ) : snapshotData.data.totals.count_change < 0 ? (
-                          <ArrowDownward sx={{ fontSize: 18, opacity: 0.9 }} />
-                        ) : null}
-                        <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 600 }}>
-                          {snapshotData.data.totals.count_change > 0 ? '+' : ''}{snapshotData.data.totals.count_change.toLocaleString()}
-                        </Typography>
-                      </Box>
-                    )}
-                  </CardContent>
-                </Card>
-              </Grid>
-
-              {/* Total Profit - Add-on */}
-              <Grid size={{ xs: 12, md: 3 }}>
-                <Card sx={{ 
-                  height: '100%', 
-                  bgcolor: 'success.main', 
-                  color: 'success.contrastText',
-                  opacity: 0.9
-                }}>
-                  <CardContent>
-                    <Typography variant="body1" gutterBottom sx={{ opacity: 0.9 }}>
-                      Total Profit
-                    </Typography>
-                    <Typography variant="h3" fontWeight="bold">
-                      {formatCurrency(snapshotData.data.totals.total_profit)}
-                    </Typography>
-                    {snapshotData.data.totals.profit_change_percentage && (
-                      <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        {parseFloat(snapshotData.data.totals.profit_change_percentage) > 0 ? (
-                          <ArrowUpward sx={{ fontSize: 16, opacity: 0.9 }} />
-                        ) : parseFloat(snapshotData.data.totals.profit_change_percentage) < 0 ? (
-                          <ArrowDownward sx={{ fontSize: 16, opacity: 0.9 }} />
-                        ) : null}
-                        <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 600 }}>
-                          {formatPercentage(snapshotData.data.totals.profit_change_percentage)}
-                        </Typography>
-                      </Box>
-                    )}
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
-
-            {/* Snapshot Month Info */}
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Snapshot for: <strong>{formatMonthDisplay(snapshotData.data.snapshot_month)}</strong>
-                {snapshotData.data.previous_month && (
-                  <Typography variant="body2" color="textSecondary" component="span" sx={{ ml: 1 }}>
-                    (vs {formatMonthDisplay(snapshotData.data.previous_month)})
-                  </Typography>
-                )}
-              </Typography>
+            {/* Monthly Trend Charts */}
+            <Box sx={{ mb: 5 }}>
+              <OverdueSnapshotMonthlyChart 
+                selectedMonth={selectedMonth}
+                selectedAgent={selectedAgent}
+                hasRestrictedRole={hasRestrictedRole}
+                userRoleForFiltering={userRoleForFiltering}
+              />
             </Box>
 
             {/* Breakdown Table */}
@@ -409,12 +363,12 @@ const OverdueSnapshotPage = () => {
                         </Box>
                       </TableCell>
                       <TableCell align="right">
-                        <Typography variant="body1" fontWeight="medium" color="primary.main">
+                        <Typography variant="body1" fontWeight="medium">
                           {formatCurrency(item.total_invoice)}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
-                        <Typography variant="body1" color="success.main">
+                        <Typography variant="body1">
                           {formatCurrency(item.total_profit)}
                         </Typography>
                       </TableCell>
@@ -433,12 +387,12 @@ const OverdueSnapshotPage = () => {
                       </Typography>
                     </TableCell>
                     <TableCell align="right">
-                      <Typography variant="body1" fontWeight="bold" color="primary.main">
+                      <Typography variant="body1" fontWeight="bold">
                         {formatCurrency(snapshotData.data.totals.total_invoice)}
                       </Typography>
                     </TableCell>
                     <TableCell align="right">
-                      <Typography variant="body1" fontWeight="bold" color="success.main">
+                      <Typography variant="body1" fontWeight="bold">
                         {formatCurrency(snapshotData.data.totals.total_profit)}
                       </Typography>
                     </TableCell>
@@ -448,22 +402,6 @@ const OverdueSnapshotPage = () => {
             </TableContainer>
           </>
         )}
-
-        {/* Monthly Trend Charts */}
-        <Box sx={{ mt: 5 }}>
-          <Typography variant="h5" fontWeight="bold" mb={2}>
-            Monthly Trends
-          </Typography>
-          <Typography variant="body2" color="textSecondary" mb={3}>
-            View trends over time for totals and status breakdown.
-          </Typography>
-          <OverdueSnapshotMonthlyChart 
-            selectedMonth={selectedMonth}
-            selectedAgent={selectedAgent}
-            hasRestrictedRole={hasRestrictedRole}
-            userRoleForFiltering={userRoleForFiltering}
-          />
-        </Box>
       </Box>
     </PageContainer>
   );

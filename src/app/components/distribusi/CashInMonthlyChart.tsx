@@ -26,7 +26,7 @@ interface CashInMonthlyChartProps {
   };
 }
 
-type ChartType = 'amounts' | 'counts' | 'days';
+type ChartType = 'amounts' | 'counts' | 'detail';
 
 const CashInMonthlyChart = ({ filters }: CashInMonthlyChartProps) => {
   const [chartData, setChartData] = useState<CashInMonthlyResponse | null>(null);
@@ -192,15 +192,13 @@ const CashInMonthlyChart = ({ filters }: CashInMonthlyChartProps) => {
 
 
   const formatValue = (value: number, type: ChartType) => {
-    if (type === 'amounts') {
+    if (type === 'amounts' || type === 'detail') {
       return new Intl.NumberFormat('id-ID', {
         style: 'currency',
         currency: 'IDR',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(value);
-    } else if (type === 'days') {
-      return `${value.toFixed(1)} days`;
     }
     return value.toLocaleString('id-ID');
   };
@@ -240,28 +238,50 @@ const CashInMonthlyChart = ({ filters }: CashInMonthlyChartProps) => {
     let series: any[] = [];
 
     if (chartType === 'amounts') {
+      // Default view: Only show Total Paid
       series = [
         {
-          name: 'Total Invoice',
-          data: sortedData.map(item => item.paid?.paid_total_invoice || 0)
+          name: 'Total Paid',
+          data: sortedData.map(item => item.total_paid || 0)
+        }
+      ];
+    } else if (chartType === 'detail') {
+      // Detail view: Show all payment breakdowns
+      series = [
+        {
+          name: 'Total Paid',
+          data: sortedData.map(item => item.total_paid || 0)
         },
         {
-          name: 'Total Profit',
-          data: sortedData.map(item => item.paid?.paid_total_profit || 0)
+          name: 'Full Payment',
+          data: sortedData.map(item => item.full_payment_total || 0)
+        },
+        {
+          name: 'Partial Payment',
+          data: sortedData.map(item => item.partial_payment_total || 0)
+        },
+        {
+          name: 'COD',
+          data: sortedData.map(item => item.cod_total || 0)
+        },
+        {
+          name: 'TOP',
+          data: sortedData.map(item => item.top_total || 0)
         }
       ];
     } else if (chartType === 'counts') {
       series = [
         {
-          name: 'Invoice Count',
-          data: sortedData.map(item => item.paid?.paid_invoice_count || 0)
+          name: 'Payment Count',
+          data: sortedData.map(item => item.payment_count || 0)
         }
       ];
     } else {
+      // Fallback: default to amounts if unknown chart type
       series = [
         {
-          name: 'Average Payment Days',
-          data: sortedData.map(item => item.paid?.paid_avg_payment_days || 0)
+          name: 'Total Paid',
+          data: sortedData.map(item => item.total_paid || 0)
         }
       ];
     }
@@ -316,7 +336,7 @@ const CashInMonthlyChart = ({ filters }: CashInMonthlyChartProps) => {
         }
       }
     },
-    colors: ['#3B82F6', '#10B981', '#F59E0B'],
+    colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'],
     grid: {
       borderColor: '#E5E7EB',
       strokeDashArray: 4
@@ -351,8 +371,8 @@ const CashInMonthlyChart = ({ filters }: CashInMonthlyChartProps) => {
                 onChange={handleChartTypeChange}
               >
                 <MenuItem value="amounts">Amounts</MenuItem>
-                <MenuItem value="counts">Invoice Count</MenuItem>
-                <MenuItem value="days">Payment Days</MenuItem>
+                <MenuItem value="detail">Detail</MenuItem>
+                <MenuItem value="counts">Payment Count</MenuItem>
               </Select>
             </FormControl>
             

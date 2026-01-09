@@ -573,18 +573,12 @@ export const updateOrderItemBuyPrices = async (updateData: OrderItemUpdateReques
 
 // Types for Cash-In API
 export interface CashInData {
-  paid: {
-    paid_total_invoice: number;
-    paid_invoice_count: number;
-    paid_total_profit: number;
-    paid_avg_payment_days: number;
-  };
-  unpaid: {
-    unpaid_total_invoice: number;
-    unpaid_invoice_count: number;
-    unpaid_total_profit: number;
-    unpaid_avg_payment_days: number;
-  };
+  total_paid: number;
+  payment_count: number;
+  full_payment_total: number;
+  partial_payment_total: number;
+  cod_total: number;
+  top_total: number;
 }
 
 export interface CashInResponse {
@@ -601,6 +595,69 @@ export interface CashInQueryParams {
   agent?: string;
   area?: string;
 }
+
+// Types for Cash-In List API
+export interface CashInListItem {
+  total_paid: number;
+  order_id: string;
+  payment_date: string;
+  type: string; // TOP or COD
+  repayment_type: string; // FULL or PARTIAL
+  order_code: string;
+  store_name: string;
+  agent_name: string;
+  segment: string;
+  area: string;
+}
+
+export interface CashInListResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: CashInListItem[];
+}
+
+// Types for Cash-In List Query Parameters
+export interface CashInListQueryParams {
+  month?: string;
+  sortTime?: 'asc' | 'desc';
+  agent?: string;
+  segment?: string;
+  area?: string;
+}
+
+// Fetch Cash-In List Data
+export const fetchCashInList = async (params: CashInListQueryParams): Promise<CashInListResponse> => {
+  const baseUrl = AM_API_URL;
+  
+  // Build query string from parameters
+  const queryParams = new URLSearchParams();
+  
+  if (params.month) queryParams.append('month', params.month);
+  if (params.sortTime) queryParams.append('sortTime', params.sortTime);
+  if (params.agent) queryParams.append('agent', params.agent);
+  if (params.segment) queryParams.append('segment', params.segment);
+  if (params.area) queryParams.append('area', params.area);
+  
+  const url = `${baseUrl}/api/order/cash-in/list?${queryParams.toString()}`;
+  
+  console.log('Fetching cash-in list from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch cash-in list: ${response.status} ${response.statusText}`);
+  }
+  
+  return response.json();
+};
 
 // Fetch Cash-In Data
 export const fetchCashInData = async (params: CashInQueryParams): Promise<CashInResponse> => {
@@ -686,18 +743,12 @@ export const fetchOrderFilters = async (params: OrderFiltersQueryParams): Promis
 // Types for Cash-In Monthly API
 export interface CashInMonthlyDataItem {
   month: string;
-  paid: {
-    paid_total_invoice: number;
-    paid_invoice_count: number;
-    paid_total_profit: number;
-    paid_avg_payment_days: number;
-  };
-  unpaid: {
-    unpaid_total_invoice: number;
-    unpaid_invoice_count: number;
-    unpaid_total_profit: number;
-    unpaid_avg_payment_days: number;
-  };
+  total_paid: number;
+  payment_count: number;
+  full_payment_total: number;
+  partial_payment_total: number;
+  cod_total: number;
+  top_total: number;
 }
 
 export interface CashInMonthlyData extends Array<CashInMonthlyDataItem> {}

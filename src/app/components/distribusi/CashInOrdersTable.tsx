@@ -28,11 +28,11 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
-import { fetchFullOrders, fetchOrders, FullOrder, Order } from '../../api/distribusi/DistribusiSlice';
+import { fetchCashInList, CashInListItem } from '../../api/distribusi/DistribusiSlice';
 import OrderDetailModal from '../shared/OrderDetailModal';
 
 type OrderDirection = 'asc' | 'desc';
-type SortableField = keyof Order;
+type SortableField = keyof CashInListItem;
 
 interface HeadCell {
   id: SortableField;
@@ -42,20 +42,14 @@ interface HeadCell {
 
 const headCells: HeadCell[] = [
   { id: 'order_code', label: 'Order Code', numeric: false },
-  { id: 'month', label: 'Month', numeric: false },
-  { id: 'reseller_name', label: 'Reseller Name', numeric: false },
   { id: 'store_name', label: 'Store Name', numeric: false },
   { id: 'segment', label: 'Segment', numeric: false },
   { id: 'area', label: 'Area', numeric: false },
   { id: 'agent_name', label: 'Agent', numeric: false },
-  { id: 'status_order', label: 'Order Status', numeric: false },
-  { id: 'status_payment', label: 'Payment Status', numeric: false },
-  { id: 'payment_type', label: 'Payment Type', numeric: false },
-  { id: 'order_date', label: 'Order Date', numeric: false },
-  { id: 'payment_due_date', label: 'Payment Due Date', numeric: false },
+  { id: 'type', label: 'Payment Type', numeric: false },
+  { id: 'repayment_type', label: 'Repayment Type', numeric: false },
   { id: 'payment_date', label: 'Payment Date', numeric: false },
-  { id: 'total_invoice', label: 'Total Invoice', numeric: true },
-  { id: 'profit', label: 'Profit', numeric: true },
+  { id: 'total_paid', label: 'Total Paid', numeric: true },
 ];
 
 interface CashInOrdersTableProps {
@@ -75,7 +69,7 @@ const CashInOrdersTable = ({
   title = 'Cash-In Orders',
   agentName
 }: CashInOrdersTableProps) => {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<CashInListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orderBy, setOrderBy] = useState<SortableField>('payment_date');
@@ -85,8 +79,8 @@ const CashInOrdersTable = ({
   const [segmentFilter, setSegmentFilter] = useState<string>('');
   const [areaFilter, setAreaFilter] = useState<string>('');
   const [agentFilter, setAgentFilter] = useState<string>('');
-  const [statusOrderFilter, setStatusOrderFilter] = useState<string>('');
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('');
+  const [typeFilter, setTypeFilter] = useState<string>('');
+  const [repaymentTypeFilter, setRepaymentTypeFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedOrderCode, setSelectedOrderCode] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -103,28 +97,18 @@ const CashInOrdersTable = ({
     setLoading(true);
     setError(null);
     try {
-      // Always filter for LUNAS and PARTIAL/SEBAGIAN payment statuses for cash-in orders
-      // Note: API may use "PARTIAL" or "SEBAGIAN" - using "PARTIAL" as specified by user
-      const response = await fetchOrders({
+      const response = await fetchCashInList({
+        month: filters.payment_month,
         sortTime: 'desc',
-        payment: 'LUNAS, PARTIAL', // Always include both LUNAS and PARTIAL for cash-in orders
-        payment_month: filters.payment_month,
         agent: agentName || filters.agent,
         segment: filters.segment,
         area: filters.area
       });
       
-      // Check for duplicate order_ids in the source data
-      const orderIds = response.data.map(order => order.order_id);
-      const uniqueOrderIds = new Set(orderIds);
-      if (orderIds.length !== uniqueOrderIds.size) {
-        console.warn(`Found ${orderIds.length - uniqueOrderIds.size} duplicate orders in API response`);
-      }
-      
       setOrders(response.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-      console.error('Failed to fetch orders data:', err);
+      console.error('Failed to fetch cash-in list data:', err);
     } finally {
       setLoading(false);
     }
@@ -152,47 +136,33 @@ const CashInOrdersTable = ({
     setPage(0);
   };
 
-  const getPaymentStatusColor = (status: string) => {
-    switch (status) {
-      case 'LUNAS': return 'success';
-      case 'BELUM LUNAS': return 'error';
-      case 'SEBAGIAN': return 'warning';
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'TOP': return 'info';
+      case 'COD': return 'success';
       default: return 'default';
     }
   };
 
-  const getOrderStatusColor = (status: string) => {
-    switch (status) {
-      case 'PACKAGED': return 'success';
-      case 'PROCESS DELIVERY': return 'warning';
-      case 'DELIVERED': return 'info';
-      case 'CANCELLED': return 'error';
+  const getRepaymentTypeColor = (type: string) => {
+    switch (type) {
+      case 'FULL': return 'success';
+      case 'PARTIAL': return 'warning';
       default: return 'default';
     }
   };
 
-  const getOverdueStatusColor = (status: string | null) => {
-    if (!status) return 'default';
-    if (status.includes('Current')) return 'success';
-    if (status.includes('B2W') || status.includes('14DPD')) return 'warning';
-    if (status.includes('30DPD') || status.includes('60DPD')) return 'error';
-    if (status.includes('90DPD')) return 'default';
-    return 'default';
-  };
-
-  const searchFields = (order: Order, query: string): boolean => {
+  const searchFields = (order: CashInListItem, query: string): boolean => {
     if (!query) return true;
 
     const searchableFields = [
       order.order_code?.toLowerCase() || '',
-      order.reseller_name?.toLowerCase() || '',
       order.store_name?.toLowerCase() || '',
       order.segment?.toLowerCase() || '',
       order.area?.toLowerCase() || '',
       order.agent_name?.toLowerCase() || '',
-      order.status_order?.toLowerCase() || '',
-      order.status_payment?.toLowerCase() || '',
-      order.payment_type?.toLowerCase() || '',
+      order.type?.toLowerCase() || '',
+      order.repayment_type?.toLowerCase() || '',
     ];
 
     return searchableFields.some((field) =>
@@ -201,17 +171,12 @@ const CashInOrdersTable = ({
   };
 
   const filteredOrders = orders.filter((o) => {
-    // Only show LUNAS and PARTIAL/SEBAGIAN orders (already filtered by API, but ensure consistency)
-    if (o.status_payment !== 'LUNAS' && o.status_payment !== 'PARTIAL' && o.status_payment !== 'SEBAGIAN') {
-      return false;
-    }
-    
     // Apply filters
     if (segmentFilter && o.segment !== segmentFilter) return false;
     if (areaFilter && o.area !== areaFilter) return false;
     if (agentFilter && o.agent_name !== agentFilter) return false;
-    if (statusOrderFilter && o.status_order !== statusOrderFilter) return false;
-    if (paymentStatusFilter && o.status_payment !== paymentStatusFilter) return false;
+    if (typeFilter && o.type !== typeFilter) return false;
+    if (repaymentTypeFilter && o.repayment_type !== repaymentTypeFilter) return false;
 
     // Search functionality
     if (searchQuery) {
@@ -224,24 +189,24 @@ const CashInOrdersTable = ({
   // Reset page when local filters change
   useEffect(() => {
     setPage(0);
-  }, [segmentFilter, areaFilter, agentFilter, statusOrderFilter, paymentStatusFilter, searchQuery]);
+  }, [segmentFilter, areaFilter, agentFilter, typeFilter, repaymentTypeFilter, searchQuery]);
 
   const uniqueSegments = Array.from(new Set(orders.map((o) => o.segment)));
   const uniqueAreas = Array.from(new Set(orders.map((o) => o.area)));
   const uniqueAgents = Array.from(new Set(orders.map((o) => o.agent_name)));
-  const uniqueStatusOrders = Array.from(new Set(orders.map((o) => o.status_order)));
-  const uniquePaymentStatuses = Array.from(new Set(orders.map((o) => o.status_payment)));
+  const uniqueTypes = Array.from(new Set(orders.map((o) => o.type)));
+  const uniqueRepaymentTypes = Array.from(new Set(orders.map((o) => o.repayment_type)));
 
   const sortedOrders = [...filteredOrders].sort((a, b) => {
     let aValue: any = a[orderBy];
     let bValue: any = b[orderBy];
 
-    if (orderBy === 'total_invoice' || orderBy === 'profit') {
+    if (orderBy === 'total_paid') {
       aValue = Number(aValue);
       bValue = Number(bValue);
     }
 
-    if (orderBy === 'order_date' || orderBy === 'payment_due_date' || orderBy === 'payment_date') {
+    if (orderBy === 'payment_date') {
       // Handle null values for date fields - put nulls at the end
       const aIsNull = !aValue;
       const bIsNull = !bValue;
@@ -267,30 +232,20 @@ const CashInOrdersTable = ({
     }
   });
 
-  const totalInvoice = filteredOrders.reduce((sum, o) => sum + Number(o.total_invoice) || 0, 0);
-  const totalProfit = filteredOrders.reduce((sum, o) => sum + Number(o.profit) || 0, 0);
+  const totalPaid = filteredOrders.reduce((sum, o) => sum + Number(o.total_paid) || 0, 0);
   const totalOrders = filteredOrders.length;
 
-  const prepareDataForExport = (orders: Order[]) => {
+  const prepareDataForExport = (orders: CashInListItem[]) => {
     return orders.map((o) => ({
       'Order Code': o.order_code,
-      'Month': o.month,
-      'Reseller Name': o.reseller_name,
       'Store Name': o.store_name,
       'Segment': o.segment,
       'Area': o.area,
       'Agent': o.agent_name,
-      'Order Status': o.status_order,
-      'Payment Status': o.status_payment,
-      'Payment Type': o.payment_type,
-      'Order Date': formatDate(o.order_date),
-      'Payment Due Date': getPaymentDueDateDisplay(o.payment_due_date).label,
+      'Payment Type': o.type,
+      'Repayment Type': o.repayment_type,
       'Payment Date': o.payment_date ? formatDate(o.payment_date) : 'No Payment Date',
-      'Total Invoice': o.total_invoice,
-      'Profit': o.profit,
-      'Business Type': o.business_type,
-      'Sub Business Type': o.sub_business_type,
-      'Overdue Status': o.overdue_status,
+      'Total Paid': o.total_paid,
     }));
   };
 
@@ -309,23 +264,14 @@ const CashInOrdersTable = ({
     // Set column widths
     const colWidths = [
       { wch: 15 }, // Order Code
-      { wch: 15 }, // Month
-      { wch: 25 }, // Reseller Name
       { wch: 25 }, // Store Name
       { wch: 15 }, // Segment
       { wch: 15 }, // Area
       { wch: 20 }, // Agent
-      { wch: 15 }, // Order Status
-      { wch: 15 }, // Payment Status
       { wch: 15 }, // Payment Type
-      { wch: 15 }, // Order Date
-      { wch: 15 }, // Payment Due Date
+      { wch: 15 }, // Repayment Type
       { wch: 15 }, // Payment Date
-      { wch: 15 }, // Total Invoice
-      { wch: 15 }, // Profit
-      { wch: 20 }, // Business Type
-      { wch: 25 }, // Sub Business Type
-      { wch: 15 }, // Overdue Status
+      { wch: 15 }, // Total Paid
     ];
     ws['!cols'] = colWidths;
 
@@ -345,195 +291,24 @@ const CashInOrdersTable = ({
     window.URL.revokeObjectURL(url);
   };
 
-  const prepareDetailDataForExport = (fullOrders: FullOrder[]) => {
-    const data: any[] = [];
-    
-    // Filter to only include LUNAS and PARTIAL/SEBAGIAN orders
-    const filteredFullOrders = fullOrders.filter((order) => 
-      order.status_payment === 'LUNAS' || order.status_payment === 'PARTIAL' || order.status_payment === 'SEBAGIAN'
-    );
-    
-    filteredFullOrders.forEach((order) => {
-      if (order.detail_order && order.detail_order.length > 0) {
-        order.detail_order.forEach((detail) => {
-          data.push({
-            'Order Code': order.order_code,
-            'User ID': order.user_id,
-            'Order Item ID': detail.order_item_id,
-            'Month': order.month,
-            'Reseller Name': order.reseller_name,
-            'Store Name': order.store_name,
-            'Segment': order.segment,
-            'Area': order.area,
-            'Agent': order.agent_name,
-            'Order Status': order.status_order,
-            'Payment Status': order.status_payment,
-            'Payment Type': order.payment_type,
-            'Order Date': formatDate(order.order_date),
-            'Payment Due Date': getPaymentDueDateDisplay(order.payment_due_date).label,
-            'Payment Date': order.payment_date ? formatDate(order.payment_date) : 'No Payment Date',
-            'Total Invoice': detail.total_invoice, // Use total_invoice from detail_order
-            'Profit': detail.profit, // Use profit from detail_order
-            'Business Type': order.business_type,
-            'Sub Business Type': order.sub_business_type,
-            'Phone Number': order.phone_number,
-            'Reseller Code': order.reseller_code,
-            'Product Name': detail.product_name,
-            'SKU': detail.sku,
-            'Brands': detail.brands,
-            'Type Category': detail.type_category,
-            'Sub Category': detail.sub_category,
-            'Price': detail.price,
-            'Order Quantity': detail.order_quantity,
-            'Stock Product': detail.stock_product,
-            'Variant': detail.variant,
-            'Variant Value': detail.variant_value,
-            'Buy Price': detail.buy_price,
-            'Principle': detail.principle,
-            'Hub': detail.hub,
-            'Address': detail.alamat,
-          });
-        });
-      } else {
-        // If no detail_order, add the main order data
-        data.push({
-          'Order Code': order.order_code,
-          'User ID': order.user_id,
-          'Order Item ID': '',
-          'Month': order.month,
-          'Reseller Name': order.reseller_name,
-          'Store Name': order.store_name,
-          'Segment': order.segment,
-          'Area': order.area,
-          'Agent': order.agent_name,
-          'Order Status': order.status_order,
-          'Payment Status': order.status_payment,
-          'Payment Type': order.payment_type,
-          'Order Date': formatDate(order.order_date),
-          'Payment Due Date': getPaymentDueDateDisplay(order.payment_due_date).label,
-          'Payment Date': order.payment_date ? formatDate(order.payment_date) : 'No Payment Date',
-          'Total Invoice': order.total_invoice,
-          'Profit': order.profit,
-          'Business Type': order.business_type,
-          'Sub Business Type': order.sub_business_type,
-          'Phone Number': order.phone_number,
-          'Reseller Code': order.reseller_code,
-          'Product Name': '',
-          'SKU': '',
-          'Brands': '',
-          'Type Category': '',
-          'Sub Category': '',
-          'Price': '',
-          'Order Quantity': '',
-          'Stock Product': '',
-          'Variant': '',
-          'Variant Value': '',
-          'Buy Price': '',
-          'Principle': '',
-          'Hub': '',
-          'Address': '',
-        });
-      }
-    });
-    
-    return data;
+  // Removed prepareDetailDataForExport - not needed for new API structure
+  const prepareDetailDataForExport = (_fullOrders: any[]): any[] => {
+    // This function is no longer needed with the new API structure
+    return [];
   };
 
+  // Removed handleDetailDownload - not needed for new API structure
   const handleDetailDownload = async () => {
-    if (!filters.payment_month) {
-      alert('Please select a payment month to download detail data');
-      return;
-    }
-
-    // Only run on client side
-    if (typeof window === 'undefined' || typeof document === 'undefined' || typeof Blob === 'undefined') return;
-
-    try {
-      setFullDownloadLoading(true);
-      
-      const response = await fetchFullOrders({
-        sortTime: 'desc',
-        payment_month: filters.payment_month,
-        agent: agentName || filters.agent,
-        segment: filters.segment,
-        area: filters.area,
-        status_payment: paymentStatusFilter || undefined
-      });
-
-      const data = prepareDetailDataForExport(response.data);
-      
-      // Create workbook and worksheet
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(data);
-
-      // Set column widths
-      const colWidths = [
-        { wch: 15 }, // Order Code
-        { wch: 15 }, // User ID
-        { wch: 25 }, // Order Item ID
-        { wch: 15 }, // Month
-        { wch: 25 }, // Reseller Name
-        { wch: 25 }, // Store Name
-        { wch: 15 }, // Segment
-        { wch: 15 }, // Area
-        { wch: 20 }, // Agent
-        { wch: 15 }, // Order Status
-        { wch: 15 }, // Payment Status
-        { wch: 15 }, // Payment Type
-        { wch: 15 }, // Order Date
-        { wch: 15 }, // Payment Due Date
-        { wch: 15 }, // Payment Date
-        { wch: 15 }, // Total Invoice
-        { wch: 15 }, // Profit
-        { wch: 20 }, // Business Type
-        { wch: 25 }, // Sub Business Type
-        { wch: 15 }, // Phone Number
-        { wch: 25 }, // Reseller Code
-        { wch: 30 }, // Product Name
-        { wch: 15 }, // SKU
-        { wch: 15 }, // Brands
-        { wch: 20 }, // Type Category
-        { wch: 20 }, // Sub Category
-        { wch: 15 }, // Price
-        { wch: 15 }, // Order Quantity
-        { wch: 15 }, // Stock Product
-        { wch: 15 }, // Variant
-        { wch: 15 }, // Variant Value
-        { wch: 15 }, // Buy Price
-        { wch: 25 }, // Principle
-        { wch: 15 }, // Hub
-        { wch: 40 }, // Address
-      ];
-      ws['!cols'] = colWidths;
-
-      // Add worksheet to workbook
-      XLSX.utils.book_append_sheet(wb, ws, 'Cash-In Orders Detail');
-
-      // Generate Excel file
-      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      
-      // Download file
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `cash-in-orders-detail-${filters.payment_month.replace(' ', '-').toLowerCase()}.xlsx`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Failed to download detail data:', error);
-      alert('Failed to download detail data. Please try again.');
-    } finally {
-      setFullDownloadLoading(false);
-    }
+    // Detail download is not available with the new cash-in list API
+    alert('Detail download is not available with the new API structure');
   };
 
   const clearAllFilters = () => {
     setSegmentFilter('');
     setAreaFilter('');
     setAgentFilter('');
-    setStatusOrderFilter('');
-    setPaymentStatusFilter('');
+    setTypeFilter('');
+    setRepaymentTypeFilter('');
     setSearchQuery('');
     setPage(0);
   };
@@ -628,7 +403,7 @@ const CashInOrdersTable = ({
               variant="outlined"
               color="secondary"
               onClick={clearAllFilters}
-              disabled={!segmentFilter && !areaFilter && !agentFilter && !statusOrderFilter && !paymentStatusFilter && !searchQuery}
+              disabled={!segmentFilter && !areaFilter && !agentFilter && !typeFilter && !repaymentTypeFilter && !searchQuery}
             >
               Clear Filters
             </Button>
@@ -639,18 +414,10 @@ const CashInOrdersTable = ({
         <Box mb={3} sx={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
           <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
             <Typography variant="h3" color="primary" fontWeight="bold" mb={1}>
-              {!filters.payment_month ? '--' : formatCurrency(totalInvoice)}
+              {!filters.payment_month ? '--' : formatCurrency(totalPaid)}
             </Typography>
             <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Total Invoice Amount
-            </Typography>
-          </Box>
-          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
-            <Typography variant="h3" color="success.main" fontWeight="bold" mb={1}>
-              {!filters.payment_month ? '--' : formatCurrency(totalProfit)}
-            </Typography>
-            <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Total Profit
+              Total Paid
             </Typography>
           </Box>
           <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
@@ -663,7 +430,7 @@ const CashInOrdersTable = ({
           </Box>
           <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
             <Typography variant="h3" color="warning.main" fontWeight="bold" mb={1}>
-              {!filters.payment_month ? '--' : (totalOrders > 0 ? formatCurrency(Math.round(totalInvoice / totalOrders)) : formatCurrency(0))}
+              {!filters.payment_month ? '--' : (totalOrders > 0 ? formatCurrency(Math.round(totalPaid / totalOrders)) : formatCurrency(0))}
             </Typography>
             <Typography variant="h6" color="textSecondary" fontWeight="500">
               Avg Order Value
@@ -690,41 +457,41 @@ const CashInOrdersTable = ({
                 }}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
               <FormControl fullWidth>
-                <InputLabel>Order Status</InputLabel>
+                <InputLabel>Payment Type</InputLabel>
                 <Select
-                  value={statusOrderFilter}
-                  label="Order Status"
-                  onChange={(e) => setStatusOrderFilter(e.target.value)}
+                  value={typeFilter}
+                  label="Payment Type"
+                  onChange={(e) => setTypeFilter(e.target.value)}
                 >
-                  <MenuItem value="">All Statuses</MenuItem>
-                  {uniqueStatusOrders.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status}
+                  <MenuItem value="">All Types</MenuItem>
+                  {uniqueTypes.map((type) => (
+                    <MenuItem key={type} value={type}>
+                      {type}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
               <FormControl fullWidth>
-                <InputLabel>Payment Status</InputLabel>
+                <InputLabel>Repayment Type</InputLabel>
                 <Select
-                  value={paymentStatusFilter}
-                  label="Payment Status"
-                  onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                  value={repaymentTypeFilter}
+                  label="Repayment Type"
+                  onChange={(e) => setRepaymentTypeFilter(e.target.value)}
                 >
-                  <MenuItem value="">All Payment Statuses</MenuItem>
-                  {uniquePaymentStatuses.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status}
+                  <MenuItem value="">All Types</MenuItem>
+                  {uniqueRepaymentTypes.map((type) => (
+                    <MenuItem key={type} value={type}>
+                      {type}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
               <FormControl fullWidth>
                 <InputLabel>Agent</InputLabel>
                 <Select
@@ -741,7 +508,7 @@ const CashInOrdersTable = ({
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
               <FormControl fullWidth>
                 <InputLabel>Segment</InputLabel>
                 <Select
@@ -758,7 +525,7 @@ const CashInOrdersTable = ({
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
               <FormControl fullWidth>
                 <InputLabel>Area</InputLabel>
                 <Select
@@ -839,15 +606,6 @@ const CashInOrdersTable = ({
                       }}
                     >
                       <TableCell>{row.order_code}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={row.month}
-                          size="small"
-                          variant="outlined"
-                          color="primary"
-                        />
-                      </TableCell>
-                      <TableCell>{row.reseller_name}</TableCell>
                       <TableCell>{row.store_name}</TableCell>
                       <TableCell>
                         <Chip
@@ -866,49 +624,23 @@ const CashInOrdersTable = ({
                       <TableCell>{row.agent_name}</TableCell>
                       <TableCell>
                         <Chip
-                          label={row.status_order}
-                          color={getOrderStatusColor(row.status_order) as any}
+                          label={row.type}
+                          color={getTypeColor(row.type) as any}
                           size="small"
                         />
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={row.status_payment}
-                          color={getPaymentStatusColor(row.status_payment) as any}
+                          label={row.repayment_type}
+                          color={getRepaymentTypeColor(row.repayment_type) as any}
                           size="small"
                         />
                       </TableCell>
-                      <TableCell>{row.payment_type}</TableCell>
-                      <TableCell>{formatDate(row.order_date)}</TableCell>
                       <TableCell>
-                        {(() => {
-                          const dueDateDisplay = getPaymentDueDateDisplay(row.payment_due_date);
-                          return (
-                            <Chip
-                              label={dueDateDisplay.label}
-                              color={dueDateDisplay.color as any}
-                              size="small"
-                            />
-                          );
-                        })()}
-                      </TableCell>
-                      <TableCell>
-                        {(() => {
-                          const paymentDateDisplay = getPaymentDateDisplay(row.payment_date);
-                          return (
-                            <Chip
-                              label={paymentDateDisplay.label}
-                              color={paymentDateDisplay.color as any}
-                              size="small"
-                            />
-                          );
-                        })()}
+                        {row.payment_date ? formatDate(row.payment_date) : 'No Payment Date'}
                       </TableCell>
                       <TableCell align="right" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                        {formatCurrency(row.total_invoice)}
-                      </TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 'bold', color: 'success.main' }}>
-                        {formatCurrency(row.profit)}
+                        {formatCurrency(row.total_paid)}
                       </TableCell>
                     </TableRow>
                   ))
@@ -938,4 +670,6 @@ const CashInOrdersTable = ({
 };
 
 export default CashInOrdersTable;
+
+
 

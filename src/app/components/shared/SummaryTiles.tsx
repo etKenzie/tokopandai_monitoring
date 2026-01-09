@@ -1,6 +1,7 @@
 'use client';
 
-import { Box, Button, CircularProgress, Grid } from '@mui/material';
+import { Box, Button, CircularProgress, Grid, Typography } from '@mui/material';
+import { ArrowUpward, ArrowDownward } from '@mui/icons-material';
 import React from 'react';
 import DashboardCard from './DashboardCard';
 
@@ -16,6 +17,12 @@ interface TileDef {
   actionButton?: {
     label: string;
     onClick: () => void;
+  };
+  fontSize?: string; // Optional custom font size for the value
+  changeIndicator?: {
+    value: number | string;
+    isPercentage?: boolean;
+    isCurrency?: boolean;
   };
 }
 
@@ -58,8 +65,8 @@ const SummaryTiles: React.FC<SummaryTilesProps> = ({ tiles, md = 4 }) => {
           <Box sx={{ color: tile.color, fontWeight: tile.fontWeight, height: '100%' }}>
             <DashboardCard>
               <Box p={2} sx={{ 
-                height: tile.actionButton ? 'auto' : '120px', 
-                minHeight: tile.actionButton ? '140px' : '120px',
+                height: tile.actionButton ? 'auto' : (tile.changeIndicator ? '120px' : '100px'), 
+                minHeight: tile.actionButton ? '140px' : (tile.changeIndicator ? '120px' : '100px'),
                 display: 'flex', 
                 flexDirection: 'column', 
                 justifyContent: 'space-between',
@@ -82,26 +89,58 @@ const SummaryTiles: React.FC<SummaryTilesProps> = ({ tiles, md = 4 }) => {
                 >
                   {tile.title}
                 </Box>
-                <Box
-                  sx={{
-                    fontSize: '1.5rem',
-                    fontWeight: 'bold',
-                    color: tile.color || 'text.primary',
-                    minHeight: '2.5rem',
-                    alignItems: 'flex-end',
-                    lineHeight: '1.2',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                  }}
-                >
-                  {tile.isLoading ? (
-                    <CircularProgress size={20} />
-                  ) : (
-                    formatValue(tile.value, tile.isCurrency) + (tile.unit || '')
-                  )}
+                <Box>
+                  <Box
+                    sx={{
+                      fontSize: tile.fontSize || '1.5rem',
+                      fontWeight: 'bold',
+                      color: tile.color || 'text.primary',
+                      lineHeight: '1.2',
+                    }}
+                  >
+                    {tile.isLoading ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      formatValue(tile.value, tile.isCurrency) + (tile.unit || '')
+                    )}
+                  </Box>
+                  {tile.changeIndicator && (() => {
+                    const change = tile.changeIndicator.value;
+                    const num = typeof change === 'string' ? parseFloat(change) : change;
+                    const isPositive = num > 0;
+                    let displayValue: string;
+                    
+                    if (tile.changeIndicator.isPercentage) {
+                      const sign = num >= 0 ? '+' : '';
+                      displayValue = `${sign}${Math.abs(num).toFixed(2)}%`;
+                    } else if (tile.changeIndicator.isCurrency) {
+                      displayValue = `${isPositive ? '+' : ''}${formatValue(Math.abs(num), true)}`;
+                    } else {
+                      displayValue = `${isPositive ? '+' : ''}${Math.abs(num).toLocaleString()}`;
+                    }
+                    
+                    const changeColor = num > 0 ? 'error.main' : num < 0 ? 'success.main' : 'text.secondary';
+                    
+                    return (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                        {isPositive ? (
+                          <ArrowUpward sx={{ fontSize: 14, color: changeColor }} />
+                        ) : num < 0 ? (
+                          <ArrowDownward sx={{ fontSize: 14, color: changeColor }} />
+                        ) : null}
+                        <Typography 
+                          variant="caption" 
+                          sx={{ 
+                            color: changeColor,
+                            fontWeight: 600,
+                            fontSize: '0.75rem'
+                          }}
+                        >
+                          {displayValue}
+                        </Typography>
+                      </Box>
+                    );
+                  })()}
                 </Box>
                 {tile.actionButton && (
                   <Box sx={{ mt: 1 }}>

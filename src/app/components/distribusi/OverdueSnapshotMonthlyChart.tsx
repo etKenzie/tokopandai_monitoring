@@ -271,7 +271,7 @@ const OverdueSnapshotMonthlyChart = ({
         title: {
           text: 'Total Invoice',
           style: {
-            color: '#3B82F6'
+            color: '#000000'
           }
         },
         labels: {
@@ -279,7 +279,7 @@ const OverdueSnapshotMonthlyChart = ({
             return formatCurrency(value);
           },
           style: {
-            colors: '#3B82F6'
+            colors: '#000000'
           }
         }
       },
@@ -288,7 +288,7 @@ const OverdueSnapshotMonthlyChart = ({
         title: {
           text: 'Total Count',
           style: {
-            color: '#10B981'
+            color: '#000000'
           }
         },
         labels: {
@@ -296,7 +296,7 @@ const OverdueSnapshotMonthlyChart = ({
             return value.toLocaleString('id-ID');
           },
           style: {
-            colors: '#10B981'
+            colors: '#000000'
           }
         }
       }
@@ -304,12 +304,18 @@ const OverdueSnapshotMonthlyChart = ({
       labels: {
         formatter: function(value: number) {
           return value.toLocaleString('id-ID');
+        },
+        style: {
+          colors: '#000000'
         }
       }
     } : {
       labels: {
         formatter: function(value: number) {
           return formatCurrency(value);
+        },
+        style: {
+          colors: '#000000'
         }
       }
     },
@@ -342,7 +348,11 @@ const OverdueSnapshotMonthlyChart = ({
     },
     legend: {
       position: 'bottom' as const,
-      horizontalAlign: 'center' as const
+      horizontalAlign: 'center' as const,
+      labels: {
+        colors: '#000000',
+        useSeriesColors: false
+      }
     }
   };
 

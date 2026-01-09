@@ -136,17 +136,18 @@ const CashInOverview = () => {
   const getSummaryTiles = () => {
     if (!cashInData) return [];
 
-    const totalPaidInvoice = cashInData.paid.paid_total_invoice;
+    const totalPaid = cashInData.total_paid;
     const goalCashIn = getGoalCashInValue();
-    const cashInProgress = goalCashIn > 0 ? (totalPaidInvoice / goalCashIn) * 100 : 0;
-    const cashInRemaining = totalPaidInvoice - goalCashIn;
+    const cashInProgress = goalCashIn > 0 ? (totalPaid / goalCashIn) * 100 : 0;
+    const cashInRemaining = totalPaid - goalCashIn;
 
     return [
       {
-        title: 'Total Paid Invoice',
-        value: totalPaidInvoice,
+        title: 'Total Paid',
+        value: totalPaid,
         isCurrency: true,
-        mdSize: 2.4,
+        mdSize: 4.8,
+        fontSize: '1.5rem',
         isLoading: loading && !cashInData
       },
       {
@@ -157,8 +158,8 @@ const CashInOverview = () => {
         isLoading: false
       },
       {
-        title: 'Paid Invoice Count',
-        value: cashInData.paid.paid_invoice_count,
+        title: 'Payment Count',
+        value: cashInData.payment_count,
         isCurrency: false,
         mdSize: 2.4,
         isLoading: loading && !cashInData
@@ -180,39 +181,30 @@ const CashInOverview = () => {
         isLoading: loading && !cashInData,
         color: getProgressColor(cashInProgress)
       },
-      
       {
-        title: 'Total Paid Profit',
-        value: cashInData.paid.paid_total_profit,
+        title: 'Full Payment Total',
+        value: cashInData.full_payment_total,
         isCurrency: true,
         mdSize: 2.4,
         isLoading: loading && !cashInData
       },
       {
-        title: 'Avg Payment Days (Paid)',
-        value: cashInData.paid.paid_avg_payment_days,
-        isCurrency: false,
-        unit: ' Days',
-        mdSize: 2.4,
-        isLoading: loading && !cashInData
-      },
-      {
-        title: 'Total Unpaid Invoice',
-        value: cashInData.unpaid.unpaid_total_invoice,
+        title: 'Partial Payment Total',
+        value: cashInData.partial_payment_total,
         isCurrency: true,
         mdSize: 2.4,
         isLoading: loading && !cashInData
       },
       {
-        title: 'Unpaid Invoice Count',
-        value: cashInData.unpaid.unpaid_invoice_count,
-        isCurrency: false,
+        title: 'COD Total',
+        value: cashInData.cod_total,
+        isCurrency: true,
         mdSize: 2.4,
         isLoading: loading && !cashInData
       },
       {
-        title: 'Total Unpaid Profit',
-        value: cashInData.unpaid.unpaid_total_profit,
+        title: 'TOP Total',
+        value: cashInData.top_total,
         isCurrency: true,
         mdSize: 2.4,
         isLoading: loading && !cashInData
