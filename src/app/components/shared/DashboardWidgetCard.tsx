@@ -4,7 +4,7 @@ import { Card, CardContent, Typography, Box, Stack } from '@mui/material';
 import { CustomizerContext } from "@/app/context/customizerContext";
 
 import { IconGridDots } from '@tabler/icons-react';
-import { useContext } from 'react';
+import React, { useContext } from 'react';
 
 type Props = {
   title: string;
@@ -13,7 +13,7 @@ type Props = {
   dataItem1: string;
   dataLabel2: string;
   dataItem2: string;
-  children: JSX.Element;
+  children: React.ReactNode;
 };
 
 const DashboardWidgetCard = ({

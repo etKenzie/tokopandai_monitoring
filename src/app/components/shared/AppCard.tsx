@@ -1,10 +1,10 @@
 'use client'
 import Card from '@mui/material/Card'
 import { CustomizerContext } from '@/app/context/customizerContext';
-import { useContext } from 'react';
+import React, { useContext } from 'react';
 
 type Props = {
-  children: JSX.Element | JSX.Element[];
+  children: React.ReactNode;
 };
 
 const AppCard = ({ children }: Props) => {

@@ -5,13 +5,13 @@ import { Box, Breadcrumbs, Grid, Typography } from "@mui/material";
 import { IconCircle } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useContext } from "react";
+import React, { useContext } from "react";
 
 interface BreadCrumbType {
   subtitle?: string;
   items?: any[];
   title: string;
-  children?: JSX.Element;
+  children?: React.ReactNode;
 }
 
 const Breadcrumb = ({ subtitle, items, title, children }: BreadCrumbType) => {

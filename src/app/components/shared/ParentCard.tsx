@@ -7,9 +7,9 @@ import { CustomizerContext } from '@/app/context/customizerContext';
 
 type Props = {
   title: string;
-  footer?: string | JSX.Element;
-  codeModel?: JSX.Element | JSX.Element[];
-  children: JSX.Element;
+  footer?: string | React.ReactNode;
+  codeModel?: React.ReactNode;
+  children: React.ReactNode;
 };
 
 const ParentCard = ({ title, children, footer, codeModel }: Props) => {

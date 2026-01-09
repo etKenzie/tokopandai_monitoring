@@ -13,7 +13,7 @@ export type NextAppDirEmotionCacheProviderProps = {
   CacheProvider?: (props: {
     value: EmotionCache;
     children: React.ReactNode;
-  }) => React.JSX.Element | null;
+  }) => React.ReactElement | null;
   children: React.ReactNode;
 };
 

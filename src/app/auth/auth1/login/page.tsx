@@ -1,3 +1,5 @@
+'use client';
+
 import Logo from '@/app/(DashboardLayout)/layout/shared/logo/Logo';
 import PageContainer from '@/app/components/container/PageContainer';
 import Box from '@mui/material/Box';

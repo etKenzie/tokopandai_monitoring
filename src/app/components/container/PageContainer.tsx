@@ -1,6 +1,8 @@
+import React from 'react';
+
 type Props = {
   description?: string;
-  children: JSX.Element | JSX.Element[];
+  children: React.ReactNode;
   title?: string;
 };
 
