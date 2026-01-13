@@ -710,7 +710,16 @@ const SalesOverview = () => {
                 variant="contained"
                 fullWidth
                 onClick={handleApplyFilters}
-                disabled={!filters.month || !filters.year}
+                disabled={
+                  !filters.month || 
+                  !filters.year || 
+                  (filters.month === appliedFilters.month &&
+                   filters.year === appliedFilters.year &&
+                   filters.agent === appliedFilters.agent &&
+                   filters.area === appliedFilters.area &&
+                   filters.segment === appliedFilters.segment &&
+                   statusPayment === appliedStatusPayment)
+                }
                 sx={{ height: '40px' }}
               >
                 Apply Filters
