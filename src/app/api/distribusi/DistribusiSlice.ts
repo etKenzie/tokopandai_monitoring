@@ -604,6 +604,41 @@ export const updateOrderPaymentDate = async (updateData: UpdatePaymentDateReques
   return data;
 };
 
+// Update total paid for an order
+export interface UpdateTotalPaidRequest {
+  order_code: string;
+  total_paid: string; // Currency amount as string (e.g. "1000000")
+}
+
+export interface UpdateTotalPaidResponse {
+  code: number;
+  status: string;
+  message: string;
+}
+
+export const updateOrderTotalPaid = async (updateData: UpdateTotalPaidRequest): Promise<UpdateTotalPaidResponse> => {
+  if (!AM_API_URL) {
+    throw new Error('API URL is not configured');
+  }
+
+  const url = `${AM_API_URL}/api/order/total-paid`;
+  
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(updateData),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const data: UpdateTotalPaidResponse = await response.json();
+  return data;
+};
+
 // Update order item buy prices
 export const updateOrderItemBuyPrices = async (updateData: OrderItemUpdateRequest): Promise<OrderItemUpdateResponse> => {
   if (!AM_API_URL) {

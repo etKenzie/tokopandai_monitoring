@@ -2,29 +2,29 @@
 
 import { Close as CloseIcon } from '@mui/icons-material';
 import {
-    Alert,
-    Box,
-    Button,
-    Chip,
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    Divider,
-    Grid,
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    TextField,
-    Typography
+  Alert,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  Grid,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { fetchOrderDetail, OrderDetailItem, updateOrderPaymentDate } from '../../api/distribusi/DistribusiSlice';
+import { fetchOrderDetail, OrderDetailItem, updateOrderPaymentDate, updateOrderTotalPaid } from '../../api/distribusi/DistribusiSlice';
 import OrderItemUpdateModal from './OrderItemUpdateModal';
 
 interface OrderDetailModalProps {
@@ -36,6 +36,7 @@ interface OrderDetailModalProps {
 const OrderDetailModal = ({ open, onClose, orderCode }: OrderDetailModalProps) => {
   const [orderDetails, setOrderDetails] = useState<OrderDetailItem[]>([]);
   const [orderPaymentDate, setOrderPaymentDate] = useState<string | null>(null);
+  const [orderTotalPaid, setOrderTotalPaid] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedOrderItem, setSelectedOrderItem] = useState<OrderDetailItem | null>(null);
@@ -44,6 +45,12 @@ const OrderDetailModal = ({ open, onClose, orderCode }: OrderDetailModalProps) =
   const [updatingPaymentDate, setUpdatingPaymentDate] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [updateSuccess, setUpdateSuccess] = useState(false);
+  
+  // Total Paid states
+  const [totalPaidAmount, setTotalPaidAmount] = useState<string>('');
+  const [updatingTotalPaid, setUpdatingTotalPaid] = useState(false);
+  const [totalPaidError, setTotalPaidError] = useState<string | null>(null);
+  const [totalPaidSuccess, setTotalPaidSuccess] = useState(false);
 
   useEffect(() => {
     if (open && orderCode) {
@@ -64,6 +71,9 @@ const OrderDetailModal = ({ open, onClose, orderCode }: OrderDetailModalProps) =
                           (response.data.details.length > 0 && (response.data.details[0] as any).payment_date) || 
                           null;
       setOrderPaymentDate(paymentDate);
+      // Extract total_paid from response if available
+      const totalPaid = (response.data as any).total_paid || null;
+      setOrderTotalPaid(totalPaid);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch order details');
       console.error('Failed to fetch order details:', err);
@@ -156,6 +166,42 @@ const OrderDetailModal = ({ open, onClose, orderCode }: OrderDetailModalProps) =
     }
   };
 
+  const handleUpdateTotalPaid = async () => {
+    if (!orderCode || !totalPaidAmount) {
+      setTotalPaidError('Please enter a total paid amount');
+      return;
+    }
+
+    setUpdatingTotalPaid(true);
+    setTotalPaidError(null);
+    setTotalPaidSuccess(false);
+
+    try {
+      await updateOrderTotalPaid({
+        order_code: orderCode,
+        total_paid: totalPaidAmount
+      });
+      
+      setTotalPaidSuccess(true);
+      setTotalPaidAmount('');
+      
+      // Refresh order details after successful update
+      if (orderCode) {
+        fetchOrderDetails();
+      }
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setTotalPaidSuccess(false);
+      }, 3000);
+    } catch (err) {
+      setTotalPaidError(err instanceof Error ? err.message : 'Failed to update total paid');
+      console.error('Failed to update total paid:', err);
+    } finally {
+      setUpdatingTotalPaid(false);
+    }
+  };
+
   const totalInvoice = orderDetails.reduce((sum, item) => sum + parseFloat(item.total_invoice), 0);
   const totalQuantity = orderDetails.reduce((sum, item) => sum + item.order_quantity, 0);
   const totalProfit = orderDetails.reduce((sum, item) => sum + ((parseFloat(item.price) - item.buy_price) * item.order_quantity), 0);
@@ -207,48 +253,48 @@ const OrderDetailModal = ({ open, onClose, orderCode }: OrderDetailModalProps) =
                 <Typography variant="h6" gutterBottom>
                   Order Summary
                 </Typography>
-                <Grid container spacing={2}>
-                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <Paper sx={{ p: 2, textAlign: 'center' }}>
-                      <Typography variant="h4" color="primary" fontWeight="bold">
-                        {formatCurrency(totalInvoice)}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        Total Invoice
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <Paper sx={{ p: 2, textAlign: 'center' }}>
-                      <Typography variant="h4" color="success.main" fontWeight="bold">
-                        {formatCurrency(totalProfit)}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        Total Profit
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <Paper sx={{ p: 2, textAlign: 'center' }}>
-                      <Typography variant="h4" color="info.main" fontWeight="bold">
-                        {totalQuantity}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        Total Quantity
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <Paper sx={{ p: 2, textAlign: 'center' }}>
-                      <Typography variant="h4" color="warning.main" fontWeight="bold">
-                        {orderDetails.length}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        Items
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                </Grid>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  <Paper sx={{ p: 2, textAlign: 'center', flex: '1 1 0', minWidth: 120 }}>
+                    <Typography variant="h5" color="primary" fontWeight="bold">
+                      {formatCurrency(totalInvoice)}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Total Invoice
+                    </Typography>
+                  </Paper>
+                  <Paper sx={{ p: 2, textAlign: 'center', flex: '1 1 0', minWidth: 120 }}>
+                    <Typography variant="h5" color="success.main" fontWeight="bold">
+                      {formatCurrency(totalProfit)}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Total Profit
+                    </Typography>
+                  </Paper>
+                  <Paper sx={{ p: 2, textAlign: 'center', flex: '1 1 0', minWidth: 120 }}>
+                    <Typography variant="h5" color="info.main" fontWeight="bold">
+                      {totalQuantity}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Total Quantity
+                    </Typography>
+                  </Paper>
+                  <Paper sx={{ p: 2, textAlign: 'center', flex: '1 1 0', minWidth: 120 }}>
+                    <Typography variant="h5" color="warning.main" fontWeight="bold">
+                      {orderDetails.length}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Items
+                    </Typography>
+                  </Paper>
+                  <Paper sx={{ p: 2, textAlign: 'center', flex: '1 1 0', minWidth: 120 }}>
+                    <Typography variant="h5" color="secondary.main" fontWeight="bold">
+                      {orderTotalPaid !== null ? formatCurrency(orderTotalPaid) : 'IDR 0'}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Total Paid
+                    </Typography>
+                  </Paper>
+                </Box>
               </Box>
             )}
 
@@ -435,52 +481,74 @@ const OrderDetailModal = ({ open, onClose, orderCode }: OrderDetailModalProps) =
               </Box>
             )}
 
-            {/* Update Payment Date Section */}
+            {/* Update Actions Section */}
             <Divider sx={{ my: 3 }} />
-            <Box mt={3}>
-              <Typography variant="h6" gutterBottom>
-                Update Payment Date
-              </Typography>
-              <Paper sx={{ p: 2 }}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              Actions
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+              {/* Update Payment Date */}
+              <Paper sx={{ p: 2, flex: 1, minWidth: 0 }}>
+                <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                  Update Payment Date
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <TextField
+                    size="small"
+                    label="Date"
+                    type="date"
+                    value={paymentDate}
+                    onChange={(e) => setPaymentDate(e.target.value)}
+                    InputLabelProps={{ shrink: true }}
+                    inputProps={{ max: new Date().toISOString().split('T')[0] }}
+                    sx={{ flex: 1 }}
+                  />
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="small"
+                    onClick={handleUpdatePaymentDate}
+                    disabled={!paymentDate || updatingPaymentDate}
+                  >
+                    {updatingPaymentDate ? <CircularProgress size={16} /> : 'Update'}
+                  </Button>
+                </Box>
+                {updateError && <Alert severity="error" sx={{ mt: 1, py: 0 }}>{updateError}</Alert>}
+                {updateSuccess && <Alert severity="success" sx={{ mt: 1, py: 0 }}>Updated!</Alert>}
+              </Paper>
+
+              {/* Update Total Paid - Only show when total_paid is not 0 */}
+              {orderTotalPaid !== null && orderTotalPaid !== 0 && (
+                <Paper sx={{ p: 2, flex: 1, minWidth: 0 }}>
+                  <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                    Update Total Paid
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                     <TextField
-                      fullWidth
-                      label="Payment Date"
-                      type="date"
-                      value={paymentDate}
-                      onChange={(e) => setPaymentDate(e.target.value)}
-                      InputLabelProps={{
-                        shrink: true,
-                      }}
-                      inputProps={{
-                        max: new Date().toISOString().split('T')[0], // Prevent future dates
-                      }}
+                      size="small"
+                      label="Amount"
+                      type="number"
+                      value={totalPaidAmount}
+                      onChange={(e) => setTotalPaidAmount(e.target.value)}
+                      InputLabelProps={{ shrink: true }}
+                      inputProps={{ min: 0 }}
+                      placeholder="e.g. 1000000"
+                      sx={{ flex: 1 }}
                     />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                     <Button
                       variant="contained"
-                      color="primary"
-                      onClick={handleUpdatePaymentDate}
-                      disabled={!paymentDate || updatingPaymentDate}
-                      startIcon={updatingPaymentDate ? <CircularProgress size={16} /> : null}
+                      color="secondary"
+                      size="small"
+                      onClick={handleUpdateTotalPaid}
+                      disabled={!totalPaidAmount || updatingTotalPaid}
                     >
-                      {updatingPaymentDate ? 'Updating...' : 'Update Payment Date'}
+                      {updatingTotalPaid ? <CircularProgress size={16} /> : 'Update'}
                     </Button>
-                  </Grid>
-                </Grid>
-                {updateError && (
-                  <Alert severity="error" sx={{ mt: 2 }}>
-                    {updateError}
-                  </Alert>
-                )}
-                {updateSuccess && (
-                  <Alert severity="success" sx={{ mt: 2 }}>
-                    Payment date updated successfully!
-                  </Alert>
-                )}
-              </Paper>
+                  </Box>
+                  {totalPaidError && <Alert severity="error" sx={{ mt: 1, py: 0 }}>{totalPaidError}</Alert>}
+                  {totalPaidSuccess && <Alert severity="success" sx={{ mt: 1, py: 0 }}>Updated!</Alert>}
+                </Paper>
+              )}
             </Box>
           </Box>
         )}
