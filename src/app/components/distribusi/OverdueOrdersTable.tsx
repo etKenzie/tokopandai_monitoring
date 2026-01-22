@@ -881,6 +881,26 @@ const OverdueOrdersTable = ({
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth>
+                <InputLabel>Overdue Status</InputLabel>
+                <Select
+                  value={overdueStatusFilter}
+                  label="Overdue Status"
+                  onChange={(e) => {
+                    setOverdueStatusFilter(e.target.value);
+                    setPage(0);
+                  }}
+                >
+                  <MenuItem value="">All Overdue Statuses</MenuItem>
+                  {uniqueOverdueStatuses.map((status) => (
+                    <MenuItem key={status} value={status}>
+                      {status}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <FormControl fullWidth>
                 <InputLabel>Order Status</InputLabel>
                 <Select
                   value={statusOrderFilter}
@@ -906,26 +926,6 @@ const OverdueOrdersTable = ({
                 >
                   <MenuItem value="">All Payment Statuses</MenuItem>
                   {uniquePaymentStatuses.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>Overdue Status</InputLabel>
-                <Select
-                  value={overdueStatusFilter}
-                  label="Overdue Status"
-                  onChange={(e) => {
-                    setOverdueStatusFilter(e.target.value);
-                    setPage(0);
-                  }}
-                >
-                  <MenuItem value="">All Overdue Statuses</MenuItem>
-                  {uniqueOverdueStatuses.map((status) => (
                     <MenuItem key={status} value={status}>
                       {status}
                     </MenuItem>
