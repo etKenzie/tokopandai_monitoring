@@ -848,6 +848,9 @@ const NOOTable = ({
                       <Typography variant="body2" color="success.main" fontWeight="bold">
                         Profit: {formatCurrency(group.totalProfit)}
                       </Typography>
+                      <Typography variant="body2" color="textSecondary" fontWeight="bold">
+                        Margin: {group.totalInvoice ? `${((group.totalProfit / group.totalInvoice) * 100).toFixed(1)}%` : '—'}
+                      </Typography>
                     </Box>
                   </Box>
                 </AccordionSummary>
@@ -862,6 +865,7 @@ const NOOTable = ({
                           <TableCell align="right">Orders</TableCell>
                           <TableCell align="right">Total Invoice</TableCell>
                           <TableCell align="right">Total Profit</TableCell>
+                          <TableCell align="right">Margin</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -897,6 +901,13 @@ const NOOTable = ({
                             <TableCell align="right">
                               <Typography variant="body2" fontWeight="bold" color="success.main">
                                 {formatCurrency(store.totalProfit)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              <Typography variant="body2">
+                                {store.totalInvoice
+                                  ? `${((store.totalProfit / store.totalInvoice) * 100).toFixed(1)}%`
+                                  : '—'}
                               </Typography>
                             </TableCell>
                           </TableRow>

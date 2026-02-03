@@ -364,9 +364,30 @@ const OverdueSnapshotPage = () => {
                         </Box>
                       </TableCell>
                       <TableCell align="right">
-                        <Typography variant="body1" fontWeight="medium">
-                          {formatCurrency(item.total_invoice)}
-                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+                          <Typography variant="body1" fontWeight="medium">
+                            {formatCurrency(item.total_invoice)}
+                          </Typography>
+                          {item.invoice_change_percentage !== undefined && item.invoice_change_percentage !== null && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'flex-end' }}>
+                              {Number(item.invoice_change_percentage) > 0 ? (
+                                <ArrowUpward sx={{ fontSize: 14, color: 'error.main' }} />
+                              ) : Number(item.invoice_change_percentage) < 0 ? (
+                                <ArrowDownward sx={{ fontSize: 14, color: 'success.main' }} />
+                              ) : null}
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color: Number(item.invoice_change_percentage) > 0 ? 'error.main' :
+                                         Number(item.invoice_change_percentage) < 0 ? 'success.main' : 'text.secondary',
+                                  fontWeight: 600
+                                }}
+                              >
+                                {Number(item.invoice_change_percentage) > 0 ? '+' : ''}{item.invoice_change_percentage}%
+                              </Typography>
+                            </Box>
+                          )}
+                        </Box>
                       </TableCell>
                       <TableCell align="right">
                         <Typography variant="body1">
