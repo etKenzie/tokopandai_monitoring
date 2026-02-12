@@ -51,9 +51,22 @@ const ROLE_TO_AGENT_MAP: Record<string, string> = {
   'mardi': 'Mardi'
 };
 
+// Role to agent_id mapping for API calls (e.g. goals/progress?agent_id=3)
+const ROLE_TO_AGENT_ID_MAP: Record<string, number> = {
+  'oki': 3,      // Oki Irawan
+  'rully': 4,    // Rully Juliandi
+  'mardi': 5,    // Mardi
+  'rifqi': 6,    // Rifqi Cassidy
+};
+
 // Helper function to get agent name from role
 export function getAgentNameFromRole(role: string): string {
   return ROLE_TO_AGENT_MAP[role] || role;
+}
+
+// Helper function to get agent_id from role (for progress/bonus API filtering)
+export function getAgentIdFromRole(role: string): number | undefined {
+  return ROLE_TO_AGENT_ID_MAP[role];
 }
 
 // Helper function to get all restricted roles that should only see their own data

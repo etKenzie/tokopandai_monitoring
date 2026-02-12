@@ -14,9 +14,20 @@ import { useAuth } from '@/app/context/AuthContext';
 import { useSettings } from '@/app/context/SettingsContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from '@/config/roles';
-import { getGoalProfit, getProfitGoalsForChart } from '@/utils/goalProfitUtils';
 import { Box, Button, FormControl, Grid, InputLabel, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
+
+interface GoalFromApi {
+  id: number;
+  scope: string;
+  goal_type: string;
+  target_value: number;
+  period_type?: string;
+  period?: string;
+  agent_name: string | null;
+}
 
 const SalesOverview = () => {
   const { user, roles, refreshRoles } = useAuth();
@@ -76,6 +87,10 @@ const SalesOverview = () => {
   // Additional filter for status_payment
   const [statusPayment, setStatusPayment] = useState<string>('');
   const [appliedStatusPayment, setAppliedStatusPayment] = useState<string>('');
+
+  // Goals from API (replaces settings.goal_profit for profit goals)
+  const [goalsFromApi, setGoalsFromApi] = useState<GoalFromApi[]>([]);
+  const [goalsForChartFromApi, setGoalsForChartFromApi] = useState<GoalFromApi[]>([]);
 
   // Set initial date values in useEffect to avoid hydration issues
   useEffect(() => {
@@ -280,80 +295,98 @@ const SalesOverview = () => {
     }
   }, [appliedFilters.month, appliedFilters.year, appliedFilters.agent, appliedFilters.area, appliedFilters.segment, appliedStatusPayment, fetchSalesDataCallback, fetchTotalStoresCallback, fetchMonthlySummaryCallback, fetchFiltersCallback]);
 
-  // Get goal profit based on selected agent and month
+  // Fetch profit goals from API for current month+year
+  useEffect(() => {
+    if (!API_BASE || !appliedFilters.month || !appliedFilters.year) {
+      setGoalsFromApi([]);
+      return;
+    }
+    const monthNum = parseInt(appliedFilters.month, 10);
+    const year = appliedFilters.year;
+    let cancelled = false;
+    (async () => {
+      try {
+        const params = new URLSearchParams({
+          goal_type: 'profit',
+          month: String(monthNum),
+          year,
+        });
+        const res = await fetch(`${API_BASE}/api/goals?${params.toString()}`);
+        const json = await res.json();
+        if (cancelled) return;
+        if (json?.data?.goals) setGoalsFromApi(json.data.goals);
+        else setGoalsFromApi([]);
+      } catch {
+        if (!cancelled) setGoalsFromApi([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [appliedFilters.month, appliedFilters.year]);
+
+  // Fetch profit goals for chart (all months in year)
+  useEffect(() => {
+    if (!API_BASE || !appliedFilters.year) {
+      setGoalsForChartFromApi([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const params = new URLSearchParams({ goal_type: 'profit', year: appliedFilters.year });
+        const res = await fetch(`${API_BASE}/api/goals?${params.toString()}`);
+        const json = await res.json();
+        if (cancelled) return;
+        if (json?.data?.goals) setGoalsForChartFromApi(json.data.goals);
+        else setGoalsForChartFromApi([]);
+      } catch {
+        if (!cancelled) setGoalsForChartFromApi([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [appliedFilters.year]);
+
+  // Get goal profit for selected agent/month from API (agent linked by agent_name)
   const getGoalProfitValue = () => {
     if (!appliedFilters.month || !appliedFilters.year) return 0;
-    
-    // For users with restricted roles, use their mapped agent name, otherwise use selected agent or default to NATIONAL
     const agentKey = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (appliedFilters.agent || 'NATIONAL');
-    
-    console.log('Sales Overview - Goal Profit Calculation:', {
-      hasRestrictedRole,
-      userRoleForFiltering,
-      agentKey,
-      filtersMonth: appliedFilters.month,
-      filtersYear: appliedFilters.year,
-      settingsAvailable: !!settings?.goal_profit,
-      settingsKeys: settings?.goal_profit ? Object.keys(settings.goal_profit) : 'No settings',
-      settingsObject: settings,
-      goalProfitData: settings?.goal_profit
-    });
-    
-    return getGoalProfit({
-      agentKey,
-      month: appliedFilters.month,
-      year: appliedFilters.year,
-      settings
-    });
-  };
-
-  // Get profit goals for chart range (for monthly chart)
-  const getProfitGoalsForChartValue = () => {
-    if (!settings?.goal_profit) return {};
-    
-    // For users with restricted roles, use their mapped agent name, otherwise use selected agent or default to NATIONAL
-    const agentKey = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (appliedFilters.agent || 'NATIONAL');
-    
-    return getProfitGoalsForChart({
-      agentKey,
-      month: appliedFilters.month || '1',
-      year: appliedFilters.year || '2025',
-      settings
-    });
-  };
-
-  // Get goal profits for all agents (for OrderTypeChart when grouping by agent)
-  const getGoalProfitByAgent = () => {
-    if (!appliedFilters.month || !appliedFilters.year) return {};
-    
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    const monthName = monthNames[parseInt(appliedFilters.month) - 1];
-    const monthYear = `${monthName} ${appliedFilters.year}`;
-    const staticMonthYear = `${monthName.toLowerCase()} ${appliedFilters.year}`;
-    
-    const goalProfitByAgent: { [agentName: string]: number } = {};
-    
-    // Get goal profits from settings first, then fallback to static data
-    if (settings?.goal_profit) {
-      Object.keys(settings.goal_profit).forEach(agentKey => {
-        // Try settings format (capitalized month) first
-        if (settings.goal_profit![agentKey] && settings.goal_profit![agentKey][monthYear]) {
-          goalProfitByAgent[agentKey] = settings.goal_profit![agentKey][monthYear];
-        }
-        // Try static format (lowercase month) in settings as fallback
-        else if (settings.goal_profit![agentKey] && settings.goal_profit![agentKey][staticMonthYear]) {
-          goalProfitByAgent[agentKey] = settings.goal_profit![agentKey][staticMonthYear];
-      }
-    });
+    const monthGoals = goalsFromApi.filter(g => (g.period_type || 'month') === 'month');
+    if (agentKey === 'NATIONAL' || !agentKey) {
+      const national = monthGoals.find(g => g.scope === 'national');
+      return national?.target_value ?? 0;
     }
-    
-    // No fallback to static data - only use settings from Supabase
-    
-    console.log('Goal profit by agent:', { monthYear, staticMonthYear, goalProfitByAgent });
-    return goalProfitByAgent;
+    const agentGoal = monthGoals.find(g => g.scope === 'agent' && (g.agent_name || '').toLowerCase() === agentKey.toLowerCase());
+    if (agentGoal) return agentGoal.target_value;
+    const national = monthGoals.find(g => g.scope === 'national');
+    return national?.target_value ?? 0;
+  };
+
+  // Get profit goals for chart: period string -> value (for selected agent or NATIONAL)
+  const getProfitGoalsForChartValue = () => {
+    const agentKey = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (appliedFilters.agent || 'NATIONAL');
+    const monthGoals = goalsForChartFromApi.filter(g => (g.period_type || 'month') === 'month');
+    const byPeriod: Record<string, number> = {};
+    if (agentKey === 'NATIONAL' || !agentKey) {
+      monthGoals.filter(g => g.scope === 'national').forEach(g => {
+        if (g.period) byPeriod[g.period] = g.target_value;
+      });
+    } else {
+      monthGoals.filter(g => g.scope === 'agent' && (g.agent_name || '').toLowerCase() === agentKey.toLowerCase()).forEach(g => {
+        if (g.period) byPeriod[g.period] = g.target_value;
+      });
+    }
+    return byPeriod;
+  };
+
+  // Get goal profit per agent for current month (for OrderTypeChart); agent linked by agent_name
+  const getGoalProfitByAgent = () => {
+    const monthGoals = goalsFromApi.filter(g => (g.period_type || 'month') === 'month');
+    const out: { [agentName: string]: number } = {};
+    const national = monthGoals.find(g => g.scope === 'national');
+    if (national) out['NATIONAL'] = national.target_value;
+    monthGoals.filter(g => g.scope === 'agent' && g.agent_name).forEach(g => {
+      out[g.agent_name!] = g.target_value;
+    });
+    return out;
   };
 
   // Calculate days remaining until target date (excluding Sundays)
