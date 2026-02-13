@@ -6,6 +6,9 @@ import { useAuth } from '@/app/context/AuthContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { getAgentIdFromRole, getAgentNameFromRole, getPageRoles, getRestrictedRoles } from '@/config/roles';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
   Card,
   CardContent,
@@ -15,6 +18,7 @@ import {
   Switch,
   Typography,
 } from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
@@ -362,11 +366,13 @@ export default function Dashboard() {
     titleColor = 'primary',
     goals,
     agentBonuses,
+    hideTitle = false,
   }: {
     scopeTitle: string;
     titleColor?: 'primary' | 'secondary';
     goals: GoalProgressItem[];
     agentBonuses?: { quarter: BonusFromApi[]; year: BonusFromApi[] };
+    hideTitle?: boolean;
   }) => {
     const quarterList = getGoalsForPeriod(goals, 'quarter');
     const monthList = getGoalsForPeriod(goals, 'month');
@@ -375,9 +381,11 @@ export default function Dashboard() {
     const yearBonus = shouldShowBonus ? (agentBonuses?.year[0] ?? null) : null;
     return (
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" fontWeight="bold" color={titleColor} gutterBottom sx={{ mb: 2 }}>
-          {scopeTitle}
-        </Typography>
+        {!hideTitle && (
+          <Typography variant="h6" fontWeight="bold" color={titleColor} gutterBottom sx={{ mb: 2 }}>
+            {scopeTitle}
+          </Typography>
+        )}
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 2 }}>
           <PeriodCard periodType="quarter" periodTitle={getPeriodTitleFromGoals(quarterList)} goals={goals} titleColor={titleColor} allocatedBonus={quarterBonus} />
           <PeriodCard periodType="month" periodTitle={getPeriodTitleFromGoals(monthList)} goals={goals} titleColor={titleColor} />
@@ -439,7 +447,7 @@ export default function Dashboard() {
                 <ScopeSection scopeTitle="National" titleColor="primary" goals={nationalGoals} />
               )}
 
-              {/* Each agent: API returns only own data when non-admin, so agentNames is already filtered */}
+              {/* Agents: admin = collapsible cards (collapsed by default); agent = own data shown directly */}
               {agentNames.map((agentName) => {
                 const agentGoals: GoalProgressItem[] = [
                   ...(byType.quarter.agent[agentName] ?? []),
@@ -448,6 +456,26 @@ export default function Dashboard() {
                 ];
                 if (agentGoals.length === 0) return null;
                 const agentBonus = bonusesByAgent[agentName];
+                if (isAdmin) {
+                  return (
+                    <Accordion key={agentName} defaultExpanded={false} variant="outlined" sx={{ mb: 1.5, '&:before': { display: 'none' } }}>
+                      <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ '& .MuiAccordionSummary-content': { my: 1.5 } }}>
+                        <Typography variant="h6" fontWeight="bold" color="secondary">
+                          {agentName}
+                        </Typography>
+                      </AccordionSummary>
+                      <AccordionDetails sx={{ pt: 0 }}>
+                        <ScopeSection
+                          scopeTitle={agentName}
+                          titleColor="secondary"
+                          goals={agentGoals}
+                          agentBonuses={agentBonus}
+                          hideTitle
+                        />
+                      </AccordionDetails>
+                    </Accordion>
+                  );
+                }
                 return (
                   <ScopeSection
                     key={agentName}
