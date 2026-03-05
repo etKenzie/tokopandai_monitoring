@@ -259,6 +259,7 @@ const StoresComparePage = () => {
       
       const storesWithInvoiceDown = filteredComparisonData.filter(
         store => store.invoiceChange !== undefined && store.invoiceChange < 0 && store.lastMonthInvoice !== undefined && store.lastMonthInvoice > 0
+          && (store.total_invoice !== 0 && store.total_invoice != null) // exclude 100% decrease (no order this month) — those are in next column
       );
       
       const storesNoOrderThisMonth = filteredComparisonData.filter(
@@ -300,6 +301,7 @@ const StoresComparePage = () => {
       
       const storesWithProfitDown = filteredComparisonData.filter(
         store => store.profitChange !== undefined && store.profitChange < 0 && store.lastMonthProfit !== undefined && store.lastMonthProfit > 0
+          && (store.total_invoice !== 0 && store.total_invoice != null) // exclude no order this month — those are in next column
       );
       
       const storesNoOrderThisMonth = filteredComparisonData.filter(
@@ -326,12 +328,12 @@ const StoresComparePage = () => {
         noOrderThisMonth: {
           count: storesNoOrderThisMonth.length,
           stores: storesNoOrderThisMonth,
-          total: storesNoOrderThisMonth.reduce((sum, store) => sum + (store.lastMonthInvoice || 0), 0)
+          total: storesNoOrderThisMonth.reduce((sum, store) => sum + (store.lastMonthProfit ?? 0), 0)
         },
         newThisMonth: {
           count: storesNewThisMonth.length,
           stores: storesNewThisMonth,
-          total: storesNewThisMonth.reduce((sum, store) => sum + (store.total_invoice || 0), 0)
+          total: storesNewThisMonth.reduce((sum, store) => sum + (store.total_profit ?? 0), 0)
         },
       };
     }
@@ -665,7 +667,7 @@ const StoresComparePage = () => {
                     <ListItem key={store.user_id} sx={{ px: 0 }}>
                       <ListItemText
                         primary={store.store_name}
-                        secondary={`Last month: ${formatCurrency(store.lastMonthInvoice || 0)}`}
+                        secondary={`Last month: ${formatCurrency(viewMode === 'invoice' ? (store.lastMonthInvoice ?? 0) : (store.lastMonthProfit ?? 0))}`}
                         primaryTypographyProps={{ variant: 'body2' }}
                         secondaryTypographyProps={{ variant: 'caption' }}
                       />
@@ -704,7 +706,7 @@ const StoresComparePage = () => {
                     <ListItem key={store.user_id} sx={{ px: 0 }}>
                       <ListItemText
                         primary={store.store_name}
-                        secondary={`Invoice: ${formatCurrency(store.total_invoice || 0)}`}
+                        secondary={`${viewMode === 'invoice' ? 'Invoice' : 'Profit'}: ${formatCurrency(viewMode === 'invoice' ? (store.total_invoice ?? 0) : (store.total_profit ?? 0))}`}
                         primaryTypographyProps={{ variant: 'body2' }}
                         secondaryTypographyProps={{ variant: 'caption' }}
                       />

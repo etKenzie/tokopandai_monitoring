@@ -8,16 +8,25 @@ import DistribusiFilters, { DistribusiFilterValues } from '@/app/components/dist
 import UnpaidOverviewChart from '@/app/components/distribusi/UnpaidOverviewChart';
 import SummaryTiles from '@/app/components/shared/SummaryTiles';
 import { useAuth } from '@/app/context/AuthContext';
-import { useSettings } from '@/app/context/SettingsContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from '@/config/roles';
-import { getGoalCashIn } from '@/utils/goalCashInUtils';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
+
+interface GoalFromApi {
+  id: number;
+  scope: string;
+  goal_type: string;
+  target_value: number;
+  period_type?: string;
+  period?: string;
+  agent_name: string | null;
+}
+
 const CashInOverview = () => {
   const { user, roles, refreshRoles } = useAuth();
-  const { settings } = useSettings();
   
   // Check access for allowed roles (configurable via roles config)
   const accessCheck = useCheckRoles(getPageRoles('DISTRIBUSI_DASHBOARD'));
@@ -38,6 +47,8 @@ const CashInOverview = () => {
   const [cashInData, setCashInData] = useState<CashInData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Goals from API (same source as sales/overview, goal_type cash-in)
+  const [goalsFromApi, setGoalsFromApi] = useState<GoalFromApi[]>([]);
   
   // Initialize filters with empty values to avoid hydration mismatch
   const [filters, setFilters] = useState<DistribusiFilterValues>({
@@ -109,19 +120,47 @@ const CashInOverview = () => {
     }
   }, [filters.month, filters.year, filters.agent, filters.area, fetchCashInDataCallback]);
 
-  // Get goal cash-in based on selected agent and month
+  // Fetch cash-in goals from API (same place as sales/overview, goal_type cash-in)
+  useEffect(() => {
+    if (!API_BASE || !filters.month || !filters.year) {
+      setGoalsFromApi([]);
+      return;
+    }
+    const monthNum = parseInt(filters.month, 10);
+    const year = filters.year;
+    let cancelled = false;
+    (async () => {
+      try {
+        const params = new URLSearchParams({
+          goal_type: 'cash-in',
+          month: String(monthNum),
+          year,
+        });
+        const res = await fetch(`${API_BASE}/api/goals?${params.toString()}`);
+        const json = await res.json();
+        if (cancelled) return;
+        if (json?.data?.goals) setGoalsFromApi(json.data.goals);
+        else setGoalsFromApi([]);
+      } catch {
+        if (!cancelled) setGoalsFromApi([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [filters.month, filters.year]);
+
+  // Get goal cash-in for selected agent/month from API (same lookup pattern as sales/overview)
   const getGoalCashInValue = () => {
     if (!filters.month || !filters.year) return 0;
-    
-    // For users with restricted roles, use their mapped agent name, otherwise use selected agent or default to NATIONAL
     const agentKey = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (filters.agent || 'NATIONAL');
-    
-    return getGoalCashIn({
-      agentKey,
-      month: filters.month,
-      year: filters.year,
-      settings
-    });
+    const monthGoals = goalsFromApi.filter(g => (g.period_type || 'month') === 'month');
+    if (agentKey === 'NATIONAL' || !agentKey) {
+      const national = monthGoals.find(g => g.scope === 'national');
+      return national?.target_value ?? 0;
+    }
+    const agentGoal = monthGoals.find(g => g.scope === 'agent' && (g.agent_name || '').toLowerCase() === agentKey.toLowerCase());
+    if (agentGoal) return agentGoal.target_value;
+    const national = monthGoals.find(g => g.scope === 'national');
+    return national?.target_value ?? 0;
   };
 
   // Helper function to get progress color based on percentage

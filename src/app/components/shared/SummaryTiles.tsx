@@ -90,19 +90,19 @@ const SummaryTiles: React.FC<SummaryTilesProps> = ({ tiles, md = 4 }) => {
                   {tile.title}
                 </Box>
                 <Box>
-                  <Box
-                    sx={{
+                <Box
+                  sx={{
                       fontSize: tile.fontSize || '1.5rem',
-                      fontWeight: 'bold',
-                      color: tile.color || 'text.primary',
-                      lineHeight: '1.2',
-                    }}
-                  >
-                    {tile.isLoading ? (
-                      <CircularProgress size={20} />
-                    ) : (
-                      formatValue(tile.value, tile.isCurrency) + (tile.unit || '')
-                    )}
+                    fontWeight: 'bold',
+                    color: tile.color || 'text.primary',
+                    lineHeight: '1.2',
+                  }}
+                >
+                  {tile.isLoading ? (
+                    <CircularProgress size={20} />
+                  ) : (
+                    formatValue(tile.value, tile.isCurrency) + (tile.unit || '')
+                  )}
                   </Box>
                   {tile.changeIndicator && (() => {
                     const change = tile.changeIndicator.value;

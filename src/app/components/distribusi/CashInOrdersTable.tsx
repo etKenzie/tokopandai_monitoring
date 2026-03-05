@@ -593,9 +593,9 @@ const CashInOrdersTable = ({
               ) : (
                 sortedOrders
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((row) => (
+                  .map((row, index) => (
                     <TableRow 
-                      key={row.order_id} 
+                      key={`${row.order_id}-${row.payment_date || 'no-date'}-${row.total_paid}-${index}`} 
                       hover 
                       onClick={() => handleRowClick(row.order_code)}
                       sx={{ 
