@@ -671,6 +671,8 @@ export interface CashInData {
   partial_payment_total: number;
   cod_total: number;
   top_total: number;
+  overdue_payment_total: number;
+  on_time_total: number;
 }
 
 export interface CashInResponse {
@@ -1464,6 +1466,46 @@ export const fetchNOOData = async (params: NOOQueryParams): Promise<NOOResponse>
     throw new Error(`Failed to fetch NOO data: ${response.status} ${response.statusText}`);
   }
   
+  return response.json();
+};
+
+// Types for Stores Order Once Monthly API
+export interface StoresOrderOnceMonthlyDataItem {
+  month: string;
+  unique_stores: number;
+  total_orders: number;
+  total_invoice: number;
+}
+
+export interface StoresOrderOnceMonthlyData extends Array<StoresOrderOnceMonthlyDataItem> {}
+
+export interface StoresOrderOnceMonthlyResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: StoresOrderOnceMonthlyData;
+}
+
+export interface StoresOrderOnceMonthlyQueryParams {
+  start_month?: string;
+  end_month?: string;
+}
+
+export const fetchStoresOrderOnceMonthly = async (
+  params: StoresOrderOnceMonthlyQueryParams
+): Promise<StoresOrderOnceMonthlyResponse> => {
+  const baseUrl = AM_API_URL;
+  const queryParams = new URLSearchParams();
+  if (params.start_month) queryParams.append('start_month', params.start_month);
+  if (params.end_month) queryParams.append('end_month', params.end_month);
+  const url = `${baseUrl}/api/order/stores-order-once-monthly?${queryParams.toString()}`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch stores order once monthly: ${response.status} ${response.statusText}`);
+  }
   return response.json();
 };
 

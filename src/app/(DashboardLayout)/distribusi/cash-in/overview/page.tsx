@@ -171,7 +171,7 @@ const CashInOverview = () => {
     return '#ef4444'; // Red
   };
 
-  // Prepare summary tiles data
+  // Prepare summary tiles data (4 per row: Total Paid, Goal, Payment Count, Remaining, Progress, COD, TOP)
   const getSummaryTiles = () => {
     if (!cashInData) return [];
 
@@ -185,7 +185,7 @@ const CashInOverview = () => {
         title: 'Total Paid',
         value: totalPaid,
         isCurrency: true,
-        mdSize: 4.8,
+        mdSize: 6,
         fontSize: '1.5rem',
         isLoading: loading && !cashInData
       },
@@ -193,59 +193,70 @@ const CashInOverview = () => {
         title: 'Goal Cash-In',
         value: goalCashIn,
         isCurrency: true,
-        mdSize: 2.4,
         isLoading: false
       },
       {
         title: 'Payment Count',
         value: cashInData.payment_count,
         isCurrency: false,
-        mdSize: 2.4,
         isLoading: loading && !cashInData
       },
       {
         title: 'Cash-In Remaining',
         value: cashInRemaining,
         isCurrency: true,
-        mdSize: 2.4,
         isLoading: loading && !cashInData,
-        color: cashInRemaining <= 0 ? '#ef4444' :'#22c55e'  // Green if goal achieved (remaining <= 0), red if still need more
+        color: cashInRemaining <= 0 ? '#ef4444' :'#22c55e'
       },
       {
         title: 'Cash-In Progress',
         value: cashInProgress,
         isCurrency: false,
         unit: '%',
-        mdSize: 2.4,
         isLoading: loading && !cashInData,
         color: getProgressColor(cashInProgress)
-      },
-      {
-        title: 'Full Payment Total',
-        value: cashInData.full_payment_total,
-        isCurrency: true,
-        mdSize: 2.4,
-        isLoading: loading && !cashInData
-      },
-      {
-        title: 'Partial Payment Total',
-        value: cashInData.partial_payment_total,
-        isCurrency: true,
-        mdSize: 2.4,
-        isLoading: loading && !cashInData
       },
       {
         title: 'COD Total',
         value: cashInData.cod_total,
         isCurrency: true,
-        mdSize: 2.4,
         isLoading: loading && !cashInData
       },
       {
         title: 'TOP Total',
         value: cashInData.top_total,
         isCurrency: true,
-        mdSize: 2.4,
+        isLoading: loading && !cashInData
+      }
+    ];
+  };
+
+  // Payment breakdown tiles: Full, Partial, Overdue, On Time — shown below Cash-In Monthly Trend (4 per row)
+  const getPaymentBreakdownTiles = () => {
+    if (!cashInData) return [];
+    return [
+      {
+        title: 'Full Payment Total',
+        value: cashInData.full_payment_total,
+        isCurrency: true,
+        isLoading: loading && !cashInData
+      },
+      {
+        title: 'Partial Payment Total',
+        value: cashInData.partial_payment_total,
+        isCurrency: true,
+        isLoading: loading && !cashInData
+      },
+      {
+        title: 'Overdue Payment Total',
+        value: cashInData.overdue_payment_total,
+        isCurrency: true,
+        isLoading: loading && !cashInData
+      },
+      {
+        title: 'On Time Total',
+        value: cashInData.on_time_total,
+        isCurrency: true,
         isLoading: loading && !cashInData
       }
     ];
@@ -285,7 +296,7 @@ const CashInOverview = () => {
               <CircularProgress />
             </Box>
           ) : cashInData ? (
-            <SummaryTiles tiles={getSummaryTiles()} />
+            <SummaryTiles tiles={getSummaryTiles()} md={3} />
           ) : error ? (
             <Box display="flex" justifyContent="center" alignItems="center" height="200px">
               <Typography variant="body1" color="error">
@@ -312,6 +323,13 @@ const CashInOverview = () => {
             }}
           />
         </Box>
+
+        {/* Payment breakdown: Full, Partial, Overdue, On Time (4 per row) */}
+        {cashInData && (
+          <Box mb={3}>
+            <SummaryTiles tiles={getPaymentBreakdownTiles()} md={3} />
+          </Box>
+        )}
 
         {/* Unpaid Overview Summary */}
         {/* <Box mb={3}>

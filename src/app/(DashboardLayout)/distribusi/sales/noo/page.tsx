@@ -3,6 +3,7 @@
 import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import PageContainer from "@/app/components/container/PageContainer";
 import NOOTable from "@/app/components/distribusi/NOOTable";
+import StoresOrderOnceMonthlyChart from "@/app/components/distribusi/StoresOrderOnceMonthlyChart";
 import { useAuth } from "@/app/context/AuthContext";
 import { useCheckRoles } from "@/app/hooks/useCheckRoles";
 import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from "@/config/roles";
@@ -128,6 +129,16 @@ const NOOPage = () => {
               </FormControl>
             </Grid>
           </Grid>
+        </Box>
+
+        {/* Stores Order Once Monthly Trend */}
+        <Box mb={3}>
+          <StoresOrderOnceMonthlyChart
+            filters={{
+              month: filters.month,
+              year: filters.year,
+            }}
+          />
         </Box>
 
         <Box sx={{ 
