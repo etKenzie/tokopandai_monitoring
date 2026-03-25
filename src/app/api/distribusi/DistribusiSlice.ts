@@ -1469,21 +1469,20 @@ export const fetchNOOData = async (params: NOOQueryParams): Promise<NOOResponse>
   return response.json();
 };
 
-// Types for Stores Order Once Monthly API
+// Types for Stores Order Once Monthly API (GET /api/order/stores-order-once/monthly)
 export interface StoresOrderOnceMonthlyDataItem {
   month: string;
-  unique_stores: number;
   total_orders: number;
-  total_invoice: number;
+  total_unique_stores: number;
+  total_invoice?: number;
 }
-
-export interface StoresOrderOnceMonthlyData extends Array<StoresOrderOnceMonthlyDataItem> {}
 
 export interface StoresOrderOnceMonthlyResponse {
   code: number;
   status: string;
   message: string;
-  data: StoresOrderOnceMonthlyData;
+  /** Normalized rows from API `data.data` */
+  data: StoresOrderOnceMonthlyDataItem[];
 }
 
 export interface StoresOrderOnceMonthlyQueryParams {
@@ -1498,7 +1497,7 @@ export const fetchStoresOrderOnceMonthly = async (
   const queryParams = new URLSearchParams();
   if (params.start_month) queryParams.append('start_month', params.start_month);
   if (params.end_month) queryParams.append('end_month', params.end_month);
-  const url = `${baseUrl}/api/order/stores-order-once-monthly?${queryParams.toString()}`;
+  const url = `${baseUrl}/api/order/stores-order-once/monthly?${queryParams.toString()}`;
   const response = await fetch(url, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
@@ -1506,7 +1505,18 @@ export const fetchStoresOrderOnceMonthly = async (
   if (!response.ok) {
     throw new Error(`Failed to fetch stores order once monthly: ${response.status} ${response.statusText}`);
   }
-  return response.json();
+  const json = await response.json();
+  const rows: StoresOrderOnceMonthlyDataItem[] = Array.isArray(json?.data?.data)
+    ? json.data.data
+    : Array.isArray(json?.data)
+      ? json.data
+      : [];
+  return {
+    code: json.code,
+    status: json.status,
+    message: json.message,
+    data: rows,
+  };
 };
 
 // Types for Compare API

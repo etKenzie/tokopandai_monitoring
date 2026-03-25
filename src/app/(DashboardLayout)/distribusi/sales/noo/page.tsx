@@ -131,7 +131,7 @@ const NOOPage = () => {
           </Grid>
         </Box>
 
-        {/* Stores Order Once Monthly Trend */}
+        {/* NOO Monthly trend */}
         <Box mb={3}>
           <StoresOrderOnceMonthlyChart
             filters={{
