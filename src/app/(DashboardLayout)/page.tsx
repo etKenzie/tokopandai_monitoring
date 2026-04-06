@@ -13,8 +13,13 @@ import {
   Card,
   CardContent,
   CircularProgress,
+  FormControl,
   FormControlLabel,
+  InputLabel,
   LinearProgress,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
   Switch,
   Table,
   TableBody,
@@ -146,6 +151,12 @@ export default function Dashboard() {
   const [companyMultiplier, setCompanyMultiplier] = useState<number | null>(null);
   const [companyFactor, setCompanyFactor] = useState<number | null>(null);
   const [bonusRules, setBonusRules] = useState<BonusRule[]>([]);
+  /** Quarter rows from GET /api/goals/periods (filter dropdown). */
+  const [bonusQuarterPeriods, setBonusQuarterPeriods] = useState<GoalPeriodFromApi[]>([]);
+  /** Default "Current" → `current=true`; numeric goal period `id` → `period_id` on progress/bonus/rules. */
+  const [bonusQuarterSelection, setBonusQuarterSelection] = useState<'current' | number>('current');
+  const [bonusPeriodsLoading, setBonusPeriodsLoading] = useState(true);
+  const [bonusRulesLoading, setBonusRulesLoading] = useState(false);
 
   const fetchProgress = useCallback(async () => {
     if (!API_BASE) return;
@@ -153,10 +164,28 @@ export default function Dashboard() {
     setError(null);
     try {
       const params = new URLSearchParams();
-      params.set('current', 'true');
+      if (bonusQuarterSelection === 'current') {
+        params.set('current', 'true');
+      } else {
+        params.set('period_id', String(bonusQuarterSelection));
+      }
       if (agentIdForApi !== undefined) params.set('agent_id', String(agentIdForApi));
-      const res = await fetch(`${API_BASE}/api/goals/progress?${params.toString()}`);
+      const progressUrl = `${API_BASE}/api/goals/progress?${params.toString()}`;
+      console.log('[Dashboard] GET /api/goals/progress', {
+        url: progressUrl,
+        query: params.toString(),
+        period_id: bonusQuarterSelection === 'current' ? null : bonusQuarterSelection,
+      });
+      const res = await fetch(progressUrl, {
+        cache: 'no-store',
+      });
       const json = await res.json();
+      console.log('[Dashboard] /api/goals/progress result:', {
+        code: json?.code,
+        goalsCount: json?.data?.goals?.length,
+        periodsCount: json?.data?.periods?.length,
+        data: json?.data,
+      });
       if (json?.data) {
         setPeriods(json.data.periods ?? []);
         setGoals(json.data.goals ?? []);
@@ -172,17 +201,76 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }, [agentIdForApi]);
+  }, [agentIdForApi, bonusQuarterSelection]);
+
+  useEffect(() => {
+    if (!API_BASE) {
+      setBonusPeriodsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setBonusPeriodsLoading(true);
+      try {
+        const periodsUrl = `${API_BASE}/api/goals/periods`;
+        const res = await fetch(periodsUrl, { cache: 'no-store' });
+        const json = await res.json();
+        console.log('[Dashboard] GET /api/goals/periods result:', json);
+        const all: GoalPeriodFromApi[] = Array.isArray(json?.data) ? json.data : [];
+        const quarters = all
+          .filter((p) => p.period_type === 'quarter')
+          .sort(
+            (a, b) =>
+              new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
+          );
+        console.log('[Dashboard] Quarter filter options (from goals/periods):', quarters);
+        if (!cancelled) {
+          setBonusQuarterPeriods(quarters);
+          setBonusQuarterSelection((prev) => {
+            if (prev === 'current') return 'current';
+            if (typeof prev === 'number' && quarters.some((q) => q.id === prev)) return prev;
+            return 'current';
+          });
+        }
+      } catch (e) {
+        console.error('Failed to fetch /api/goals/periods:', e);
+        if (!cancelled) {
+          setBonusQuarterPeriods([]);
+          setBonusQuarterSelection('current');
+        }
+      } finally {
+        if (!cancelled) setBonusPeriodsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [API_BASE]);
 
   const fetchBonuses = useCallback(async () => {
     if (!API_BASE) return;
     setBonusLoading(true);
     try {
       const params = new URLSearchParams();
-      params.set('current', 'true');
+      if (bonusQuarterSelection === 'current') {
+        params.set('current', 'true');
+      } else {
+        params.set('period_id', String(bonusQuarterSelection));
+      }
       if (agentIdForApi !== undefined) params.set('agent_id', String(agentIdForApi));
-      const res = await fetch(`${API_BASE}/api/bonus?${params.toString()}`);
+      const bonusUrl = `${API_BASE}/api/bonus?${params.toString()}`;
+      console.log('[Dashboard] GET /api/bonus', {
+        url: bonusUrl,
+        query: params.toString(),
+        period_id: bonusQuarterSelection === 'current' ? null : bonusQuarterSelection,
+      });
+      const res = await fetch(bonusUrl, { cache: 'no-store' });
       const json = await res.json();
+      console.log('[Dashboard] /api/bonus result:', {
+        code: json?.code,
+        bonusesCount: json?.data?.bonuses?.length,
+        data: json?.data,
+      });
       if (json?.data) {
         const bonusData = json.data as BonusApiResponse;
         if (bonusData.bonuses) setBonuses(bonusData.bonuses);
@@ -214,15 +302,33 @@ export default function Dashboard() {
     } finally {
       setBonusLoading(false);
     }
-  }, [agentIdForApi]);
+  }, [agentIdForApi, bonusQuarterSelection]);
 
   const fetchBonusRules = useCallback(async () => {
     if (!API_BASE) return;
+    setBonusRulesLoading(true);
     try {
       const params = new URLSearchParams();
-      params.set('current', 'true');
-      const res = await fetch(`${API_BASE}/api/bonus/rules?${params.toString()}`);
+      if (bonusQuarterSelection === 'current') {
+        params.set('current', 'true');
+      } else {
+        params.set('period_id', String(bonusQuarterSelection));
+      }
+      const rulesUrl = `${API_BASE}/api/bonus/rules?${params.toString()}`;
+      console.log('[Dashboard] GET /api/bonus/rules', {
+        url: rulesUrl,
+        query: params.toString(),
+        period_id: bonusQuarterSelection === 'current' ? null : bonusQuarterSelection,
+      });
+      const res = await fetch(rulesUrl, {
+        cache: 'no-store',
+      });
       const json = await res.json();
+      console.log('[Dashboard] /api/bonus/rules result:', {
+        code: json?.code,
+        rulesCount: json?.data?.rules?.length,
+        data: json?.data,
+      });
       if (json?.data) {
         const rulesData = json.data as BonusRulesResponse;
         if (rulesData.rules) setBonusRules(rulesData.rules);
@@ -233,8 +339,10 @@ export default function Dashboard() {
     } catch (e) {
       console.error('Failed to fetch bonus rules:', e);
       setBonusRules([]);
+    } finally {
+      setBonusRulesLoading(false);
     }
-  }, []);
+  }, [bonusQuarterSelection]);
 
   useEffect(() => {
     fetchProgress();
@@ -247,6 +355,15 @@ export default function Dashboard() {
   useEffect(() => {
     fetchBonusRules();
   }, [fetchBonusRules]);
+
+  const selectedBonusPeriodLabel = useMemo(() => {
+    if (bonusQuarterSelection === 'current') return null;
+    const p = bonusQuarterPeriods.find((q) => q.id === bonusQuarterSelection);
+    return p ? formatPeriodTitle(p) : null;
+  }, [bonusQuarterSelection, bonusQuarterPeriods]);
+
+  const bonusQuarterFilterDisabled =
+    bonusPeriodsLoading || loading || bonusLoading || bonusRulesLoading;
 
   const periodById = useMemo(() => {
     const map: Record<number, GoalPeriodFromApi> = {};
@@ -564,6 +681,12 @@ export default function Dashboard() {
     const agentNextInfo = !isNational && quarterBonus?.individual_factor !== undefined && quarterBonus?.bonus_amount !== undefined
       ? getNextThresholdInfo(quarterBonus.individual_factor, 'individual', quarterBonus.bonus_amount)
       : null;
+
+    /** Goals API with period_id returns quarter rows only — hide month/year goal cards. */
+    const isHistoricalQuarterView = bonusQuarterSelection !== 'current';
+    const quarterPeriodTitle = isHistoricalQuarterView && selectedBonusPeriodLabel
+      ? selectedBonusPeriodLabel
+      : getPeriodTitleFromGoals(quarterList);
     
     return (
       <Box sx={{ mb: 3, p: 2 }}>
@@ -1048,34 +1171,50 @@ export default function Dashboard() {
             )}
           </Box>
         )}
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 2 }}>
-          <PeriodCard 
-            periodType="quarter" 
-            periodTitle={getPeriodTitleFromGoals(quarterList)} 
-            goals={goals} 
-            titleColor={titleColor} 
-            allocatedBonus={quarterBonus}
-            isNational={isNational}
-            companyMultiplier={companyMultiplier}
-          />
-          <PeriodCard 
-            periodType="month" 
-            periodTitle={getPeriodTitleFromGoals(monthList)} 
-            goals={goals} 
-            titleColor={titleColor}
-            isNational={isNational}
-            companyMultiplier={companyMultiplier}
-          />
-        </Box>
-        <PeriodCard 
-          periodType="year" 
-          periodTitle={getPeriodTitleFromGoals(yearList)} 
-          goals={goals} 
-          titleColor={titleColor} 
-          allocatedBonus={yearBonus}
-          isNational={isNational}
-          companyMultiplier={companyMultiplier}
-        />
+        {isHistoricalQuarterView ? (
+          <Box sx={{ mb: 2 }}>
+            <PeriodCard
+              periodType="quarter"
+              periodTitle={quarterPeriodTitle}
+              goals={goals}
+              titleColor={titleColor}
+              allocatedBonus={quarterBonus}
+              isNational={isNational}
+              companyMultiplier={companyMultiplier}
+            />
+          </Box>
+        ) : (
+          <>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 2 }}>
+              <PeriodCard
+                periodType="quarter"
+                periodTitle={getPeriodTitleFromGoals(quarterList)}
+                goals={goals}
+                titleColor={titleColor}
+                allocatedBonus={quarterBonus}
+                isNational={isNational}
+                companyMultiplier={companyMultiplier}
+              />
+              <PeriodCard
+                periodType="month"
+                periodTitle={getPeriodTitleFromGoals(monthList)}
+                goals={goals}
+                titleColor={titleColor}
+                isNational={isNational}
+                companyMultiplier={companyMultiplier}
+              />
+            </Box>
+            <PeriodCard
+              periodType="year"
+              periodTitle={getPeriodTitleFromGoals(yearList)}
+              goals={goals}
+              titleColor={titleColor}
+              allocatedBonus={yearBonus}
+              isNational={isNational}
+              companyMultiplier={companyMultiplier}
+            />
+          </>
+        )}
       </Box>
     );
   };
@@ -1090,25 +1229,62 @@ export default function Dashboard() {
                 Home
               </Typography>
               <Typography variant="body1" color="text.secondary">
-                {isAdmin
-                  ? 'Current goal progress — national and all agents.'
-                  : agentNameForDisplay
-                    ? `Current goal progress for ${agentNameForDisplay}.`
-                    : 'Current goal progress.'}
+                {selectedBonusPeriodLabel
+                  ? isAdmin
+                    ? `Goal progress for ${selectedBonusPeriodLabel} — national and all agents.`
+                    : agentNameForDisplay
+                      ? `Goal progress for ${selectedBonusPeriodLabel} (${agentNameForDisplay}).`
+                      : `Goal progress for ${selectedBonusPeriodLabel}.`
+                  : isAdmin
+                    ? 'Current goal progress — national and all agents.'
+                    : agentNameForDisplay
+                      ? `Current goal progress for ${agentNameForDisplay}.`
+                      : 'Current goal progress.'}
               </Typography>
             </Box>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={showAllocatedBonus}
-                  onChange={(_, checked) => setShowAllocatedBonus(checked)}
-                  color="primary"
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 2 }}>
+              {API_BASE && (
+                <FormControl
                   size="small"
-                />
-              }
-              label="Bonus"
-              sx={{ flexShrink: 0 }}
-            />
+                  sx={{ minWidth: 200 }}
+                  disabled={bonusQuarterFilterDisabled}
+                >
+                  <InputLabel id="bonus-quarter-label">Bonus quarter</InputLabel>
+                  <Select
+                    labelId="bonus-quarter-label"
+                    label="Bonus quarter"
+                    disabled={bonusQuarterFilterDisabled}
+                    value={
+                      bonusQuarterSelection === 'current' ? 'current' : String(bonusQuarterSelection)
+                    }
+                    onChange={(e: SelectChangeEvent<string>) => {
+                      const v = e.target.value;
+                      if (v === 'current') setBonusQuarterSelection('current');
+                      else setBonusQuarterSelection(Number(v));
+                    }}
+                  >
+                    <MenuItem value="current">Current</MenuItem>
+                    {bonusQuarterPeriods.map((p) => (
+                      <MenuItem key={p.id} value={String(p.id)}>
+                        {formatPeriodTitle(p)}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={showAllocatedBonus}
+                    onChange={(_, checked) => setShowAllocatedBonus(checked)}
+                    color="primary"
+                    size="small"
+                  />
+                }
+                label="Bonus"
+                sx={{ flexShrink: 0 }}
+              />
+            </Box>
           </Box>
 
           {error && (
