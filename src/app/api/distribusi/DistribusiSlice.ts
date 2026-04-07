@@ -1472,8 +1472,11 @@ export const fetchNOOData = async (params: NOOQueryParams): Promise<NOOResponse>
 // Types for Stores Order Once Monthly API (GET /api/order/stores-order-once/monthly)
 export interface StoresOrderOnceMonthlyDataItem {
   month: string;
+  /** API field name */
+  unique_stores?: number;
+  /** Legacy / alternate name */
+  total_unique_stores?: number;
   total_orders: number;
-  total_unique_stores: number;
   total_invoice?: number;
 }
 

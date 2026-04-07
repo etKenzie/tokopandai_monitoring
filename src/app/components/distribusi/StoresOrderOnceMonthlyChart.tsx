@@ -165,7 +165,12 @@ const StoresOrderOnceMonthlyChart = ({ filters }: StoresOrderOnceMonthlyChartPro
     return {
       categories,
       series: [
-        { name: 'Total unique stores', data: sortedRows.map((item) => item.total_unique_stores ?? 0) },
+        {
+          name: 'Unique stores',
+          data: sortedRows.map(
+            (item) => item.unique_stores ?? item.total_unique_stores ?? 0
+          ),
+        },
         { name: 'Total orders', data: sortedRows.map((item) => item.total_orders ?? 0) },
       ],
     };
