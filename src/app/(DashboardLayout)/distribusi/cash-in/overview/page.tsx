@@ -10,7 +10,7 @@ import SummaryTiles from '@/app/components/shared/SummaryTiles';
 import { useAuth } from '@/app/context/AuthContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from '@/config/roles';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Box, CircularProgress, FormControlLabel, Switch, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
@@ -47,6 +47,7 @@ const CashInOverview = () => {
   const [cashInData, setCashInData] = useState<CashInData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPercentage, setShowPercentage] = useState(false);
   // Goals from API (same source as sales/overview, goal_type cash-in)
   const [goalsFromApi, setGoalsFromApi] = useState<GoalFromApi[]>([]);
   
@@ -179,6 +180,7 @@ const CashInOverview = () => {
     const goalCashIn = getGoalCashInValue();
     const cashInProgress = goalCashIn > 0 ? (totalPaid / goalCashIn) * 100 : 0;
     const cashInRemaining = totalPaid - goalCashIn;
+    const toPercent = (value: number) => (totalPaid > 0 ? (value / totalPaid) * 100 : 0);
 
     return [
       {
@@ -218,45 +220,69 @@ const CashInOverview = () => {
       },
       {
         title: 'COD Total',
-        value: cashInData.cod_total,
-        isCurrency: true,
+        value: showPercentage ? toPercent(cashInData.cod_total) : cashInData.cod_total,
+        isCurrency: !showPercentage,
+        unit: showPercentage ? '%' : undefined,
         isLoading: loading && !cashInData
       },
       {
         title: 'TOP Total',
-        value: cashInData.top_total,
-        isCurrency: true,
+        value: showPercentage ? toPercent(cashInData.top_total) : cashInData.top_total,
+        isCurrency: !showPercentage,
+        unit: showPercentage ? '%' : undefined,
         isLoading: loading && !cashInData
       }
     ];
   };
 
-  // Payment breakdown tiles: Full, Partial, Overdue, On Time — shown below Cash-In Monthly Trend (4 per row)
+  // Payment breakdown tiles: row 1 Full/Partial, row 2 Overdue/On Time/Current/Previous
   const getPaymentBreakdownTiles = () => {
     if (!cashInData) return [];
+    const totalPaid = cashInData.total_paid;
+    const toPercent = (value: number) => (totalPaid > 0 ? (value / totalPaid) * 100 : 0);
     return [
       {
         title: 'Full Payment Total',
-        value: cashInData.full_payment_total,
-        isCurrency: true,
+        value: showPercentage ? toPercent(cashInData.full_payment_total) : cashInData.full_payment_total,
+        isCurrency: !showPercentage,
+        unit: showPercentage ? '%' : undefined,
+        mdSize: 6,
         isLoading: loading && !cashInData
       },
       {
         title: 'Partial Payment Total',
-        value: cashInData.partial_payment_total,
-        isCurrency: true,
+        value: showPercentage ? toPercent(cashInData.partial_payment_total) : cashInData.partial_payment_total,
+        isCurrency: !showPercentage,
+        unit: showPercentage ? '%' : undefined,
+        mdSize: 6,
         isLoading: loading && !cashInData
       },
       {
         title: 'Overdue Payment Total',
-        value: cashInData.overdue_payment_total,
-        isCurrency: true,
+        value: showPercentage ? toPercent(cashInData.overdue_payment_total) : cashInData.overdue_payment_total,
+        isCurrency: !showPercentage,
+        unit: showPercentage ? '%' : undefined,
         isLoading: loading && !cashInData
       },
       {
         title: 'On Time Total',
-        value: cashInData.on_time_total,
-        isCurrency: true,
+        value: showPercentage ? toPercent(cashInData.on_time_total) : cashInData.on_time_total,
+        isCurrency: !showPercentage,
+        unit: showPercentage ? '%' : undefined,
+        isLoading: loading && !cashInData
+      },
+      {
+        title: 'Current Month Cash',
+        value: showPercentage ? toPercent(cashInData.current_month_cash) : cashInData.current_month_cash,
+        isCurrency: !showPercentage,
+        unit: showPercentage ? '%' : undefined,
+        isLoading: loading && !cashInData
+      },
+      {
+        title: 'Previous Months Cash',
+        value: showPercentage ? toPercent(cashInData.previous_months_cash) : cashInData.previous_months_cash,
+        isCurrency: !showPercentage,
+        unit: showPercentage ? '%' : undefined,
         isLoading: loading && !cashInData
       }
     ];
@@ -266,18 +292,38 @@ const CashInOverview = () => {
     <PageContainer title="Cash-In Overview" description="Monitor cash-in performance and metrics">
       <Box>
         {/* Header */}
-        <Box mb={3}>
-          <Typography variant="h3" fontWeight="bold" mb={1}>
-            Cash-In Overview
-          </Typography>
-          <Typography variant="body1" color="textSecondary">
-            Monitor cash-in performance, invoice status, and payment metrics
-          </Typography>
-          {hasRestrictedRole && (
-            <Typography variant="body2" color="info.main" sx={{ mt: 1, fontStyle: 'italic' }}>
-              Showing data for {getAgentNameFromRole(userRoleForFiltering!)} only
+        <Box
+          mb={3}
+          display="flex"
+          justifyContent="space-between"
+          alignItems={{ xs: 'flex-start', md: 'center' }}
+          flexDirection={{ xs: 'column', md: 'row' }}
+          gap={2}
+        >
+          <Box>
+            <Typography variant="h3" fontWeight="bold" mb={1}>
+              Cash-In Overview
             </Typography>
-          )}
+            <Typography variant="body1" color="textSecondary">
+              Monitor cash-in performance, invoice status, and payment metrics
+            </Typography>
+            {hasRestrictedRole && (
+              <Typography variant="body2" color="info.main" sx={{ mt: 1, fontStyle: 'italic' }}>
+                Showing data for {getAgentNameFromRole(userRoleForFiltering!)} only
+              </Typography>
+            )}
+          </Box>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showPercentage}
+                onChange={(_, checked) => setShowPercentage(checked)}
+                color="primary"
+              />
+            }
+            label={showPercentage ? 'Percentage Mode' : 'Cash Mode'}
+            sx={{ mr: 0 }}
+          />
         </Box>
 
         {/* Filters */}
@@ -288,7 +334,6 @@ const CashInOverview = () => {
             hasRestrictedRole={hasRestrictedRole}
           />
         </Box>
-
         {/* Summary Tiles */}
         <Box mb={3}>
           {loading ? (
@@ -324,7 +369,7 @@ const CashInOverview = () => {
           />
         </Box>
 
-        {/* Payment breakdown: Full, Partial, Overdue, On Time (4 per row) */}
+        {/* Payment breakdown: Full/Partial row, then Overdue/On Time/Current/Previous row */}
         {cashInData && (
           <Box mb={3}>
             <SummaryTiles tiles={getPaymentBreakdownTiles()} md={3} />

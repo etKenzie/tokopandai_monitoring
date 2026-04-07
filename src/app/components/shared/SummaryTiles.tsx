@@ -32,7 +32,7 @@ interface SummaryTilesProps {
 }
 
 const SummaryTiles: React.FC<SummaryTilesProps> = ({ tiles, md = 4 }) => {
-  const formatValue = (value: string | number, isCurrency?: boolean) => {
+  const formatValue = (value: string | number, isCurrency?: boolean, unit?: string) => {
     if (isCurrency && typeof value === 'number') {
       // Format currency with commas as thousand separators, no decimal places
       return new Intl.NumberFormat('en-US', {
@@ -45,7 +45,7 @@ const SummaryTiles: React.FC<SummaryTilesProps> = ({ tiles, md = 4 }) => {
     
     if (typeof value === 'number') {
       // Only format as percentage if explicitly marked as currency: false AND value is a decimal between 0 and 1
-      if (isCurrency === false && value <= 1 && value > 0 && value % 1 !== 0) {
+      if (unit !== '%' && isCurrency === false && value <= 1 && value > 0 && value % 1 !== 0) {
         return `${(value * 100).toFixed(1)}%`;
       }
       // Format numbers with commas as thousand separators, showing decimals only when they exist
@@ -101,7 +101,7 @@ const SummaryTiles: React.FC<SummaryTilesProps> = ({ tiles, md = 4 }) => {
                   {tile.isLoading ? (
                     <CircularProgress size={20} />
                   ) : (
-                    formatValue(tile.value, tile.isCurrency) + (tile.unit || '')
+                    formatValue(tile.value, tile.isCurrency, tile.unit) + (tile.unit || '')
                   )}
                   </Box>
                   {tile.changeIndicator && (() => {

@@ -673,6 +673,8 @@ export interface CashInData {
   top_total: number;
   overdue_payment_total: number;
   on_time_total: number;
+  current_month_cash: number;
+  previous_months_cash: number;
 }
 
 export interface CashInResponse {
