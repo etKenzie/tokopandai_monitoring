@@ -2,9 +2,11 @@
 
 import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import PageContainer from "@/app/components/container/PageContainer";
+import DashboardCard from '@/app/components/shared/DashboardCard';
 import { useAuth } from '@/app/context/AuthContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { getAgentIdFromRole, getAgentNameFromRole, getPageRoles, getRestrictedRoles } from '@/config/roles';
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   Accordion,
   AccordionDetails,
@@ -28,8 +30,6 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import DashboardCard from '@/app/components/shared/DashboardCard';
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
@@ -82,8 +82,54 @@ interface BonusFromApi {
 interface BonusApiResponse {
   bonuses?: BonusFromApi[];
   company_multiplier?: number;
+  company_factor?: number;
   current_company_factor?: number;
   current_company_multiplier?: number;
+}
+
+/** When period_id is used, factor/multiplier may only exist on bonus rows (not top-level). */
+function resolveNationalCompanyMetrics(bonusData: BonusApiResponse): {
+  companyFactor: number | null;
+  companyMultiplier: number | null;
+} {
+  const list = bonusData.bonuses ?? [];
+  let companyFactor: number | null = null;
+  let factorRow: BonusFromApi | undefined;
+
+  if (bonusData.current_company_factor != null) {
+    companyFactor = bonusData.current_company_factor;
+  } else if (bonusData.company_factor != null) {
+    companyFactor = bonusData.company_factor;
+  } else {
+    factorRow =
+      list.find((b) => b.company_factor != null) ??
+      list.find((b) => !b.agent_name?.trim()) ??
+      list[0];
+    if (factorRow?.company_factor != null) companyFactor = factorRow.company_factor;
+  }
+
+  let companyMultiplier: number | null = null;
+  if (bonusData.current_company_multiplier != null) {
+    companyMultiplier = bonusData.current_company_multiplier;
+  } else if (bonusData.company_multiplier != null) {
+    companyMultiplier = bonusData.company_multiplier;
+  } else if (
+    factorRow &&
+    (factorRow.company_multiplier != null || factorRow.multiplier != null)
+  ) {
+    companyMultiplier = factorRow.company_multiplier ?? factorRow.multiplier ?? null;
+  } else {
+    const row =
+      list.find((b) => b.company_multiplier != null) ??
+      list.find((b) => b.multiplier != null) ??
+      list.find((b) => !b.agent_name?.trim()) ??
+      list[0];
+    if (row) {
+      companyMultiplier = row.company_multiplier ?? row.multiplier ?? null;
+    }
+  }
+
+  return { companyFactor, companyMultiplier };
 }
 
 interface BonusRule {
@@ -102,8 +148,8 @@ interface BonusRulesResponse {
 }
 
 function formatCurrency(value: number): string {
-  if (value >= 1e9) return (value / 1e9).toFixed(1) + 'B';
-  if (value >= 1e6) return (value / 1e6).toFixed(1) + 'M';
+  if (value >= 1e9) return (value / 1e9).toFixed(2) + 'M';
+  if (value >= 1e6) return (value / 1e6).toFixed(1) + 'J';
   if (value >= 1e3) return (value / 1e3).toFixed(1) + 'K';
   return String(value);
 }
@@ -121,9 +167,10 @@ function formatPeriodTitle(p: GoalPeriodFromApi): string {
   return `Period ${p.id}`;
 }
 
-/** Progress fill color: 0% → red, 100% → green (HSL hue 0 → 120). */
+/** Progress fill color: 0% → red, 100%+ → green (HSL hue 0 → 120; clamp input for color scale). */
 function progressFillColor(pct: number): string {
-  const hue = Math.max(0, Math.min(120, (pct / 100) * 120));
+  const clamped = Math.max(0, Math.min(100, pct));
+  const hue = (clamped / 100) * 120;
   return `hsl(${hue}, 70%, 45%)`;
 }
 
@@ -275,20 +322,9 @@ export default function Dashboard() {
         const bonusData = json.data as BonusApiResponse;
         if (bonusData.bonuses) setBonuses(bonusData.bonuses);
         else setBonuses([]);
-        // Use current_company_multiplier if available, otherwise fall back to company_multiplier
-        if (bonusData.current_company_multiplier !== undefined) {
-          setCompanyMultiplier(bonusData.current_company_multiplier);
-        } else if (bonusData.company_multiplier !== undefined) {
-          setCompanyMultiplier(bonusData.company_multiplier);
-        } else {
-          setCompanyMultiplier(null);
-        }
-        // Set current_company_factor
-        if (bonusData.current_company_factor !== undefined) {
-          setCompanyFactor(bonusData.current_company_factor);
-        } else {
-          setCompanyFactor(null);
-        }
+        const { companyFactor, companyMultiplier } = resolveNationalCompanyMetrics(bonusData);
+        setCompanyFactor(companyFactor);
+        setCompanyMultiplier(companyMultiplier);
       } else {
         setBonuses([]);
         setCompanyMultiplier(null);
@@ -362,6 +398,12 @@ export default function Dashboard() {
     return p ? formatPeriodTitle(p) : null;
   }, [bonusQuarterSelection, bonusQuarterPeriods]);
 
+  /** National section title includes selected quarter+year when filtering by period (e.g. "National — Q1 2026"). */
+  const nationalScopeTitle = useMemo(
+    () => (selectedBonusPeriodLabel ? `National — ${selectedBonusPeriodLabel}` : 'National'),
+    [selectedBonusPeriodLabel]
+  );
+
   const bonusQuarterFilterDisabled =
     bonusPeriodsLoading || loading || bonusLoading || bonusRulesLoading;
 
@@ -418,7 +460,8 @@ export default function Dashboard() {
   const ProfitCircularProgress = ({ g }: { g: GoalProgressItem }) => {
     const actual = g.progress?.actual_value ?? 0;
     const target = g.target_value || 1;
-    const pct = Math.min(100, Math.round((actual / target) * 100));
+    const pct = Math.round((actual / target) * 100);
+    const barPct = Math.min(100, Math.max(0, pct));
     const fillColor = progressFillColor(pct);
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 2 }}>
@@ -431,8 +474,8 @@ export default function Dashboard() {
             thickness={5}
             sx={{ position: 'absolute', color: 'grey.300' }}
           />
-          {/* Colored progress — filled part (red → green by pct) */}
-          <CircularProgress variant="determinate" value={pct} size={160} thickness={5} sx={{ color: fillColor }} />
+          {/* Colored progress — filled part (red → green by pct); ring caps at 100% for MUI */}
+          <CircularProgress variant="determinate" value={barPct} size={160} thickness={5} sx={{ color: fillColor }} />
           <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <Typography variant="h4" fontWeight="bold" sx={{ fontSize: '2rem' }}>{pct}%</Typography>
             <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1rem', mt: 0.5 }}>profit</Typography>
@@ -449,7 +492,8 @@ export default function Dashboard() {
   const LinearGoalRow = ({ g }: { g: GoalProgressItem }) => {
     const actual = g.progress?.actual_value ?? 0;
     const target = g.target_value || 1;
-    const pct = Math.min(100, Math.round((actual / target) * 100));
+    const pct = Math.round((actual / target) * 100);
+    const barPct = Math.min(100, Math.max(0, pct));
     const fillColor = progressFillColor(pct);
     return (
       <Box
@@ -468,7 +512,7 @@ export default function Dashboard() {
         </Box>
         <LinearProgress
           variant="determinate"
-          value={pct}
+          value={barPct}
           sx={{
             mt: 0.5,
             height: 6,
@@ -663,11 +707,16 @@ export default function Dashboard() {
     // Always get bonus data if available, but only show "Alokasi Bonus" header when toggle is on
     const quarterBonus = agentBonuses?.quarter[0] ?? null;
     const yearBonus = agentBonuses?.year[0] ?? null;
-    // Show bonus tiles when toggle is on AND data exists
-    // For National: show if company factor exists. For agents: show if final_bonus_amount exists
-    const showCurrentBonus = showAllocatedBonus && (isNational 
-      ? (companyFactor !== null && companyFactor !== undefined)
-      : (quarterBonus && quarterBonus.final_bonus_amount !== undefined));
+    // National: always show the bonus dashboard (factor / multiplier / rules) when any data exists — not gated by Bonus switch.
+    // Agents: still require Bonus switch + quarter bonus row with final_bonus_amount.
+    const showNationalBonusBlock =
+      isNational &&
+      (companyFactor != null ||
+        companyMultiplier != null ||
+        (sectionBonusRules?.length ?? 0) > 0);
+    const showCurrentBonus = isNational
+      ? showNationalBonusBlock
+      : showAllocatedBonus && !!(quarterBonus && quarterBonus.final_bonus_amount !== undefined);
     
     // Calculate next threshold info for National
     const nationalBonusAmount = isNational && allBonuses 
@@ -1306,7 +1355,7 @@ export default function Dashboard() {
               {/* National: only for admin */}
               {isAdmin && nationalGoals.length > 0 && (
                 <ScopeSection 
-                  scopeTitle="National" 
+                  scopeTitle={nationalScopeTitle} 
                   titleColor="primary" 
                   goals={nationalGoals}
                   isNational={true}
@@ -1344,6 +1393,7 @@ export default function Dashboard() {
                           companyMultiplier={companyMultiplier}
                           companyFactor={companyFactor}
                           allBonuses={bonuses}
+                          bonusRules={bonusRules}
                         />
                       </AccordionDetails>
                     </Accordion>
@@ -1359,6 +1409,7 @@ export default function Dashboard() {
                     companyMultiplier={companyMultiplier}
                     companyFactor={companyFactor}
                     allBonuses={bonuses}
+                    bonusRules={bonusRules}
                   />
                 );
               })}
