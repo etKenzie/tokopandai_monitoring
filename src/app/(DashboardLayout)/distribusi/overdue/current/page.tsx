@@ -155,14 +155,15 @@ const OverduePage = () => {
           </Grid>
         </Box>
 
-        <Box sx={{ 
-          flex: 1,
-          width: '100%',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 3
-        }}>
+        <Box
+          sx={{
+            flex: 1,
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 3,
+          }}
+        >
           <OverdueOrdersTable 
             filters={filters}
             title="Overdue Orders"

@@ -1,7 +1,6 @@
 import {
   IconBuildingStore,
   IconCashBanknote,
-  IconClockCancel,
   IconDashboard,
   IconFlag,
   IconGitCompare,
@@ -103,7 +102,7 @@ const Menuitems: MenuitemsType[] = [
    
   {
     id: uniqueId(),
-    title: "Overdue",
+    title: "TOP",
     icon: IconTimeDuration0,
     href: "/overdue",
     
@@ -143,14 +142,6 @@ const Menuitems: MenuitemsType[] = [
         icon: IconMenu2,
         href: "/distribusi/cash-in/orders",
       },
-      {
-        id: uniqueId(),
-        title: "Overdue List",
-        icon: IconClockCancel,
-        href: "/distribusi/cash-in/overdue",
-      },
-      
-      
     ],
   },
   {

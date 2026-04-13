@@ -1,7 +1,13 @@
 'use client';
 
 import { getAgentNameFromRole } from '@/config/roles';
-import { ArrowForward as ArrowForwardIcon, Download as DownloadIcon, ExpandLess as ExpandLessIcon, ExpandMore as ExpandMoreIcon, Info as InfoIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
+import {
+  calculateDaysLate,
+  compareOverdueBuckets,
+  overdueStatusChipColor,
+  resolveOverdueStatus,
+} from '@/utils/overdueStatus';
+import { Download as DownloadIcon, ExpandMore as ExpandMoreIcon, Info as InfoIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
   Accordion,
   AccordionDetails,
@@ -34,10 +40,12 @@ import {
   TextField,
   Typography
 } from '@mui/material';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { fetchOverdueOrders, Order } from '../../api/distribusi/DistribusiSlice';
 import OrderDetailModal from '../shared/OrderDetailModal';
+import OverdueStatusDistributionChart from './OverdueStatusDistributionChart';
+import OverdueTransitionRecap from './OverdueTransitionRecap';
 
 type OrderDirection = 'asc' | 'desc';
 type SortableField = keyof Order | 'days_late';
@@ -51,7 +59,6 @@ interface HeadCell {
 const headCells: HeadCell[] = [
   { id: 'order_code', label: 'Order Code', numeric: false },
   { id: 'month', label: 'Month', numeric: false },
-  { id: 'reseller_name', label: 'Reseller Name', numeric: false },
   { id: 'store_name', label: 'Store Name', numeric: false },
   { id: 'segment', label: 'Segment', numeric: false },
   { id: 'area', label: 'Area', numeric: false },
@@ -82,15 +89,26 @@ interface OverdueOrdersTableProps {
   userRoleForFiltering?: string;
   // Callback to update available agents in parent
   onAgentsUpdate?: (agents: string[]) => void;
+  onOrdersChange?: (orders: Order[]) => void;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
-const OverdueOrdersTable = ({ 
-  filters,
-  title = 'Overdue Orders',
-  hasRestrictedRole = false,
-  userRoleForFiltering,
-  onAgentsUpdate
-}: OverdueOrdersTableProps) => {
+export type OverdueOrdersTableHandle = {
+  openOrderDetail: (orderCode: string) => void;
+};
+
+const OverdueOrdersTable = forwardRef<OverdueOrdersTableHandle, OverdueOrdersTableProps>(function OverdueOrdersTable(
+  {
+    filters,
+    title = 'Overdue Orders',
+    hasRestrictedRole = false,
+    userRoleForFiltering,
+    onAgentsUpdate,
+    onOrdersChange,
+    onLoadingChange,
+  },
+  ref
+) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -112,7 +130,13 @@ const OverdueOrdersTable = ({
   const [activeStoreSearchQuery, setActiveStoreSearchQuery] = useState<string>('');
   const [storePage, setStorePage] = useState(0);
   const [storeRowsPerPage, setStoreRowsPerPage] = useState(5);
-  const [showTransitionedOrders, setShowTransitionedOrders] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    openOrderDetail: (orderCode: string) => {
+      setSelectedOrderCode(orderCode);
+      setModalOpen(true);
+    },
+  }));
 
   const fetchOverdueOrdersData = async () => {
     // Clear existing data immediately when fetching new data
@@ -120,6 +144,7 @@ const OverdueOrdersTable = ({
     setError(null);
 
     setLoading(true);
+    onLoadingChange?.(true);
     try {
       // For users with restricted roles, use their mapped agent name instead of filter selection
       const agentName = hasRestrictedRole && userRoleForFiltering 
@@ -139,12 +164,15 @@ const OverdueOrdersTable = ({
       }
 
       const response = await fetchOverdueOrders(requestParams);
-      
-      setOrders(response.data);
-      
-      // Update available agents in parent component
+
+      const raw = response?.data;
+      const rows: Order[] = Array.isArray(raw) ? raw : [];
+      setOrders(rows);
+
       if (onAgentsUpdate) {
-        const uniqueAgents = Array.from(new Set(response.data.map((o: Order) => o.agent_name).filter(Boolean))) as string[];
+        const uniqueAgents = Array.from(
+          new Set(rows.map((o: Order) => o.agent_name).filter(Boolean))
+        ) as string[];
         onAgentsUpdate(uniqueAgents.sort());
       }
     } catch (err) {
@@ -152,6 +180,7 @@ const OverdueOrdersTable = ({
       console.error('Failed to fetch overdue orders data:', err);
     } finally {
       setLoading(false);
+      onLoadingChange?.(false);
     }
   };
 
@@ -212,78 +241,11 @@ const OverdueOrdersTable = ({
     }
   };
 
-  // Calculate days late (how many days past the due date)
-  const calculateDaysLate = (order: Order): number => {
-    if (!order.payment_due_date) return 0;
-    
-    const today = new Date();
-    const dueDate = new Date(order.payment_due_date);
-    
-    // Reset time to start of day for accurate day calculation
-    today.setHours(0, 0, 0, 0);
-    dueDate.setHours(0, 0, 0, 0);
-    
-    // Calculate difference in days (positive if due date is in the future, negative if past due)
-    const diffTime = dueDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    // Return 0 if not overdue, otherwise return the number of days late
-    return diffDays < 0 ? Math.abs(diffDays) : 0;
-  };
-
-  // Calculate overdue status based on payment_due_date and current date
-  const calculateOverdueStatus = (order: Order): string => {
-    if (!order.payment_due_date) return '';
-    
-    const today = new Date();
-    const dueDate = new Date(order.payment_due_date);
-    
-    // Reset time to start of day for accurate day calculation
-    today.setHours(0, 0, 0, 0);
-    dueDate.setHours(0, 0, 0, 0);
-    
-    // Calculate difference in days (positive if due date is in the future, negative if past due)
-    const diffTime = dueDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    // Determine overdue status based on days past due
-    if (diffDays >= 0) {
-      return 'CURRENT';
-    } else {
-      const daysPastDue = Math.abs(diffDays);
-      if (daysPastDue < 14) {
-        return 'B2W';
-      } else if (daysPastDue < 30) {
-        return '14DPD';
-      } else if (daysPastDue < 60) {
-        return '30DPD';
-      } else if (daysPastDue < 90) {
-        return '60DPD';
-      } else {
-        return '90DPD';
-      }
-    }
-  };
-
-  const getOverdueStatusColor = (status: string) => {
-    if (!status) return 'default';
-    if (status.includes('DPD')) {
-      const days = parseInt(status.replace('DPD', '').trim());
-      if (days >= 30) return 'error';
-      if (days >= 14) return 'warning';
-      return 'info';
-    }
-    if (status === 'CURRENT') return 'success';
-    if (status === 'B2W') return 'warning';
-    return 'default';
-  };
-
-  const searchFields = (order: Order, query: string): boolean => {
+  const searchFields = useCallback((order: Order, query: string): boolean => {
     if (!query) return true;
 
     const searchableFields = [
       order.order_code?.toLowerCase() || '',
-      order.reseller_name?.toLowerCase() || '',
       order.store_name?.toLowerCase() || '',
       order.segment?.toLowerCase() || '',
       order.area?.toLowerCase() || '',
@@ -293,47 +255,71 @@ const OverdueOrdersTable = ({
       order.payment_type?.toLowerCase() || '',
       order.business_type?.toLowerCase() || '',
       order.sub_business_type?.toLowerCase() || '',
-      calculateOverdueStatus(order).toLowerCase(),
+      resolveOverdueStatus(order).toLowerCase(),
     ];
 
     return searchableFields.some((field) =>
       field.includes(query.toLowerCase())
     );
-  };
+  }, []);
 
-  const filteredOrders = orders.filter((o) => {
-    // Apply filters
-    if (segmentFilter && o.segment !== segmentFilter) return false;
-    if (areaFilter && o.area !== areaFilter) return false;
-    if (agentFilter && o.agent_name !== agentFilter) return false;
-    if (statusOrderFilter && o.status_order !== statusOrderFilter) return false;
-    if (paymentStatusFilter && o.status_payment !== paymentStatusFilter) return false;
-    if (overdueStatusFilter) {
-      const overdueStatus = calculateOverdueStatus(o);
-      if (overdueStatus !== overdueStatusFilter) return false;
-    }
+  const filteredOrders = useMemo(() => {
+    const list = Array.isArray(orders) ? orders : [];
+    return list.filter((o) => {
+      if (segmentFilter && o.segment !== segmentFilter) return false;
+      if (areaFilter && o.area !== areaFilter) return false;
+      if (agentFilter && o.agent_name !== agentFilter) return false;
+      if (statusOrderFilter && o.status_order !== statusOrderFilter) return false;
+      if (paymentStatusFilter && o.status_payment !== paymentStatusFilter) return false;
+      if (overdueStatusFilter) {
+        const overdueStatus = resolveOverdueStatus(o);
+        if (overdueStatus !== overdueStatusFilter) return false;
+      }
+      if (searchQuery) {
+        return searchFields(o, searchQuery);
+      }
+      return true;
+    });
+  }, [
+    orders,
+    segmentFilter,
+    areaFilter,
+    agentFilter,
+    statusOrderFilter,
+    paymentStatusFilter,
+    overdueStatusFilter,
+    searchQuery,
+    searchFields,
+  ]);
 
-    // Search functionality
-    if (searchQuery) {
-      return searchFields(o, searchQuery);
-    }
-
-    return true;
-  });
+  useEffect(() => {
+    onOrdersChange?.(filteredOrders);
+  }, [filteredOrders, onOrdersChange]);
 
   // Reset page when local filters change
   useEffect(() => {
     setPage(0);
   }, [segmentFilter, areaFilter, agentFilter, statusOrderFilter, paymentStatusFilter, overdueStatusFilter, searchQuery]);
 
-  const uniqueSegments = Array.from(new Set(orders.map((o) => o.segment)));
-  const uniqueAreas = Array.from(new Set(orders.map((o) => o.area)));
-  const uniqueAgents = Array.from(new Set(orders.map((o) => o.agent_name)));
-  const uniqueStatusOrders = Array.from(new Set(orders.map((o) => o.status_order)));
-  const uniquePaymentStatuses = Array.from(new Set(orders.map((o) => o.status_payment)));
-  const uniqueOverdueStatuses = Array.from(new Set(orders.map((o) => calculateOverdueStatus(o)).filter(Boolean))).sort();
+  const orderList = Array.isArray(orders) ? orders : [];
+  const uniqueSegments = Array.from(new Set(orderList.map((o) => o.segment)));
+  const uniqueAreas = Array.from(new Set(orderList.map((o) => o.area)));
+  const uniqueAgents = Array.from(new Set(orderList.map((o) => o.agent_name)));
+  const uniqueStatusOrders = Array.from(new Set(orderList.map((o) => o.status_order)));
+  const uniquePaymentStatuses = Array.from(new Set(orderList.map((o) => o.status_payment)));
+  const uniqueOverdueStatuses = Array.from(
+    new Set(orderList.map((o) => resolveOverdueStatus(o)).filter(Boolean))
+  ).sort(compareOverdueBuckets);
 
   const sortedOrders = [...filteredOrders].sort((a, b) => {
+    if (orderBy === 'overdue_status') {
+      const cmp = compareOverdueBuckets(
+        resolveOverdueStatus(a),
+        resolveOverdueStatus(b)
+      );
+      return order === 'asc' ? cmp : -cmp;
+    }
+
     // Special handling for days_late field - use calculated value
     if (orderBy === 'days_late') {
       const aValue = calculateDaysLate(a);
@@ -358,22 +344,7 @@ const OverdueOrdersTable = ({
       bValue = bValue ? new Date(bValue).getTime() : 0;
     }
 
-    // Special handling for overdue_status field - use calculated value
-    if (orderBy === 'overdue_status') {
-      const getOverduePriority = (status: string) => {
-        if (!status) return 6; // null status gets lowest priority
-        if (status === 'CURRENT') return 0;
-        if (status === 'B2W') return 1;
-        if (status.includes('14DPD')) return 2;
-        if (status.includes('30DPD')) return 3;
-        if (status.includes('60DPD')) return 4;
-        if (status.includes('90DPD')) return 5;
-        return 6; // for any other status
-      };
-      
-      aValue = getOverduePriority(calculateOverdueStatus(a));
-      bValue = getOverduePriority(calculateOverdueStatus(b));
-    } else if (typeof aValue === 'string' && typeof bValue === 'string') {
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
       // Handle string comparisons for other text fields
       aValue = aValue.toLowerCase();
       bValue = bValue.toLowerCase();
@@ -436,7 +407,7 @@ const OverdueOrdersTable = ({
       store.totalInvoice += Number(order.total_invoice) || 0;
       store.totalProfit += Number(order.profit) || 0;
       store.orderCount += 1;
-      const overdueStatus = calculateOverdueStatus(order);
+      const overdueStatus = resolveOverdueStatus(order);
       if (overdueStatus && !store.overdueStatuses.includes(overdueStatus)) {
         store.overdueStatuses.push(overdueStatus);
       }
@@ -466,7 +437,6 @@ const OverdueOrdersTable = ({
     const summaryRow = {
       'Order Code': 'SUMMARY',
       'Month': '',
-      'Reseller Name': '',
       'Store Name': '',
       'Segment': '',
       'Area': '',
@@ -488,7 +458,6 @@ const OverdueOrdersTable = ({
     const orderData = orders.map((o) => ({
       'Order Code': o.order_code,
       'Month': o.month,
-      'Reseller Name': o.reseller_name,
       'Store Name': o.store_name,
       'Segment': o.segment,
       'Area': o.area,
@@ -499,7 +468,7 @@ const OverdueOrdersTable = ({
       'Order Date': formatDate(o.order_date),
       'Faktur Date': o.faktur_date ? formatDate(o.faktur_date) : '',
       'Due Date': o.payment_due_date ? formatDate(o.payment_due_date) : '',
-      'Overdue Status': calculateOverdueStatus(o) || '',
+      'Overdue Status': resolveOverdueStatus(o) || '',
       'Days Late': calculateDaysLate(o),
       'Total Invoice': o.total_invoice,
       'Profit': o.profit,
@@ -526,7 +495,6 @@ const OverdueOrdersTable = ({
     const colWidths = [
       { wch: 15 }, // Order Code
       { wch: 15 }, // Month
-      { wch: 25 }, // Reseller Name
       { wch: 25 }, // Store Name
       { wch: 15 }, // Segment
       { wch: 15 }, // Area
@@ -601,180 +569,47 @@ const OverdueOrdersTable = ({
     });
   };
 
-  // Calculate days past due for a specific reference date
-  const calculateDaysPastDueForDate = (order: Order, referenceDate: Date): number => {
-    if (!order.payment_due_date) return 0;
-    
-    const today = new Date(referenceDate);
-    const dueDate = new Date(order.payment_due_date);
-    
-    // Reset time to start of day for accurate day calculation
-    today.setHours(0, 0, 0, 0);
-    dueDate.setHours(0, 0, 0, 0);
-    
-    // Calculate difference in days (positive if due date is in the future, negative if past due)
-    const diffTime = dueDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    // Return 0 if not overdue, otherwise return the number of days past due
-    return diffDays < 0 ? Math.abs(diffDays) : 0;
-  };
-
-  // Find orders that transitioned from 30DPD to 60DPD in the last 10 days
-  // These are orders that are currently 60-70 days late
-  // (These orders just entered the 60DPD range in the last 10 days)
-  const ordersTransitionedTo60DPD = useMemo(() => {
-    const result = filteredOrders.filter(order => {
-      if (!order.payment_due_date) return false;
-      
-      // Calculate days past due today
-      const daysPastDueToday = calculateDaysLate(order);
-      
-      // Orders that are currently 60-70 days late
-      // These orders just entered the 60DPD range (60-89 days) in the last 10 days
-      return daysPastDueToday >= 60 && daysPastDueToday <= 70;
-    });
-    
-    // Debug logging
-    console.log('Orders transitioned to 60DPD:', result.length);
-    console.log('Sample orders:', result.slice(0, 3).map(o => ({
-      order_code: o.order_code,
-      days_late: calculateDaysLate(o),
-      payment_due_date: o.payment_due_date
-    })));
-    
-    return result;
-  }, [filteredOrders]);
-
-  const transitionedTotalInvoice = ordersTransitionedTo60DPD.reduce((sum, o) => sum + (Number(o.total_invoice) || 0), 0);
-  const transitionedTotalProfit = ordersTransitionedTo60DPD.reduce((sum, o) => sum + (Number(o.profit) || 0), 0);
-  const transitionedOrderCount = ordersTransitionedTo60DPD.length;
-
   return (
     <Card>
       <CardContent>
-        {/* Recap Section: Orders Transitioned from 30DPD to 60DPD */}
-        <Box
-          sx={{
-            mb: 3,
-            p: 2,
-            backgroundColor: transitionedOrderCount > 0 ? 'error.light' : 'grey.100',
-            borderRadius: 2,
-            border: '2px solid',
-            borderColor: transitionedOrderCount > 0 ? 'error.main' : 'grey.300',
-          }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-            <Typography variant="h6" fontWeight="bold" color={transitionedOrderCount > 0 ? 'error.main' : 'text.secondary'}>
-              ⚠️ Order yang Naik dari 30DPD ke 60DPD (10 Hari Terakhir)
+        <Box sx={{ mb: 5 }}>
+          <OverdueTransitionRecap orders={filteredOrders} onOrderClick={handleRowClick} />
+        </Box>
+
+        {/* Summary Stats */}
+        <Box mb={3} sx={{ display: 'flex', justifyContent: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
+            <Typography variant="h3" color="primary" fontWeight="bold" mb={1}>
+              {storeCount}
             </Typography>
-            {transitionedOrderCount > 0 && (
-              <Button
-                variant="outlined"
-                size="small"
-                endIcon={showTransitionedOrders ? <ExpandLessIcon /> : <ArrowForwardIcon />}
-                onClick={() => setShowTransitionedOrders(!showTransitionedOrders)}
-                sx={{ minWidth: '150px' }}
-              >
-                {showTransitionedOrders ? 'Sembunyikan' : 'Lihat Order'}
-              </Button>
-            )}
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              Unique Stores
+            </Typography>
           </Box>
-          <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap', mt: 2 }}>
-            <Box>
-              <Typography variant="h4" color={transitionedOrderCount > 0 ? 'error.main' : 'text.secondary'} fontWeight="bold">
-                {transitionedOrderCount}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Order (60-70 hari terlambat)
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="h5" color={transitionedOrderCount > 0 ? 'error.main' : 'text.secondary'} fontWeight="bold">
-                {formatCurrency(transitionedTotalInvoice)}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Total Invoice
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="h5" color={transitionedOrderCount > 0 ? 'error.main' : 'text.secondary'} fontWeight="bold">
-                {formatCurrency(transitionedTotalProfit)}
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Total Profit
-              </Typography>
-            </Box>
+          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
+            <Typography variant="h3" color="secondary" fontWeight="bold" mb={1}>
+              {totalOrders}
+            </Typography>
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              Total Orders
+            </Typography>
           </Box>
-          <Typography variant="body2" color="textSecondary" sx={{ mt: 2, fontStyle: 'italic' }}>
-            {transitionedOrderCount > 0 
-              ? 'Order-order ini saat ini 60-70 hari terlambat dan baru saja masuk ke kategori 60DPD dalam 10 hari terakhir.'
-              : 'Tidak ada order yang ditemukan dengan 60-70 hari terlambat. Ini adalah order yang baru saja masuk ke kategori 60DPD.'}
-          </Typography>
-          
-          {/* Expanded Orders List */}
-          {showTransitionedOrders && transitionedOrderCount > 0 && (
-            <Box sx={{ mt: 3 }}>
-              <TableContainer component={Paper} variant="outlined">
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Order Code</TableCell>
-                      <TableCell>Store Name</TableCell>
-                      <TableCell>Agent</TableCell>
-                      <TableCell>Due Date</TableCell>
-                      <TableCell align="right">Days Late</TableCell>
-                      <TableCell align="right">Total Invoice</TableCell>
-                      <TableCell align="right">Profit</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {ordersTransitionedTo60DPD.map((order) => (
-                      <TableRow 
-                        key={order.order_id}
-                        hover
-                        onClick={() => handleRowClick(order.order_code)}
-                        sx={{ cursor: 'pointer' }}
-                      >
-                        <TableCell>
-                          <Typography variant="body2" fontWeight="medium">
-                            {order.order_code}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>{order.store_name}</TableCell>
-                        <TableCell>{order.agent_name}</TableCell>
-                        <TableCell>{formatDate(order.payment_due_date)}</TableCell>
-                        <TableCell align="right">
-                          <Typography 
-                            variant="body2" 
-                            fontWeight="bold" 
-                            color="error.main"
-                            sx={{
-                              border: '1px solid',
-                              borderColor: 'error.main',
-                              borderRadius: '4px',
-                              padding: '4px 8px',
-                              display: 'inline-block',
-                              minWidth: '40px',
-                              textAlign: 'center'
-                            }}
-                          >
-                            {calculateDaysLate(order)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                          {formatCurrency(Number(order.total_invoice))}
-                        </TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'success.main' }}>
-                          {formatCurrency(Number(order.profit))}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Box>
-          )}
+          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
+            <Typography variant="h3" color="info.main" fontWeight="bold" mb={1}>
+              {formatCurrency(totalInvoice)}
+            </Typography>
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              Total Invoice Amount
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
+            <Typography variant="h3" color="success.main" fontWeight="bold" mb={1}>
+              {formatCurrency(totalProfit)}
+            </Typography>
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              Total Profit Amount
+            </Typography>
+          </Box>
         </Box>
 
         <Box
@@ -821,42 +656,6 @@ const OverdueOrdersTable = ({
             >
               Clear Filters
             </Button>
-          </Box>
-        </Box>
-
-        {/* Summary Stats */}
-        <Box mb={3} sx={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
-          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
-            <Typography variant="h3" color="primary" fontWeight="bold" mb={1}>
-              {storeCount}
-            </Typography>
-            <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Unique Stores
-            </Typography>
-          </Box>
-          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
-            <Typography variant="h3" color="secondary" fontWeight="bold" mb={1}>
-              {totalOrders}
-            </Typography>
-            <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Total Orders
-            </Typography>
-          </Box>
-          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
-            <Typography variant="h3" color="info.main" fontWeight="bold" mb={1}>
-              {formatCurrency(totalInvoice)}
-            </Typography>
-            <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Total Invoice Amount
-            </Typography>
-          </Box>
-          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
-            <Typography variant="h3" color="success.main" fontWeight="bold" mb={1}>
-              {formatCurrency(totalProfit)}
-            </Typography>
-            <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Total Profit Amount
-            </Typography>
           </Box>
         </Box>
 
@@ -988,6 +787,10 @@ const OverdueOrdersTable = ({
           </Grid>
         </Box>
 
+        <Box sx={{ mb: 3 }}>
+          <OverdueStatusDistributionChart orders={filteredOrders} loading={loading} />
+        </Box>
+
         {/* Table */}
         <TableContainer component={Paper} variant="outlined">
           <Table>
@@ -1057,7 +860,6 @@ const OverdueOrdersTable = ({
                           color="primary"
                         />
                       </TableCell>
-                      <TableCell>{row.reseller_name}</TableCell>
                       <TableCell>{row.store_name}</TableCell>
                       <TableCell>
                         <Chip
@@ -1094,11 +896,11 @@ const OverdueOrdersTable = ({
                       <TableCell>{formatDate(row.payment_due_date)}</TableCell>
                       <TableCell>
                         {(() => {
-                          const overdueStatus = calculateOverdueStatus(row);
+                          const overdueStatus = resolveOverdueStatus(row);
                           return overdueStatus ? (
                             <Chip
                               label={overdueStatus}
-                              color={getOverdueStatusColor(overdueStatus) as any}
+                              color={overdueStatusChipColor(overdueStatus) as any}
                               size="small"
                             />
                           ) : (
@@ -1256,7 +1058,7 @@ const OverdueOrdersTable = ({
                           <Chip
                             key={idx}
                             label={status}
-                            color={getOverdueStatusColor(status) as any}
+                            color={overdueStatusChipColor(status) as any}
                             size="small"
                           />
                         ))}
@@ -1304,11 +1106,11 @@ const OverdueOrdersTable = ({
                               </TableCell>
                               <TableCell>
                                 {(() => {
-                                  const overdueStatus = calculateOverdueStatus(order);
+                                  const overdueStatus = resolveOverdueStatus(order);
                                   return overdueStatus ? (
                                     <Chip
                                       label={overdueStatus}
-                                      color={getOverdueStatusColor(overdueStatus) as any}
+                                      color={overdueStatusChipColor(overdueStatus) as any}
                                       size="small"
                                     />
                                   ) : (
@@ -1393,7 +1195,9 @@ const OverdueOrdersTable = ({
       </Dialog>
     </Card>
   );
-};
+});
+
+OverdueOrdersTable.displayName = 'OverdueOrdersTable';
 
 export default OverdueOrdersTable;
 

@@ -298,8 +298,16 @@ export const fetchOverdueOrders = async (params: OverdueOrdersQueryParams): Prom
   if (!response.ok) {
     throw new Error(`Failed to fetch overdue orders: ${response.status} ${response.statusText}`);
   }
-  
-  return response.json();
+
+  const json = (await response.json()) as OrdersResponse & { data?: Order[] | { data?: Order[] } };
+  const payload = json?.data;
+  const rows: Order[] = Array.isArray(payload)
+    ? payload
+    : payload && typeof payload === 'object' && Array.isArray((payload as { data?: Order[] }).data)
+      ? (payload as { data: Order[] }).data
+      : [];
+
+  return { ...json, data: rows };
 };
 
 // Types for Overdue Snapshot API
