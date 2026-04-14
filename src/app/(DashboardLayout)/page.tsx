@@ -258,6 +258,14 @@ function goalProgressPercent(g: GoalProgressItem | undefined): number | null {
   return (actual / target) * 100;
 }
 
+/** Client estimate when API omits or zeroes final_bonus_amount but allocation and multipliers are present. */
+function estimateAgentFinalBonusFromRow(b: BonusFromApi): number {
+  const base = b.bonus_amount ?? 0;
+  const ind = b.individual_multiplier ?? b.multiplier ?? 1;
+  const comp = b.company_multiplier != null ? b.company_multiplier : 1;
+  return Math.round(base * ind * comp);
+}
+
 function goalMeetsQuarterThreshold(g: GoalProgressItem | undefined, thresholdPct: number): boolean | null {
   const p = goalProgressPercent(g);
   if (p === null) return null;
@@ -867,33 +875,50 @@ export default function Dashboard() {
     const nationalQuarterCashInGoal = quarterList.find(
       (g) => (g.goal_type || '').toLowerCase() === 'cash-in'
     );
+    // National: may fall back to quarter goal progress. Agent: only use guardrails API national % —
+    // do not substitute the agent's own goal % (that wrongly failed guardrails and zeroed bonus).
     const profitPct =
       typeof sectionGuardrailsData?.national_goal_progress_percentage === 'number'
         ? sectionGuardrailsData.national_goal_progress_percentage
-        : goalProgressPercent(nationalQuarterProfitGoal);
+        : isNational
+          ? goalProgressPercent(nationalQuarterProfitGoal)
+          : null;
     const profitOk =
       profitPct == null ? null : profitPct >= GUARDRAIL_QUARTER_PCT_THRESHOLD;
     const cashInPct =
       typeof sectionGuardrailsData?.national_cash_in_progress_percentage === 'number'
         ? sectionGuardrailsData.national_cash_in_progress_percentage
-        : goalProgressPercent(nationalQuarterCashInGoal);
+        : isNational
+          ? goalProgressPercent(nationalQuarterCashInGoal)
+          : null;
     const cashInOk =
       cashInPct == null ? null : cashInPct >= GUARDRAIL_QUARTER_PCT_THRESHOLD;
-    const overdueOk = bonusQuarterSelection !== 'current'
-      ? sectionGuardrailsData?.overdue_60_plus_ok === true
-      : sectionGuardrailsData &&
-          typeof sectionGuardrailsData.percentage_of_total_invoice === 'number'
-        ? sectionGuardrailsData.percentage_of_total_invoice <= GUARDRAIL_60_INVOICE_PCT_THRESHOLD
-        : sectionGuardrailsData?.overdue_60_plus_ok === true;
-    const ebitdaOk = sectionGuardrailsData?.ebitda === true;
-    const fraudOk = sectionGuardrailsData?.fraud === false;
-    // Lock only on explicit failures; unknown values should not force factor/multiplier to zero.
+    // Tri-state where possible: only explicit API failures lock bonuses (matches guardrail tiles).
+    const overdueOk =
+      sectionGuardrailsData == null
+        ? null
+        : bonusQuarterSelection !== 'current'
+          ? sectionGuardrailsData.overdue_60_plus_ok === true
+            ? true
+            : sectionGuardrailsData.overdue_60_plus_ok === false
+              ? false
+              : null
+          : typeof sectionGuardrailsData.percentage_of_total_invoice === 'number'
+            ? sectionGuardrailsData.percentage_of_total_invoice <= GUARDRAIL_60_INVOICE_PCT_THRESHOLD
+            : sectionGuardrailsData.overdue_60_plus_ok === true
+              ? true
+              : sectionGuardrailsData.overdue_60_plus_ok === false
+                ? false
+                : null;
+    const ebitdaFailed = sectionGuardrailsData?.ebitda === false;
+    const fraudFailed = sectionGuardrailsData?.fraud === true;
+    // Lock only on explicit failures; unknown / missing fields must not zero agent quarter bonus.
     const hasNationalGuardrailFailure =
       profitOk === false ||
       cashInOk === false ||
       overdueOk === false ||
-      ebitdaOk === false ||
-      fraudOk === false;
+      ebitdaFailed ||
+      fraudFailed;
     const allNationalGuardrailsPassed = !hasNationalGuardrailFailure;
     const effectiveCompanyFactor = isNational
       ? hasNationalGuardrailFailure
@@ -906,11 +931,22 @@ export default function Dashboard() {
         : companyMultiplier
       : companyMultiplier;
     const shouldZeroAgentQuarterBonus = !isNational && hasNationalGuardrailFailure;
+    const estimatedQuarterFinal =
+      quarterBonus != null ? estimateAgentFinalBonusFromRow(quarterBonus) : null;
+    const apiFinal = quarterBonus?.final_bonus_amount;
     const effectiveQuarterFinalBonus =
-      shouldZeroAgentQuarterBonus && quarterBonus ? 0 : quarterBonus?.final_bonus_amount;
+      shouldZeroAgentQuarterBonus && quarterBonus
+        ? 0
+        : apiFinal != null && apiFinal > 0
+          ? apiFinal
+          : !hasNationalGuardrailFailure &&
+              estimatedQuarterFinal != null &&
+              estimatedQuarterFinal > 0
+            ? estimatedQuarterFinal
+            : apiFinal ?? estimatedQuarterFinal ?? 0;
 
     // National: always show the bonus dashboard (factor / multiplier / rules) when any data exists — not gated by Bonus switch.
-    // Agents: still require Bonus switch + quarter bonus row with final_bonus_amount.
+    // Agents: Bonus switch + quarter bonus row (allocation and/or final from API).
     const showNationalBonusBlock =
       isNational &&
       (effectiveCompanyFactor != null ||
@@ -918,7 +954,10 @@ export default function Dashboard() {
         (sectionBonusRules?.length ?? 0) > 0);
     const showCurrentBonus = isNational
       ? showNationalBonusBlock
-      : showAllocatedBonus && !!(quarterBonus && quarterBonus.final_bonus_amount !== undefined);
+      : showAllocatedBonus &&
+          !!quarterBonus &&
+          (quarterBonus.final_bonus_amount !== undefined ||
+            quarterBonus.bonus_amount !== undefined);
 
     // Calculate next threshold info for National
     const nationalBonusAmount = isNational && allBonuses
@@ -1997,6 +2036,9 @@ export default function Dashboard() {
                           companyFactor={companyFactor}
                           allBonuses={bonuses}
                           bonusRules={bonusRules}
+                          guardrailsData={guardrailsData}
+                          guardrailsLoading={guardrailsLoading}
+                          guardrailsError={guardrailsError}
                         />
                       </AccordionDetails>
                     </Accordion>
