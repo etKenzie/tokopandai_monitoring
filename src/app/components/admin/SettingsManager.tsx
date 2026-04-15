@@ -4,6 +4,7 @@ import { useSettings } from '@/app/context/SettingsContext';
 import { Add, Cancel, Delete, Edit, Save } from '@mui/icons-material';
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   Card,
@@ -128,6 +129,9 @@ interface BonusFromApi {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
 
+/** POST /api/goals and filters only accept these `goal_type` values (do not use open-ended /filters goal_types for pickers). */
+const ALLOWED_GOAL_TYPES: string[] = ['profit', 'cash-in', 'noo', '60+'];
+
 const MONTH_OPTIONS = [
   { value: '', label: 'All months' },
   ...Array.from({ length: 12 }, (_, i) => ({
@@ -135,6 +139,25 @@ const MONTH_OPTIONS = [
     label: new Intl.DateTimeFormat('en', { month: 'long' }).format(new Date(2000, i)),
   })),
 ];
+
+/** Normalize goal_type for equality; `60` (legacy) and `60+` are the same bucket. */
+function normGoalTypeKey(s: string): string {
+  const t = s.trim().toLowerCase();
+  if (t === '60' || t === '60+') return '60+';
+  return t;
+}
+
+function goalTypesMatch(a: string, b: string): boolean {
+  return normGoalTypeKey(a) === normGoalTypeKey(b);
+}
+
+/** Show `60+` for API values `60` or `60+`; other types unchanged. */
+function goalTypeDisplayLabel(gt?: string | null): string {
+  if (gt == null || gt === '') return '—';
+  const t = gt.trim().toLowerCase();
+  if (t === '60' || t === '60+') return '60+';
+  return gt;
+}
 
 const SettingsManager = () => {
   const { settings, loading, error, updateSetting, isAdmin } = useSettings();
@@ -154,18 +177,17 @@ const SettingsManager = () => {
   // Goals overview from API
   const [goalsFromApi, setGoalsFromApi] = useState<GoalFromApi[]>([]);
   const [agentsFromApi, setAgentsFromApi] = useState<AgentFromApi[]>([]);
-  const [goalTypesFromApi, setGoalTypesFromApi] = useState<string[]>([]);
   const [goalsLoading, setGoalsLoading] = useState(false);
   const [goalsError, setGoalsError] = useState<string | null>(null);
   const [goalsScope, setGoalsScope] = useState<string>('');
   const [goalsAgentId, setGoalsAgentId] = useState<string>('');
-  const [goalsGoalType, setGoalsGoalType] = useState<string>(''); // required; set from filters when loaded
+  const [goalsGoalType, setGoalsGoalType] = useState<string>(ALLOWED_GOAL_TYPES[0]);
   const [goalsMonth, setGoalsMonth] = useState<string>(''); // 1-12 or ''
   const [goalsYear, setGoalsYear] = useState<string>(() => String(new Date().getFullYear()));
   const [activeTab, setActiveTab] = useState(0); // 0 = Goals, 1 = Settings, 2 = Periods, 3 = Goal progress, 4 = Bonus
   const [progressMonth, setProgressMonth] = useState<string>(() => String(new Date().getMonth() + 1));
   const [progressYear, setProgressYear] = useState<string>(() => String(new Date().getFullYear()));
-  const [progressGoalType, setProgressGoalType] = useState<string>('');
+  const [progressGoalType, setProgressGoalType] = useState<string>('profit');
   const [progressPeriods, setProgressPeriods] = useState<GoalPeriodFromApi[]>([]);
   const [progressGoals, setProgressGoals] = useState<GoalProgressItem[]>([]);
   const [progressLoading, setProgressLoading] = useState(false);
@@ -201,15 +223,17 @@ const SettingsManager = () => {
   const [createGoalForm, setCreateGoalForm] = useState<{
     period_id: number;
     period_label: string;
+    period_type?: 'month' | 'quarter' | 'year';
     scope: 'national' | 'agent';
     agent_name: string;
     goal_type: string;
     target_value: number;
     description: string;
-    weight?: number; // only used when scope is agent
+    weight?: number; // agent quarter/year only; month goals do not use weight
   }>({
     period_id: 0,
     period_label: '',
+    period_type: undefined,
     scope: 'agent',
     agent_name: '',
     goal_type: '',
@@ -223,6 +247,7 @@ const SettingsManager = () => {
   const [editGoalTargetValue, setEditGoalTargetValue] = useState(0);
   const [editGoalDescription, setEditGoalDescription] = useState('');
   const [editGoalWeight, setEditGoalWeight] = useState<number | null>(null);
+  const [editGoalPeriodType, setEditGoalPeriodType] = useState<'month' | 'quarter' | 'year'>('month');
   const [editGoalSaving, setEditGoalSaving] = useState(false);
   const [editGoalError, setEditGoalError] = useState<string | null>(null);
   const [editGoalDeleteConfirmOpen, setEditGoalDeleteConfirmOpen] = useState(false);
@@ -273,12 +298,10 @@ const SettingsManager = () => {
       const json = await res.json();
       if (json?.data) {
         const agents = json.data.agents ?? [];
-        const goalTypes = json.data.goal_types ?? [];
         setAgentsFromApi(agents);
-        setGoalTypesFromApi(goalTypes);
         setGoalsGoalType((prev) => {
-          if (goalTypes.length && !goalTypes.includes(prev)) return goalTypes[0];
-          return prev;
+          const m = ALLOWED_GOAL_TYPES.find((t) => goalTypesMatch(t, prev));
+          return m ?? ALLOWED_GOAL_TYPES[0];
         });
       }
     } catch (e) {
@@ -469,6 +492,15 @@ const SettingsManager = () => {
   useEffect(() => {
     if (activeTab === 3 && progressYear) fetchGoalsFilters(progressYear);
   }, [activeTab, progressYear, fetchGoalsFilters]);
+
+  // Keep progress goal type valid; default to profit when opening Goal progress or when the type list changes
+  useEffect(() => {
+    if (activeTab !== 3) return;
+    setProgressGoalType((prev) => {
+      const matchPrev = ALLOWED_GOAL_TYPES.find((t) => goalTypesMatch(t, prev));
+      return matchPrev ?? 'profit';
+    });
+  }, [activeTab]);
 
   useEffect(() => {
     if (activeTab === 3 && progressMonth && progressYear && progressGoalType) fetchGoalProgress(progressMonth, progressYear, progressGoalType);
@@ -746,6 +778,16 @@ const SettingsManager = () => {
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
 
+  const isPlainNumberGoalType = (gt?: string | null) => {
+    const t = (gt ?? '').trim().toLowerCase();
+    return t === 'noo' || t === '60+' || t === '60';
+  };
+
+  const formatGoalValue = (value: number, goalType?: string | null) =>
+    isPlainNumberGoalType(goalType)
+      ? new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(value)
+      : formatCurrency(value);
+
   const getPeriodLabel = (g: GoalFromApi) =>
     g.period ?? (g.period_start_date && g.period_end_date
       ? `${new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(g.period_start_date))} – ${new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(g.period_end_date))}`
@@ -779,7 +821,9 @@ const SettingsManager = () => {
       };
       if (createGoalForm.scope === 'agent') {
         body.agent_name = createGoalForm.agent_name || '';
-        body.weight = Number(createGoalForm.weight) ?? 0.5;
+        if (createGoalForm.period_type !== 'month') {
+          body.weight = Number(createGoalForm.weight) ?? 0.5;
+        }
       }
       const res = await fetch(`${API_BASE}/api/goals`, {
         method: 'POST',
@@ -805,6 +849,7 @@ const SettingsManager = () => {
     setEditGoalTargetValue(g.target_value);
     setEditGoalDescription(g.description || '');
     setEditGoalWeight(g.weight ?? null);
+    setEditGoalPeriodType(g.period_type ?? 'month');
     setEditGoalError(null);
     setEditGoalOpen(true);
   };
@@ -820,7 +865,8 @@ const SettingsManager = () => {
         body: JSON.stringify({
           target_value: Number(editGoalTargetValue) || 0,
           description: editGoalDescription || '',
-          ...(editGoalWeight != null && { weight: Number(editGoalWeight) }),
+          ...(editGoalPeriodType !== 'month' &&
+            editGoalWeight != null && { weight: Number(editGoalWeight) }),
         }),
       });
       const json = await res.json();
@@ -1173,9 +1219,10 @@ const SettingsManager = () => {
                   setCreateGoalForm({
                     period_id: 0,
                     period_label: '',
+                    period_type: undefined,
                     scope: 'agent',
                     agent_name: agentsFromApi[0]?.name ?? '',
-                    goal_type: goalTypesFromApi[0] ?? '',
+                    goal_type: ALLOWED_GOAL_TYPES[0],
                     target_value: 0,
                     description: '',
                     weight: 0.5,
@@ -1198,21 +1245,19 @@ const SettingsManager = () => {
                 onChange={(e) => setGoalsYear(e.target.value)}
                 sx={{ minWidth: 90 }}
               />
-              <FormControl size="small" sx={{ minWidth: 140 }} required>
-                <InputLabel>Goal type</InputLabel>
-                <Select
-                  value={goalsGoalType}
-                  label="Goal type"
-                  onChange={(e) => setGoalsGoalType(e.target.value)}
-                  displayEmpty
-                >
-                  {goalTypesFromApi.map((gt) => (
-                    <MenuItem key={gt} value={gt}>
-                      {gt}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <Autocomplete
+                size="small"
+                sx={{ minWidth: 200 }}
+                options={[...ALLOWED_GOAL_TYPES]}
+                value={ALLOWED_GOAL_TYPES.find((t) => goalTypesMatch(t, goalsGoalType)) ?? undefined}
+                onChange={(_, v) => setGoalsGoalType(v ?? '')}
+                disableClearable
+                getOptionLabel={(o) => goalTypeDisplayLabel(o)}
+                isOptionEqualToValue={(a, b) => goalTypesMatch(a, b)}
+                renderInput={(params) => (
+                  <TextField {...params} label="Goal type" required placeholder="Search (e.g. 60+)" />
+                )}
+              />
               <FormControl size="small" sx={{ minWidth: 120 }}>
                 <InputLabel>Scope</InputLabel>
                 <Select value={goalsScope} label="Scope" onChange={(e) => setGoalsScope(e.target.value)}>
@@ -1284,10 +1329,10 @@ const SettingsManager = () => {
                             }}
                           >
                             <Typography variant="caption" color="text.secondary">
-                              YEAR {g.period || getPeriodLabel(g)} · {g.goal_type || '—'}
+                              YEAR {g.period || getPeriodLabel(g)} · {goalTypeDisplayLabel(g.goal_type)}
                             </Typography>
                             <Typography variant="h6" fontWeight="bold">
-                              {formatCurrency(g.target_value)}
+                              {formatGoalValue(g.target_value, g.goal_type)}
                             </Typography>
                             {g.weight != null && (
                               <Typography variant="caption" color="text.secondary">Weight: {g.weight}</Typography>
@@ -1315,10 +1360,10 @@ const SettingsManager = () => {
                             }}
                           >
                             <Typography variant="caption" color="text.secondary">
-                              {getPeriodLabel(g)} · {g.goal_type || '—'}
+                              {getPeriodLabel(g)} · {goalTypeDisplayLabel(g.goal_type)}
                             </Typography>
                             <Typography variant="body1" fontWeight="bold">
-                              {formatCurrency(g.target_value)}
+                              {formatGoalValue(g.target_value, g.goal_type)}
                             </Typography>
                             {g.weight != null && (
                               <Typography variant="caption" color="text.secondary" display="block">Weight: {g.weight}</Typography>
@@ -1336,7 +1381,6 @@ const SettingsManager = () => {
                               <TableCell>Period</TableCell>
                               <TableCell>Goal type</TableCell>
                               <TableCell align="right">Target value</TableCell>
-                              <TableCell align="right">Weight</TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
@@ -1355,9 +1399,8 @@ const SettingsManager = () => {
                                 <TableCell sx={{ fontWeight: isCurrentGoal(g) ? 'bold' : 'normal' }}>
                                   {getPeriodLabel(g)}
                                 </TableCell>
-                                <TableCell>{g.goal_type || '—'}</TableCell>
-                                <TableCell align="right">{formatCurrency(g.target_value)}</TableCell>
-                                <TableCell align="right">{g.weight != null ? String(g.weight) : '—'}</TableCell>
+                                <TableCell>{goalTypeDisplayLabel(g.goal_type)}</TableCell>
+                                <TableCell align="right">{formatGoalValue(g.target_value, g.goal_type)}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -1404,10 +1447,10 @@ const SettingsManager = () => {
                                 }}
                               >
                                 <Typography variant="caption" color="text.secondary">
-                                  YEAR {g.period || getPeriodLabel(g)} · {g.goal_type || '—'}
+                                  YEAR {g.period || getPeriodLabel(g)} · {goalTypeDisplayLabel(g.goal_type)}
                                 </Typography>
                                 <Typography variant="body1" fontWeight="bold">
-                                  {formatCurrency(g.target_value)}
+                                  {formatGoalValue(g.target_value, g.goal_type)}
                                 </Typography>
                                 {g.weight != null && (
                                   <Typography variant="caption" color="text.secondary">Weight: {g.weight}</Typography>
@@ -1436,7 +1479,7 @@ const SettingsManager = () => {
                               >
                                 <Typography variant="caption" color="text.secondary">{getPeriodLabel(g)}</Typography>
                                 <Typography variant="body2" fontWeight="bold">
-                                  {formatCurrency(g.target_value)}
+                                  {formatGoalValue(g.target_value, g.goal_type)}
                                 </Typography>
                                 {g.weight != null && (
                                   <Typography variant="caption" color="text.secondary" display="block">Weight: {g.weight}</Typography>
@@ -1454,7 +1497,6 @@ const SettingsManager = () => {
                                   <TableCell>Period</TableCell>
                                   <TableCell>Goal type</TableCell>
                                   <TableCell align="right">Target</TableCell>
-                                  <TableCell align="right">Weight</TableCell>
                                 </TableRow>
                               </TableHead>
                               <TableBody>
@@ -1473,9 +1515,8 @@ const SettingsManager = () => {
                                     <TableCell sx={{ fontWeight: isCurrentGoal(g) ? 'bold' : 'normal' }}>
                                       {getPeriodLabel(g)}
                                     </TableCell>
-                                    <TableCell>{g.goal_type || '—'}</TableCell>
-                                    <TableCell align="right">{formatCurrency(g.target_value)}</TableCell>
-                                    <TableCell align="right">{g.weight != null ? String(g.weight) : '—'}</TableCell>
+                                    <TableCell>{goalTypeDisplayLabel(g.goal_type)}</TableCell>
+                                    <TableCell align="right">{formatGoalValue(g.target_value, g.goal_type)}</TableCell>
                                   </TableRow>
                                 ))}
                               </TableBody>
@@ -1554,18 +1595,19 @@ const SettingsManager = () => {
                 </Select>
               </FormControl>
             )}
-            <FormControl fullWidth size="small">
-              <InputLabel>Goal type</InputLabel>
-              <Select
-                value={createGoalForm.goal_type}
-                label="Goal type"
-                onChange={(e) => setCreateGoalForm((prev) => ({ ...prev, goal_type: e.target.value }))}
-              >
-                {goalTypesFromApi.map((gt) => (
-                  <MenuItem key={gt} value={gt}>{gt}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <Autocomplete
+              size="small"
+              fullWidth
+              options={[...ALLOWED_GOAL_TYPES]}
+              value={ALLOWED_GOAL_TYPES.find((t) => goalTypesMatch(t, createGoalForm.goal_type)) ?? undefined}
+              onChange={(_, v) => setCreateGoalForm((prev) => ({ ...prev, goal_type: v ?? '' }))}
+              disableClearable
+              getOptionLabel={(o) => goalTypeDisplayLabel(o)}
+              isOptionEqualToValue={(a, b) => goalTypesMatch(a, b)}
+              renderInput={(params) => (
+                <TextField {...params} label="Goal type" placeholder="Search (e.g. 60+)" />
+              )}
+            />
             <TextField
               label="Target value"
               type="number"
@@ -1573,7 +1615,7 @@ const SettingsManager = () => {
               onChange={(e) => setCreateGoalForm((prev) => ({ ...prev, target_value: Number(e.target.value) || 0 }))}
               fullWidth
               size="small"
-              inputProps={{ min: 0 }}
+              inputProps={{ min: 0, step: 'any' }}
             />
             <TextField
               label="Description"
@@ -1582,7 +1624,9 @@ const SettingsManager = () => {
               fullWidth
               size="small"
             />
-            {createGoalForm.scope === 'agent' && (
+            {createGoalForm.scope === 'agent' &&
+              createGoalForm.period_type &&
+              createGoalForm.period_type !== 'month' && (
               <TextField
                 label="Weight"
                 type="number"
@@ -1627,7 +1671,7 @@ const SettingsManager = () => {
               onChange={(e) => setEditGoalTargetValue(Number(e.target.value) || 0)}
               fullWidth
               size="small"
-              inputProps={{ min: 0 }}
+              inputProps={{ min: 0, step: 'any' }}
             />
             <TextField
               label="Description"
@@ -1637,6 +1681,7 @@ const SettingsManager = () => {
               size="small"
               multiline
             />
+            {editGoalPeriodType !== 'month' && (
             <TextField
               label="Weight"
               type="number"
@@ -1647,6 +1692,7 @@ const SettingsManager = () => {
               placeholder="Optional (e.g. 0.5)"
               inputProps={{ min: 0, max: 1, step: 0.1 }}
             />
+            )}
             {editGoalError && (
               <Alert severity="error" onClose={() => setEditGoalError(null)}>
                 {editGoalError}
@@ -1747,7 +1793,12 @@ const SettingsManager = () => {
                               if (periodPickerFor === 'bonus') {
                                 setBonusCreateForm((prev) => ({ ...prev, period_id: p.id, period_label: formatPeriodLabel(p) }));
                               } else {
-                                setCreateGoalForm((prev) => ({ ...prev, period_id: p.id, period_label: formatPeriodLabel(p) }));
+                                setCreateGoalForm((prev) => ({
+                                  ...prev,
+                                  period_id: p.id,
+                                  period_label: formatPeriodLabel(p),
+                                  period_type: p.period_type,
+                                }));
                               }
                               setPeriodSelectAnchor(null);
                               setPeriodPickerFor(null);
@@ -1766,7 +1817,12 @@ const SettingsManager = () => {
                               if (periodPickerFor === 'bonus') {
                                 setBonusCreateForm((prev) => ({ ...prev, period_id: p.id, period_label: formatPeriodLabel(p) }));
                               } else {
-                                setCreateGoalForm((prev) => ({ ...prev, period_id: p.id, period_label: formatPeriodLabel(p) }));
+                                setCreateGoalForm((prev) => ({
+                                  ...prev,
+                                  period_id: p.id,
+                                  period_label: formatPeriodLabel(p),
+                                  period_type: p.period_type,
+                                }));
                               }
                               setPeriodSelectAnchor(null);
                               setPeriodPickerFor(null);
@@ -1785,7 +1841,12 @@ const SettingsManager = () => {
                               if (periodPickerFor === 'bonus') {
                                 setBonusCreateForm((prev) => ({ ...prev, period_id: p.id, period_label: formatPeriodLabel(p) }));
                               } else {
-                                setCreateGoalForm((prev) => ({ ...prev, period_id: p.id, period_label: formatPeriodLabel(p) }));
+                                setCreateGoalForm((prev) => ({
+                                  ...prev,
+                                  period_id: p.id,
+                                  period_label: formatPeriodLabel(p),
+                                  period_type: p.period_type,
+                                }));
                               }
                               setPeriodSelectAnchor(null);
                               setPeriodPickerFor(null);
@@ -2313,22 +2374,19 @@ const SettingsManager = () => {
                 sx={{ minWidth: 100 }}
                 required
               />
-              <FormControl size="small" sx={{ minWidth: 160 }} required>
-                <InputLabel>Goal type</InputLabel>
-                <Select
-                  value={progressGoalType}
-                  label="Goal type"
-                  onChange={(e) => setProgressGoalType(e.target.value)}
-                  displayEmpty
-                >
-                  <MenuItem value="" disabled>
-                    Select goal type
-                  </MenuItem>
-                  {goalTypesFromApi.map((gt) => (
-                    <MenuItem key={gt} value={gt}>{gt}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <Autocomplete
+                size="small"
+                sx={{ minWidth: 220 }}
+                options={[...ALLOWED_GOAL_TYPES]}
+                value={ALLOWED_GOAL_TYPES.find((t) => goalTypesMatch(t, progressGoalType)) ?? undefined}
+                onChange={(_, v) => setProgressGoalType(v ?? '')}
+                disableClearable
+                getOptionLabel={(o) => goalTypeDisplayLabel(o)}
+                isOptionEqualToValue={(a, b) => goalTypesMatch(a, b)}
+                renderInput={(params) => (
+                  <TextField {...params} label="Goal type" required placeholder="Search (e.g. 60+)" />
+                )}
+              />
             </Box>
             {!progressGoalType ? (
               <Typography variant="body2" color="text.secondary">
@@ -2359,11 +2417,11 @@ const SettingsManager = () => {
                         }}
                       >
                         <Typography variant="caption" color="text.secondary">
-                          {periodLabel} · {g.goal_type || '—'}
+                          {periodLabel} · {goalTypeDisplayLabel(g.goal_type)}
                         </Typography>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5, gap: 2 }}>
                           <Typography variant="body2">
-                            {formatCurrency(actual)} / {formatCurrency(g.target_value)}
+                            {formatGoalValue(actual, g.goal_type)} / {formatGoalValue(g.target_value, g.goal_type)}
                           </Typography>
                           <Typography variant="body2" fontWeight="bold">
                             {pct}%
@@ -2425,8 +2483,8 @@ const SettingsManager = () => {
                                         sx={{ cursor: 'pointer' }}
                                       >
                                         <TableCell>{periodLabelFor(g)}</TableCell>
-                                        <TableCell>{g.goal_type || '—'}</TableCell>
-                                        <TableCell>{formatCurrency(actual)} / {formatCurrency(g.target_value)}</TableCell>
+                                        <TableCell>{goalTypeDisplayLabel(g.goal_type)}</TableCell>
+                                        <TableCell>{formatGoalValue(actual, g.goal_type)} / {formatGoalValue(g.target_value, g.goal_type)}</TableCell>
                                         <TableCell align="right">
                                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'flex-end' }}>
                                             <LinearProgress variant="determinate" value={pct} sx={{ width: 80, height: 6, borderRadius: 1 }} />
@@ -2512,8 +2570,8 @@ const SettingsManager = () => {
                                                 sx={{ cursor: 'pointer' }}
                                               >
                                                 <TableCell>{periodLabelFor(g)}</TableCell>
-                                                <TableCell>{g.goal_type || '—'}</TableCell>
-                                                <TableCell>{formatCurrency(actual)} / {formatCurrency(g.target_value)}</TableCell>
+                                                <TableCell>{goalTypeDisplayLabel(g.goal_type)}</TableCell>
+                                                <TableCell>{formatGoalValue(actual, g.goal_type)} / {formatGoalValue(g.target_value, g.goal_type)}</TableCell>
                                                 <TableCell align="right">
                                                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'flex-end' }}>
                                                     <LinearProgress variant="determinate" value={pct} sx={{ width: 80, height: 6, borderRadius: 1 }} />

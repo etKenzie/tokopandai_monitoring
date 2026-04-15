@@ -175,6 +175,48 @@ function formatCurrency(value: number): string {
   return String(value);
 }
 
+function isPlainNumberGoalType(gt?: string | null): boolean {
+  const t = (gt ?? '').trim().toLowerCase();
+  return t === 'noo' || t === '60+' || t === '60';
+}
+
+function goalTypeDisplayLabel(gt?: string | null): string {
+  if (gt == null || gt === '') return '—';
+  const t = gt.trim().toLowerCase();
+  if (t === '60' || t === '60+') return '60+';
+  return gt;
+}
+
+/** 60+ is inverse KPI: lower actual is better than higher. */
+function isInverseGoalProgressType(gt?: string | null): boolean {
+  const t = (gt ?? '').trim().toLowerCase();
+  return t === '60' || t === '60+';
+}
+
+/** Displayed progress percentage for goal rows (supports inverse goal types). */
+function calculateDisplayedGoalProgressPct(g: GoalProgressItem): number {
+  const target = g.target_value || 0;
+  if (target <= 0) return 0;
+  const actual = g.progress?.actual_value ?? 0;
+  if (isInverseGoalProgressType(g.goal_type)) {
+    if (actual <= 0) return 100;
+    return (target / actual) * 100;
+  }
+  return (actual / target) * 100;
+}
+
+/** Compact IDR-style for monetary goals; plain number for noo / 60+. */
+function formatGoalProgressValue(value: number, goalType?: string | null): string {
+  if (isPlainNumberGoalType(goalType)) {
+    return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(value);
+  }
+  return formatCurrency(value);
+}
+
+function formatPercentValue(value: number): string {
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(value);
+}
+
 function formatBonusAmount(value: number): string {
   return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
 }
@@ -633,11 +675,14 @@ export default function Dashboard() {
     );
   };
 
-  /** One row for non-profit goals: goal type, actual/target, linear progress (fill color by pct: red → green) */
+  /** One row for non-profit goals; 60+ is treated as an upper-bound threshold (no progress bar). */
   const LinearGoalRow = ({ g }: { g: GoalProgressItem }) => {
     const actual = g.progress?.actual_value ?? 0;
-    const target = g.target_value || 1;
-    const pct = Math.round((actual / target) * 100);
+    const target = g.target_value || 0;
+    const isInverseType = isInverseGoalProgressType(g.goal_type);
+    const isThresholdOk = !isInverseType || actual <= target;
+    // For 60+, backend actual_value is already a percentage; do not derive from target.
+    const pct = isInverseType ? actual : Math.round(calculateDisplayedGoalProgressPct(g));
     const barPct = Math.min(100, Math.max(0, pct));
     const fillColor = progressFillColor(pct);
     return (
@@ -650,22 +695,37 @@ export default function Dashboard() {
         }}
       >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-          <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>{g.goal_type || '—'}</Typography>
+          <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>{goalTypeDisplayLabel(g.goal_type)}</Typography>
           <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>
-            {formatCurrency(actual)} / {formatCurrency(g.target_value)} · <strong>{pct}%</strong>
+            {isInverseType ? <strong>{formatPercentValue(pct)}%</strong> : (
+              <>
+                {formatGoalProgressValue(actual, g.goal_type)} / {formatGoalProgressValue(g.target_value, g.goal_type)} · <strong>{pct}%</strong>
+              </>
+            )}
           </Typography>
         </Box>
-        <LinearProgress
-          variant="determinate"
-          value={barPct}
-          sx={{
-            mt: 0.5,
-            height: 6,
-            borderRadius: 1,
-            backgroundColor: 'grey.300',
-            '& .MuiLinearProgress-bar': { backgroundColor: fillColor },
-          }}
-        />
+        {isInverseType ? (
+          <Box sx={{ mt: 0.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+            <Typography variant="caption" color="text.secondary">
+              Goal boundary: {'<='} {formatGoalProgressValue(g.target_value, g.goal_type)}
+            </Typography>
+            <Typography variant="caption" color={isThresholdOk ? 'success.main' : 'error.main'}>
+              {isThresholdOk ? 'Within boundary' : 'Above boundary'}
+            </Typography>
+          </Box>
+        ) : (
+          <LinearProgress
+            variant="determinate"
+            value={barPct}
+            sx={{
+              mt: 0.5,
+              height: 6,
+              borderRadius: 1,
+              backgroundColor: 'grey.300',
+              '& .MuiLinearProgress-bar': { backgroundColor: fillColor },
+            }}
+          />
+        )}
       </Box>
     );
   };
@@ -740,11 +800,15 @@ export default function Dashboard() {
     companyMultiplier?: number | null;
   }) => {
     const list = getGoalsForPeriod(goals, periodType);
-    if (list.length === 0 && !allocatedBonus && !companyMultiplier) return null;
+    // For now, 60+ is only shown in Quarter cards (hide it in Year cards).
+    const visibleList = periodType === 'year'
+      ? list.filter((g) => !isInverseGoalProgressType(g.goal_type))
+      : list;
+    if (visibleList.length === 0 && !allocatedBonus && !companyMultiplier) return null;
     const title = periodTitle || (periodType === 'quarter' ? 'Quarter' : periodType === 'month' ? 'Month' : 'Year');
     const isQuarterOrMonth = periodType === 'quarter' || periodType === 'month';
-    const profitGoal = isQuarterOrMonth ? list.find((g) => (g.goal_type || '').toLowerCase() === 'profit') : null;
-    const otherGoals = isQuarterOrMonth && profitGoal ? list.filter((g) => g.id !== profitGoal.id) : list;
+    const profitGoal = isQuarterOrMonth ? visibleList.find((g) => (g.goal_type || '').toLowerCase() === 'profit') : null;
+    const otherGoals = isQuarterOrMonth && profitGoal ? visibleList.filter((g) => g.id !== profitGoal.id) : visibleList;
 
     return (
       <Card variant="outlined" sx={{ height: '100%' }}>
