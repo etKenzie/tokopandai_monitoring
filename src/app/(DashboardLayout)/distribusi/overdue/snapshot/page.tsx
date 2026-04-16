@@ -439,7 +439,7 @@ const OverdueSnapshotPage = () => {
 
 export default function ProtectedOverdueSnapshotPage() {
   return (
-    <ProtectedRoute requiredRoles={getPageRoles('DISTRIBUSI_DASHBOARD')}>
+    <ProtectedRoute requiredRoles={getPageRoles('TOP_SECTION')}>
       <OverdueSnapshotPage />
     </ProtectedRoute>
   );

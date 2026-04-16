@@ -29,7 +29,7 @@ const CashInOverview = () => {
   const { user, roles, refreshRoles } = useAuth();
   
   // Check access for allowed roles (configurable via roles config)
-  const accessCheck = useCheckRoles(getPageRoles('DISTRIBUSI_DASHBOARD'));
+  const accessCheck = useCheckRoles(getPageRoles('CASH_IN_SECTION'));
   
   // Get restricted roles from config
   const restrictedRoles = getRestrictedRoles();
@@ -402,7 +402,7 @@ const CashInOverview = () => {
 
 export default function ProtectedCashInOverview() {
   return (
-    <ProtectedRoute requiredRoles={getPageRoles('DISTRIBUSI_DASHBOARD')}>
+    <ProtectedRoute requiredRoles={getPageRoles('CASH_IN_SECTION')}>
       <CashInOverview />
     </ProtectedRoute>
   );

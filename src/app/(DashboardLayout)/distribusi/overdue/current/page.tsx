@@ -13,7 +13,7 @@ const OverduePage = () => {
   const { user, roles, refreshRoles } = useAuth();
   
   // Check access for allowed roles (configurable via roles config)
-  const accessCheck = useCheckRoles(getPageRoles('DISTRIBUSI_DASHBOARD'));
+  const accessCheck = useCheckRoles(getPageRoles('TOP_SECTION'));
   
   // Get restricted roles from config
   const restrictedRoles = getRestrictedRoles();
@@ -179,7 +179,7 @@ const OverduePage = () => {
 
 export default function ProtectedOverduePage() {
   return (
-    <ProtectedRoute requiredRoles={getPageRoles('DISTRIBUSI_DASHBOARD')}>
+    <ProtectedRoute requiredRoles={getPageRoles('TOP_SECTION')}>
       <OverduePage />
     </ProtectedRoute>
   );
