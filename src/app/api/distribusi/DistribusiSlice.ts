@@ -1488,6 +1488,8 @@ export interface StoresOrderOnceMonthlyDataItem {
   total_unique_stores?: number;
   total_orders: number;
   total_invoice?: number;
+  segment?: string;
+  business_type?: string;
 }
 
 export interface StoresOrderOnceMonthlyResponse {
@@ -1496,6 +1498,8 @@ export interface StoresOrderOnceMonthlyResponse {
   message: string;
   /** Normalized rows from API `data.data` */
   data: StoresOrderOnceMonthlyDataItem[];
+  trend_by_segment: StoresOrderOnceMonthlyDataItem[];
+  trend_by_business_type: StoresOrderOnceMonthlyDataItem[];
 }
 
 export interface StoresOrderOnceMonthlyQueryParams {
@@ -1524,11 +1528,21 @@ export const fetchStoresOrderOnceMonthly = async (
     : Array.isArray(json?.data)
       ? json.data
       : [];
+  const segmentRows: StoresOrderOnceMonthlyDataItem[] = Array.isArray(json?.data?.trend_by_segment)
+    ? json.data.trend_by_segment
+    : [];
+  const businessTypeRows: StoresOrderOnceMonthlyDataItem[] = Array.isArray(
+      json?.data?.trend_by_business_type
+    )
+    ? json.data.trend_by_business_type
+    : [];
   return {
     code: json.code,
     status: json.status,
     message: json.message,
     data: rows,
+    trend_by_segment: segmentRows,
+    trend_by_business_type: businessTypeRows,
   };
 };
 

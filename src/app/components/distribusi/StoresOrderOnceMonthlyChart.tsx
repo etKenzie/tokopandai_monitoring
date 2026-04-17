@@ -13,13 +13,15 @@ import {
   MenuItem,
   Select,
   SelectChangeEvent,
-  Switch,
   Typography,
 } from '@mui/material';
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
+
+type TrendView = 'all' | 'segment' | 'business_type';
+type MetricView = 'unique_stores' | 'total_orders' | 'total_invoice';
 
 interface StoresOrderOnceMonthlyChartProps {
   filters: {
@@ -33,8 +35,8 @@ const StoresOrderOnceMonthlyChart = ({ filters }: StoresOrderOnceMonthlyChartPro
   const [loading, setLoading] = useState(false);
   const [startMonthYear, setStartMonthYear] = useState<string>('');
   const [endMonthYear, setEndMonthYear] = useState<string>('');
-  /** false = stores & orders (two series); true = total invoice (one series) */
-  const [showInvoice, setShowInvoice] = useState(false);
+  const [trendView, setTrendView] = useState<TrendView>('all');
+  const [metricView, setMetricView] = useState<MetricView>('total_orders');
 
   const generateMonthYearOptions = () => {
     const options = [];
@@ -129,52 +131,95 @@ const StoresOrderOnceMonthlyChart = ({ filters }: StoresOrderOnceMonthlyChartPro
       maximumFractionDigits: 0,
     }).format(value);
 
-  const sortedRows = useMemo(() => {
-    if (!chartData?.data?.length) return [];
+  const getMonthOrderValue = useCallback((monthYear: string) => {
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December',
     ];
-    return [...chartData.data].sort((a, b) => {
-      const [monthA, yearA] = a.month.split(' ');
-      const [monthB, yearB] = b.month.split(' ');
-      if (!monthA || !yearA || !monthB || !yearB) return 0;
-      const yearDiff = parseInt(yearA, 10) - parseInt(yearB, 10);
-      if (yearDiff !== 0) return yearDiff;
-      return monthNames.indexOf(monthA) - monthNames.indexOf(monthB);
+    const [month, year] = monthYear.split(' ');
+    if (!month || !year) return Number.MAX_SAFE_INTEGER;
+    const monthIndex = monthNames.indexOf(month);
+    if (monthIndex < 0) return Number.MAX_SAFE_INTEGER;
+    return parseInt(year, 10) * 100 + monthIndex;
+  }, []);
+
+  const sortedRows = useMemo(() => {
+    const sourceRows =
+      trendView === 'segment'
+        ? chartData?.trend_by_segment
+        : trendView === 'business_type'
+          ? chartData?.trend_by_business_type
+          : chartData?.data;
+
+    if (!sourceRows?.length) return [];
+
+    return [...sourceRows].sort((a, b) => {
+      const monthOrderDiff = getMonthOrderValue(a.month) - getMonthOrderValue(b.month);
+      if (monthOrderDiff !== 0) return monthOrderDiff;
+
+      if (trendView === 'segment') {
+        return (a.segment ?? '').localeCompare(b.segment ?? '');
+      }
+      if (trendView === 'business_type') {
+        return (a.business_type ?? '').localeCompare(b.business_type ?? '');
+      }
+      return 0;
     });
-  }, [chartData]);
+  }, [chartData, getMonthOrderValue, trendView]);
 
   const chartDataConfig = useMemo(() => {
     if (!sortedRows.length) return { categories: [] as string[], series: [] as { name: string; data: number[] }[] };
 
-    const categories = sortedRows.map((item) => item.month);
+    const metricLabel =
+      metricView === 'unique_stores'
+        ? 'Unique stores'
+        : metricView === 'total_orders'
+          ? 'Total orders'
+          : 'Total invoice';
+    const getMetricValue = (item: (typeof sortedRows)[number]) => {
+      if (metricView === 'unique_stores') {
+        return item.unique_stores ?? item.total_unique_stores ?? 0;
+      }
+      if (metricView === 'total_orders') {
+        return item.total_orders ?? 0;
+      }
+      return item.total_invoice ?? 0;
+    };
 
-    if (showInvoice) {
+    if (trendView === 'all') {
       return {
-        categories,
+        categories: sortedRows.map((item) => item.month),
         series: [
           {
-            name: 'Total invoice',
-            data: sortedRows.map((item) => item.total_invoice ?? 0),
+            name: metricLabel,
+            data: sortedRows.map((item) => getMetricValue(item)),
           },
         ],
       };
     }
 
+    const months = Array.from(new Set(sortedRows.map((item) => item.month))).sort(
+      (a, b) => getMonthOrderValue(a) - getMonthOrderValue(b)
+    );
+    const groupingKey = trendView === 'segment' ? 'segment' : 'business_type';
+    const grouped = new Map<string, Map<string, number>>();
+
+    sortedRows.forEach((item) => {
+      const groupName = (item[groupingKey] ?? 'Unknown').toString();
+      if (!grouped.has(groupName)) {
+        grouped.set(groupName, new Map<string, number>());
+      }
+      grouped.get(groupName)!.set(item.month, getMetricValue(item));
+    });
+
     return {
-      categories,
-      series: [
-        {
-          name: 'Unique stores',
-          data: sortedRows.map(
-            (item) => item.unique_stores ?? item.total_unique_stores ?? 0
-          ),
-        },
-        { name: 'Total orders', data: sortedRows.map((item) => item.total_orders ?? 0) },
-      ],
+      categories: months,
+      series: Array.from(grouped.entries()).map(([name, monthToValue]) => ({
+        name,
+        data: months.map((month) => monthToValue.get(month) ?? 0),
+      })),
     };
-  }, [sortedRows, showInvoice]);
+  }, [sortedRows, metricView, trendView, getMonthOrderValue]);
 
   const shouldRenderChart =
     chartDataConfig.categories.length > 0 && chartDataConfig.series.length > 0;
@@ -194,21 +239,21 @@ const StoresOrderOnceMonthlyChart = ({ filters }: StoresOrderOnceMonthlyChartPro
       yaxis: {
         labels: {
           formatter: (value: number) =>
-            showInvoice ? formatCurrency(value) : formatCount(value),
+            metricView === 'total_invoice' ? formatCurrency(value) : formatCount(value),
         },
       },
       tooltip: {
         y: {
           formatter: (value: number) =>
-            showInvoice ? formatCurrency(value) : formatCount(value),
+            metricView === 'total_invoice' ? formatCurrency(value) : formatCount(value),
         },
       },
-      colors: showInvoice ? ['#F59E0B'] : ['#3B82F6', '#10B981'],
+      colors: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#14B8A6'],
       grid: { borderColor: '#E5E7EB', strokeDashArray: 4 },
       markers: { size: 6, strokeColors: '#FFFFFF', strokeWidth: 2 },
       legend: { position: 'bottom' as const, horizontalAlign: 'center' as const },
     }),
-    [chartDataConfig, showInvoice]
+    [chartDataConfig, metricView]
   );
 
   return (
@@ -228,19 +273,34 @@ const StoresOrderOnceMonthlyChart = ({ filters }: StoresOrderOnceMonthlyChartPro
             NOO Monthly trend
           </Typography>
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="body2" color={showInvoice ? 'text.secondary' : 'text.primary'}>
-                Stores &amp; orders
-              </Typography>
-              <Switch
-                checked={showInvoice}
-                onChange={(_, checked) => setShowInvoice(checked)}
-                inputProps={{ 'aria-label': 'Toggle between stores/orders and invoice' }}
-              />
-              <Typography variant="body2" color={showInvoice ? 'text.primary' : 'text.secondary'}>
-                Invoice
-              </Typography>
-            </Box>
+            <FormControl size="small">
+              <InputLabel>View by</InputLabel>
+              <Select
+                value={trendView}
+                label="View by"
+                onChange={(event: SelectChangeEvent<string>) =>
+                  setTrendView(event.target.value as TrendView)
+                }
+              >
+                <MenuItem value="all">All</MenuItem>
+                <MenuItem value="segment">Segment</MenuItem>
+                <MenuItem value="business_type">Business type</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl size="small">
+              <InputLabel>Metric</InputLabel>
+              <Select
+                value={metricView}
+                label="Metric"
+                onChange={(event: SelectChangeEvent<string>) =>
+                  setMetricView(event.target.value as MetricView)
+                }
+              >
+                <MenuItem value="unique_stores">Unique stores</MenuItem>
+                <MenuItem value="total_orders">Total orders</MenuItem>
+                <MenuItem value="total_invoice">Total invoice</MenuItem>
+              </Select>
+            </FormControl>
             <FormControl size="small">
               <InputLabel>Start month</InputLabel>
               <Select
@@ -286,7 +346,7 @@ const StoresOrderOnceMonthlyChart = ({ filters }: StoresOrderOnceMonthlyChartPro
             </Box>
           ) : shouldRenderChart ? (
             <ReactApexChart
-              key={`${startMonthYear}-${endMonthYear}-${showInvoice ? 'inv' : 'so'}`}
+              key={`${startMonthYear}-${endMonthYear}-${trendView}-${metricView}`}
               options={chartOptions}
               series={chartDataConfig.series}
               type="line"
