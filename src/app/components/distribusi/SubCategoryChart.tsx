@@ -1,15 +1,17 @@
 'use client';
 
+import { fetchProductSummary, ProductSummaryData } from '@/app/api/distribusi/DistribusiSlice';
 import {
     Box,
     Card,
     CardContent,
     CircularProgress,
+    FormControlLabel,
+    Switch,
     Typography
 } from '@mui/material';
 import dynamic from "next/dynamic";
-import { useEffect, useState, useMemo } from 'react';
-import { fetchProductSummary, ProductSummaryData } from '@/app/api/distribusi/DistribusiSlice';
+import { useEffect, useMemo, useState } from 'react';
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -17,6 +19,7 @@ interface SubCategoryAggregatedData {
   sub_category: string;
   total_invoice: number;
   total_profit: number;
+  margin: number;
   product_count: number;
 }
 
@@ -33,6 +36,7 @@ interface SubCategoryChartProps {
 const SubCategoryChart = ({ filters }: SubCategoryChartProps) => {
   const [products, setProducts] = useState<ProductSummaryData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showMargin, setShowMargin] = useState(false);
 
   const fetchChartData = async () => {
     if (!filters.month || !filters.year) {
@@ -87,6 +91,7 @@ const SubCategoryChart = ({ filters }: SubCategoryChartProps) => {
           sub_category: subCategory,
           total_invoice: 0,
           total_profit: 0,
+          margin: 0,
           product_count: 0,
         };
       }
@@ -103,8 +108,13 @@ const SubCategoryChart = ({ filters }: SubCategoryChartProps) => {
       return acc;
     }, {} as Record<string, SubCategoryAggregatedData>);
 
-    // Convert to array and sort by total_invoice descending
-    return Object.values(aggregated).sort((a, b) => b.total_invoice - a.total_invoice);
+    // Calculate margin then sort by total_invoice descending
+    return Object.values(aggregated)
+      .map((item) => ({
+        ...item,
+        margin: item.total_invoice > 0 ? (item.total_profit / item.total_invoice) * 100 : 0
+      }))
+      .sort((a, b) => b.total_invoice - a.total_invoice);
   }, [products]);
 
   // Fetch data when filters change
@@ -124,8 +134,8 @@ const SubCategoryChart = ({ filters }: SubCategoryChartProps) => {
   const formatNumber = (value: number) => {
     return new Intl.NumberFormat('en-US').format(value);
   };
+  const formatPercent = (value: number) => `${value.toFixed(2)}%`;
 
-  // Prepare chart data for total profit and total invoice
   const chartOptions = {
     chart: {
       type: 'bar' as const,
@@ -169,24 +179,33 @@ const SubCategoryChart = ({ filters }: SubCategoryChartProps) => {
         rotateAlways: false,
       },
     },
-    yaxis: [
-      {
-        title: { text: 'Total Invoice (IDR)', style: { fontSize: '14px', fontWeight: 600 } },
-        labels: { formatter: (value: number) => formatCurrency(value) }
-      },
-      {
-        opposite: true,
-        title: { text: 'Total Profit (IDR)', style: { fontSize: '14px', fontWeight: 600 } },
-        labels: { formatter: (value: number) => formatCurrency(value) }
-      }
-    ],
-    tooltip: {
-      y: [
-        { formatter: (value: number) => formatCurrency(value), title: { formatter: () => 'Total Invoice: ' } },
-        { formatter: (value: number) => formatCurrency(value), title: { formatter: () => 'Total Profit: ' } }
-      ]
-    },
-    colors: ['#3B82F6', '#10B981'],
+    yaxis: showMargin
+      ? {
+          title: { text: 'Margin (%)', style: { fontSize: '14px', fontWeight: 600 } },
+          labels: { formatter: (value: number) => formatPercent(value) }
+        }
+      : [
+          {
+            title: { text: 'Total Invoice (IDR)', style: { fontSize: '14px', fontWeight: 600 } },
+            labels: { formatter: (value: number) => formatCurrency(value) }
+          },
+          {
+            opposite: true,
+            title: { text: 'Total Profit (IDR)', style: { fontSize: '14px', fontWeight: 600 } },
+            labels: { formatter: (value: number) => formatCurrency(value) }
+          }
+        ],
+    tooltip: showMargin
+      ? {
+          y: { formatter: (value: number) => formatPercent(value), title: { formatter: () => 'Margin: ' } }
+        }
+      : {
+          y: [
+            { formatter: (value: number) => formatCurrency(value), title: { formatter: () => 'Total Invoice: ' } },
+            { formatter: (value: number) => formatCurrency(value), title: { formatter: () => 'Total Profit: ' } }
+          ]
+        },
+    colors: showMargin ? ['#F59E0B'] : ['#3B82F6', '#10B981'],
     legend: {
       position: 'top' as const,
       horizontalAlign: 'center' as const,
@@ -198,10 +217,12 @@ const SubCategoryChart = ({ filters }: SubCategoryChartProps) => {
     },
   };
 
-  const series = [
-    { name: 'Total Invoice', data: chartData.map(item => item.total_invoice) },
-    { name: 'Total Profit', data: chartData.map(item => item.total_profit) }
-  ];
+  const series = showMargin
+    ? [{ name: 'Margin (%)', data: chartData.map(item => item.margin) }]
+    : [
+        { name: 'Total Invoice', data: chartData.map(item => item.total_invoice) },
+        { name: 'Total Profit', data: chartData.map(item => item.total_profit) }
+      ];
 
   if (loading) {
     return (
@@ -247,13 +268,22 @@ const SubCategoryChart = ({ filters }: SubCategoryChartProps) => {
         <Typography variant="h6" gutterBottom>
           Sub Category Distribution
         </Typography>
+        <Box display="flex" justifyContent="flex-end" mb={2}>
+          <FormControlLabel
+            control={<Switch checked={showMargin} onChange={(e) => setShowMargin(e.target.checked)} color="primary" />}
+            label="Margin chart"
+          />
+        </Box>
         
         <Typography variant="body2" color="textSecondary" mb={3}>
-          Distribution of products by sub category showing total invoice and total profit
+          {showMargin
+            ? 'Distribution of products by sub category showing margin percentage'
+            : 'Distribution of products by sub category showing total invoice and total profit'}
         </Typography>
         
         <Box>
           <ReactApexChart
+            key={showMargin ? 'subcat-margin-mode' : 'subcat-financial-mode'}
             options={chartOptions}
             series={series}
             type="bar"
@@ -269,6 +299,7 @@ const SubCategoryChart = ({ filters }: SubCategoryChartProps) => {
             Total sub categories: {chartData.length} | 
             Total invoice: {formatCurrency(chartData.reduce((sum, item) => sum + Number(item.total_invoice) || 0, 0))} | 
             Total profit: {formatCurrency(chartData.reduce((sum, item) => sum + Number(item.total_profit) || 0, 0))} | 
+            Avg margin: {formatPercent(chartData.length > 0 ? chartData.reduce((sum, item) => sum + item.margin, 0) / chartData.length : 0)} | 
             Total products: {formatNumber(chartData.reduce((sum, item) => sum + item.product_count, 0))}
           </Typography>
         </Box>

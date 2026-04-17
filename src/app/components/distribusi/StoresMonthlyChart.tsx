@@ -14,7 +14,7 @@ import {
     Typography
 } from '@mui/material';
 import dynamic from "next/dynamic";
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -23,6 +23,7 @@ interface StoresMonthlyChartProps {
     agent: string;
     area: string;
     segment?: string;
+    business_type?: string;
     month?: string;
     year?: string;
     status_payment?: string;
@@ -67,7 +68,7 @@ const StoresMonthlyChart = ({ filters, onViewAllStores }: StoresMonthlyChartProp
   useEffect(() => {
     console.log('Filters changed, updating month range:', filters);
     updateMonthRange();
-  }, [filters.month, filters.year, filters.agent, filters.area, filters.segment, filters.status_payment]);
+  }, [filters.month, filters.year, filters.agent, filters.area, filters.segment, filters.business_type, filters.status_payment]);
 
   const updateMonthRange = () => {
     console.log('Updating month range with filters:', filters);
@@ -155,6 +156,7 @@ const StoresMonthlyChart = ({ filters, onViewAllStores }: StoresMonthlyChartProp
         agent_name: currentFilters.agent,
         area: currentFilters.area,
         segment: currentFilters.segment,
+        business_type: currentFilters.business_type,
         status_payment: currentFilters.status_payment
       });
 
@@ -164,6 +166,7 @@ const StoresMonthlyChart = ({ filters, onViewAllStores }: StoresMonthlyChartProp
         agent_name: currentFilters.agent || undefined,
         area: currentFilters.area || undefined,
         segment: currentFilters.segment || undefined,
+        business_type: currentFilters.business_type || undefined,
         status_payment: currentFilters.status_payment || undefined,
       }, signal);
       
@@ -220,6 +223,7 @@ const StoresMonthlyChart = ({ filters, onViewAllStores }: StoresMonthlyChartProp
         agent: filters.agent,
         area: filters.area,
         segment: filters.segment,
+        business_type: filters.business_type,
         status_payment: filters.status_payment
       });
 
@@ -245,7 +249,7 @@ const StoresMonthlyChart = ({ filters, onViewAllStores }: StoresMonthlyChartProp
         abortControllerRef.current = null;
       }
     };
-  }, [startMonthYear, endMonthYear, filters.agent, filters.area, filters.segment, filters.status_payment]);
+  }, [startMonthYear, endMonthYear, filters.agent, filters.area, filters.segment, filters.business_type, filters.status_payment]);
 
   const handleChartTypeChange = (event: SelectChangeEvent<ChartType>) => {
     setChartType(event.target.value as ChartType);

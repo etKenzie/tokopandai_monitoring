@@ -46,6 +46,7 @@ const headCells: HeadCell[] = [
   { id: 'reseller_name', label: 'Reseller Name', numeric: false },
   { id: 'store_name', label: 'Store Name', numeric: false },
   { id: 'segment', label: 'Segment', numeric: false },
+  { id: 'business_type', label: 'Business Type', numeric: false },
   { id: 'area', label: 'Area', numeric: false },
   { id: 'agent_name', label: 'Agent', numeric: false },
   { id: 'status_order', label: 'Order Status', numeric: false },
@@ -82,6 +83,7 @@ const SalesOrdersTable = ({
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [segmentFilter, setSegmentFilter] = useState<string>('');
+  const [businessTypeFilter, setBusinessTypeFilter] = useState<string>('');
   const [areaFilter, setAreaFilter] = useState<string>('');
   const [agentFilter, setAgentFilter] = useState<string>('');
   const [statusOrderFilter, setStatusOrderFilter] = useState<string>('');
@@ -104,7 +106,7 @@ const SalesOrdersTable = ({
     try {
       const response = await fetchOrders({
         sortTime: 'desc',
-        payment: paymentStatusFilter || undefined,
+        payment: filters.statusPayment || undefined,
         month: filters.month,
         agent: agentName || filters.agent,
         segment: filters.segment,
@@ -131,7 +133,7 @@ const SalesOrdersTable = ({
     fetchOrdersData();
     // Reset pagination when filters change
     setPage(0);
-  }, [filters.month, filters.agent, filters.segment, filters.area, filters.statusPayment, paymentStatusFilter, agentName]);
+  }, [filters.month, filters.agent, filters.segment, filters.area, filters.statusPayment, agentName]);
 
   const handleRequestSort = (property: SortableField) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -200,6 +202,7 @@ const SalesOrdersTable = ({
   const filteredOrders = orders.filter((o) => {
     // Apply filters
     if (segmentFilter && o.segment !== segmentFilter) return false;
+    if (businessTypeFilter && o.business_type !== businessTypeFilter) return false;
     if (areaFilter && o.area !== areaFilter) return false;
     if (agentFilter && o.agent_name !== agentFilter) return false;
     if (statusOrderFilter && o.status_order !== statusOrderFilter) return false;
@@ -216,9 +219,10 @@ const SalesOrdersTable = ({
   // Reset page when local filters change
   useEffect(() => {
     setPage(0);
-  }, [segmentFilter, areaFilter, agentFilter, statusOrderFilter, paymentStatusFilter, searchQuery]);
+  }, [segmentFilter, businessTypeFilter, areaFilter, agentFilter, statusOrderFilter, paymentStatusFilter, searchQuery]);
 
   const uniqueSegments = Array.from(new Set(orders.map((o) => o.segment)));
+  const uniqueBusinessTypes = Array.from(new Set(orders.map((o) => o.business_type).filter(Boolean)));
   const uniqueAreas = Array.from(new Set(orders.map((o) => o.area)));
   const uniqueAgents = Array.from(new Set(orders.map((o) => o.agent_name)));
   const uniqueStatusOrders = Array.from(new Set(orders.map((o) => o.status_order)));
@@ -431,6 +435,7 @@ const SalesOrdersTable = ({
         month: filters.month,
         agent: agentName || filters.agent,
         segment: filters.segment,
+        business_type: businessTypeFilter || undefined,
         area: filters.area,
         status_payment: paymentStatusFilter || undefined
       });
@@ -504,6 +509,7 @@ const SalesOrdersTable = ({
 
   const clearAllFilters = () => {
     setSegmentFilter('');
+    setBusinessTypeFilter('');
     setAreaFilter('');
     setAgentFilter('');
     setStatusOrderFilter('');
@@ -593,7 +599,7 @@ const SalesOrdersTable = ({
               variant="outlined"
               color="secondary"
               onClick={clearAllFilters}
-              disabled={!segmentFilter && !areaFilter && !agentFilter && !statusOrderFilter && !paymentStatusFilter && !searchQuery}
+              disabled={!segmentFilter && !businessTypeFilter && !areaFilter && !agentFilter && !statusOrderFilter && !paymentStatusFilter && !searchQuery}
             >
               Clear Filters
             </Button>
@@ -725,6 +731,23 @@ const SalesOrdersTable = ({
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth>
+                <InputLabel>Business Type</InputLabel>
+                <Select
+                  value={businessTypeFilter}
+                  label="Business Type"
+                  onChange={(e) => setBusinessTypeFilter(e.target.value)}
+                >
+                  <MenuItem value="">All Business Types</MenuItem>
+                  {uniqueBusinessTypes.map((businessType) => (
+                    <MenuItem key={businessType} value={businessType}>
+                      {businessType}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <FormControl fullWidth>
                 <InputLabel>Area</InputLabel>
                 <Select
                   value={areaFilter}
@@ -819,6 +842,14 @@ const SalesOrdersTable = ({
                           label={row.segment}
                           size="small"
                           variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={row.business_type || '-'}
+                          size="small"
+                          variant="outlined"
+                          color="secondary"
                         />
                       </TableCell>
                       <TableCell>

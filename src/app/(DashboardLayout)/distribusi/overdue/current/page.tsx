@@ -35,7 +35,7 @@ const OverduePage = () => {
   const [filters, setFilters] = useState({
     start_date: '',
     end_date: '',
-    agent: ''
+    agent: '',
   });
 
   // State for available agents (populated from orders)

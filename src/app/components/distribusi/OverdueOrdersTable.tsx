@@ -117,6 +117,7 @@ const OverdueOrdersTable = forwardRef<OverdueOrdersTableHandle, OverdueOrdersTab
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [segmentFilter, setSegmentFilter] = useState<string>('');
+  const [businessTypeFilter, setBusinessTypeFilter] = useState<string>('');
   const [areaFilter, setAreaFilter] = useState<string>('');
   const [agentFilter, setAgentFilter] = useState<string>('');
   const [statusOrderFilter, setStatusOrderFilter] = useState<string>('');
@@ -154,7 +155,7 @@ const OverdueOrdersTable = forwardRef<OverdueOrdersTableHandle, OverdueOrdersTab
       // Build request parameters - only include dates if they are provided
       const requestParams: any = {
         sortTime: 'desc',
-        agent: agentName
+        agent: agentName,
       };
 
       // Only add dates if both are provided
@@ -267,6 +268,7 @@ const OverdueOrdersTable = forwardRef<OverdueOrdersTableHandle, OverdueOrdersTab
     const list = Array.isArray(orders) ? orders : [];
     return list.filter((o) => {
       if (segmentFilter && o.segment !== segmentFilter) return false;
+      if (businessTypeFilter && o.business_type !== businessTypeFilter) return false;
       if (areaFilter && o.area !== areaFilter) return false;
       if (agentFilter && o.agent_name !== agentFilter) return false;
       if (statusOrderFilter && o.status_order !== statusOrderFilter) return false;
@@ -283,6 +285,7 @@ const OverdueOrdersTable = forwardRef<OverdueOrdersTableHandle, OverdueOrdersTab
   }, [
     orders,
     segmentFilter,
+    businessTypeFilter,
     areaFilter,
     agentFilter,
     statusOrderFilter,
@@ -299,10 +302,13 @@ const OverdueOrdersTable = forwardRef<OverdueOrdersTableHandle, OverdueOrdersTab
   // Reset page when local filters change
   useEffect(() => {
     setPage(0);
-  }, [segmentFilter, areaFilter, agentFilter, statusOrderFilter, paymentStatusFilter, overdueStatusFilter, searchQuery]);
+  }, [segmentFilter, businessTypeFilter, areaFilter, agentFilter, statusOrderFilter, paymentStatusFilter, overdueStatusFilter, searchQuery]);
 
   const orderList = Array.isArray(orders) ? orders : [];
   const uniqueSegments = Array.from(new Set(orderList.map((o) => o.segment)));
+  const uniqueBusinessTypes = Array.from(
+    new Set(orderList.map((o) => o.business_type).filter(Boolean))
+  );
   const uniqueAreas = Array.from(new Set(orderList.map((o) => o.area)));
   const uniqueAgents = Array.from(new Set(orderList.map((o) => o.agent_name)));
   const uniqueStatusOrders = Array.from(new Set(orderList.map((o) => o.status_order)));
@@ -532,6 +538,7 @@ const OverdueOrdersTable = forwardRef<OverdueOrdersTableHandle, OverdueOrdersTab
 
   const clearAllFilters = () => {
     setSegmentFilter('');
+    setBusinessTypeFilter('');
     setAreaFilter('');
     setAgentFilter('');
     setStatusOrderFilter('');
@@ -652,7 +659,7 @@ const OverdueOrdersTable = forwardRef<OverdueOrdersTableHandle, OverdueOrdersTab
               variant="outlined"
               color="secondary"
               onClick={clearAllFilters}
-              disabled={!segmentFilter && !areaFilter && !agentFilter && !statusOrderFilter && !paymentStatusFilter && !overdueStatusFilter && !searchQuery}
+              disabled={!segmentFilter && !businessTypeFilter && !areaFilter && !agentFilter && !statusOrderFilter && !paymentStatusFilter && !overdueStatusFilter && !searchQuery}
             >
               Clear Filters
             </Button>
@@ -762,6 +769,23 @@ const OverdueOrdersTable = forwardRef<OverdueOrdersTableHandle, OverdueOrdersTab
                   {uniqueSegments.map((segment) => (
                     <MenuItem key={segment} value={segment}>
                       {segment}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <FormControl fullWidth>
+                <InputLabel>Business Type</InputLabel>
+                <Select
+                  value={businessTypeFilter}
+                  label="Business Type"
+                  onChange={(e) => setBusinessTypeFilter(e.target.value)}
+                >
+                  <MenuItem value="">All Business Types</MenuItem>
+                  {uniqueBusinessTypes.map((businessType) => (
+                    <MenuItem key={businessType} value={businessType}>
+                      {businessType}
                     </MenuItem>
                   ))}
                 </Select>

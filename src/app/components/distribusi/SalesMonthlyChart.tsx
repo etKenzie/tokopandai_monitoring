@@ -22,6 +22,7 @@ interface SalesMonthlyChartProps {
     agent: string;
     area: string;
     segment?: string;
+    business_type?: string;
     month?: string;
     year?: string;
     status_payment?: string;
@@ -68,12 +69,12 @@ const SalesMonthlyChart = ({ filters, monthlyData, profitGoals }: SalesMonthlyCh
   useEffect(() => {
     console.log('Filters changed, updating month range:', filters);
     // Reset manual mode when page filters change (month, year, agent, area, segment, status_payment)
-    if (filters.month || filters.year || filters.agent || filters.area || filters.segment || filters.status_payment) {
+    if (filters.month || filters.year || filters.agent || filters.area || filters.segment || filters.business_type || filters.status_payment) {
       console.log('Page filters changed, resetting to automatic mode');
       setIsManuallySet(false);
     }
     updateMonthRange();
-  }, [filters.month, filters.year, filters.agent, filters.area, filters.segment, filters.status_payment]);
+  }, [filters.month, filters.year, filters.agent, filters.area, filters.segment, filters.business_type, filters.status_payment]);
 
   const updateMonthRange = () => {
     console.log('Updating month range with filters:', filters);
@@ -145,6 +146,7 @@ const SalesMonthlyChart = ({ filters, monthlyData, profitGoals }: SalesMonthlyCh
         agent_name: filters.agent,
         area: filters.area,
         segment: filters.segment,
+        business_type: filters.business_type,
         status_payment: filters.status_payment
       });
 
@@ -154,6 +156,7 @@ const SalesMonthlyChart = ({ filters, monthlyData, profitGoals }: SalesMonthlyCh
         agent_name: filters.agent || undefined,
         area: filters.area || undefined,
         segment: filters.segment || undefined,
+        business_type: filters.business_type || undefined,
         status_payment: filters.status_payment || undefined,
       });
       
@@ -164,7 +167,7 @@ const SalesMonthlyChart = ({ filters, monthlyData, profitGoals }: SalesMonthlyCh
     } finally {
       setLoading(false);
     }
-  }, [startMonthYear, endMonthYear, filters.agent, filters.area, filters.segment, filters.status_payment]);
+  }, [startMonthYear, endMonthYear, filters.agent, filters.area, filters.segment, filters.business_type, filters.status_payment]);
 
   // Fetch data when month range changes
   useEffect(() => {
@@ -176,11 +179,11 @@ const SalesMonthlyChart = ({ filters, monthlyData, profitGoals }: SalesMonthlyCh
 
   // Separate effect for filter changes that should trigger month range updates
   useEffect(() => {
-    if (filters.agent || filters.area || filters.segment || filters.status_payment) {
+    if (filters.agent || filters.area || filters.segment || filters.business_type || filters.status_payment) {
       console.log('Filter changed, re-fetching data');
       fetchChartData();
     }
-  }, [filters.agent, filters.area, filters.segment, filters.status_payment]); // Remove fetchChartData to avoid circular dependency
+  }, [filters.agent, filters.area, filters.segment, filters.business_type, filters.status_payment]); // Remove fetchChartData to avoid circular dependency
 
   const handleChartTypeChange = (event: SelectChangeEvent<ChartType>) => {
     setChartType(event.target.value as ChartType);

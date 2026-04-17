@@ -2,26 +2,26 @@
 
 import { fetchStoreSummary, StoreSummaryItem } from '@/app/api/distribusi/DistribusiSlice';
 import {
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  Tabs,
-  Tab,
-  TextField,
-  Typography
+    Box,
+    Button,
+    Chip,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Paper,
+    Tab,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TablePagination,
+    TableRow,
+    Tabs,
+    TextField,
+    Typography
 } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -30,6 +30,7 @@ interface StoreSummaryModalProps {
   onClose: () => void;
   month: string;
   agent?: string;
+  business_type?: string;
 }
 
 interface TabPanelProps {
@@ -54,7 +55,7 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-const StoreSummaryModal = ({ open, onClose, month, agent }: StoreSummaryModalProps) => {
+const StoreSummaryModal = ({ open, onClose, month, agent, business_type }: StoreSummaryModalProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasOrderStores, setHasOrderStores] = useState<StoreSummaryItem[]>([]);
@@ -78,13 +79,13 @@ const StoreSummaryModal = ({ open, onClose, month, agent }: StoreSummaryModalPro
       setSearchQuery('');
       setActiveSearchQuery('');
     }
-  }, [open, month, agent]);
+  }, [open, month, agent, business_type]);
 
   const fetchStoreSummaryData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetchStoreSummary(month, agent);
+      const response = await fetchStoreSummary(month, agent, business_type);
       setHasOrderStores(response.data.has_order || []);
       setNoOrderStores(response.data.no_order || []);
     } catch (err) {

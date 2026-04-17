@@ -174,6 +174,7 @@ export interface OrderQueryParams {
   payment_month?: string;
   agent?: string;
   segment?: string;
+  business_type?: string;
   area?: string;
 }
 
@@ -182,6 +183,7 @@ export interface OverdueOrdersQueryParams {
   end_date?: string;
   sortTime?: 'asc' | 'desc';
   agent?: string;
+  business_type?: string;
 }
 
 // Get API URL from environment variable with fallback
@@ -200,6 +202,7 @@ export const fetchOrders = async (params: OrderQueryParams): Promise<OrdersRespo
   if (params.payment_month) queryParams.append('payment_month', params.payment_month);
   if (params.agent) queryParams.append('agent', params.agent);
   if (params.segment) queryParams.append('segment', params.segment);
+  if (params.business_type) queryParams.append('business_type', params.business_type);
   if (params.area) queryParams.append('area', params.area);
   
   const url = `${baseUrl}/api/order?${queryParams.toString()}`;
@@ -281,6 +284,7 @@ export const fetchOverdueOrders = async (params: OverdueOrdersQueryParams): Prom
   if (params.end_date) queryParams.append('end_date', params.end_date);
   if (params.sortTime) queryParams.append('sortTime', params.sortTime);
   if (params.agent) queryParams.append('agent', params.agent);
+  if (params.business_type) queryParams.append('business_type', params.business_type);
   
   const url = `${baseUrl}/api/order/overdue?${queryParams.toString()}`;
   
@@ -528,12 +532,17 @@ export interface StoreSummaryResponse {
 }
 
 // Fetch Store Summary
-export const fetchStoreSummary = async (month: string, agent?: string): Promise<StoreSummaryResponse> => {
+export const fetchStoreSummary = async (
+  month: string,
+  agent?: string,
+  business_type?: string
+): Promise<StoreSummaryResponse> => {
   const baseUrl = AM_API_URL;
   
   const queryParams = new URLSearchParams();
   queryParams.append('month', month);
   if (agent) queryParams.append('agent', agent);
+  if (business_type) queryParams.append('business_type', business_type);
   
   const url = `${baseUrl}/api/order/store-summary?${queryParams.toString()}`;
   
@@ -1017,6 +1026,7 @@ export interface SalesSummaryQueryParams {
   agent_name?: string;
   area?: string;
   segment?: string;
+  business_type?: string;
   status_payment?: string;
 }
 
@@ -1031,6 +1041,7 @@ export const fetchSalesSummary = async (params: SalesSummaryQueryParams): Promis
   if (params.agent_name) queryParams.append('agent_name', params.agent_name);
   if (params.area) queryParams.append('area', params.area);
   if (params.segment) queryParams.append('segment', params.segment);
+  if (params.business_type) queryParams.append('business_type', params.business_type);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
   const url = `${baseUrl}/api/order/summary?${queryParams.toString()}`;
@@ -1079,6 +1090,7 @@ export interface SalesSummaryMonthlyQueryParams {
   agent_name?: string;
   area?: string;
   segment?: string;
+  business_type?: string;
   status_payment?: string;
 }
 
@@ -1094,6 +1106,7 @@ export const fetchSalesSummaryMonthly = async (params: SalesSummaryMonthlyQueryP
   if (params.agent_name) queryParams.append('agent_name', params.agent_name);
   if (params.area) queryParams.append('area', params.area);
   if (params.segment) queryParams.append('segment', params.segment);
+  if (params.business_type) queryParams.append('business_type', params.business_type);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
   const url = `${baseUrl}/api/order/summary-monthly?${queryParams.toString()}`;
@@ -1136,6 +1149,7 @@ export interface TotalStoresQueryParams {
   agent_name?: string;
   area?: string;
   segment?: string;
+  business_type?: string;
   status_payment?: string;
 }
 
@@ -1150,6 +1164,7 @@ export const fetchTotalStores = async (params: TotalStoresQueryParams): Promise<
   if (params.agent_name) queryParams.append('agent_name', params.agent_name);
   if (params.area) queryParams.append('area', params.area);
   if (params.segment) queryParams.append('segment', params.segment);
+  if (params.business_type) queryParams.append('business_type', params.business_type);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
   const url = `${baseUrl}/api/order/total-stores?${queryParams.toString()}`;
@@ -1196,6 +1211,7 @@ export interface TotalStoresMonthlyQueryParams {
   agent_name?: string;
   area?: string;
   segment?: string;
+  business_type?: string;
   status_payment?: string;
 }
 
@@ -1214,6 +1230,7 @@ export const fetchTotalStoresMonthly = async (
   if (params.agent_name) queryParams.append('agent_name', params.agent_name);
   if (params.area) queryParams.append('area', params.area);
   if (params.segment) queryParams.append('segment', params.segment);
+  if (params.business_type) queryParams.append('business_type', params.business_type);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
   const url = `${baseUrl}/api/order/total-stores-monthly?${queryParams.toString()}`;
@@ -1343,6 +1360,7 @@ export const fetchUpdatedSalesSummary = async (params: SalesSummaryQueryParams):
   if (params.agent_name) queryParams.append('agent_name', params.agent_name);
   if (params.area) queryParams.append('area', params.area);
   if (params.segment) queryParams.append('segment', params.segment);
+  if (params.business_type) queryParams.append('business_type', params.business_type);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
   const url = `${baseUrl}/api/order/summary?${queryParams.toString()}`;
@@ -1377,6 +1395,7 @@ export const fetchUpdatedSalesSummaryMonthly = async (params: SalesSummaryMonthl
   if (params.agent_name) queryParams.append('agent_name', params.agent_name);
   if (params.area) queryParams.append('area', params.area);
   if (params.segment) queryParams.append('segment', params.segment);
+  if (params.business_type) queryParams.append('business_type', params.business_type);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
   const url = `${baseUrl}/api/order/summary-monthly?${queryParams.toString()}`;
@@ -1690,6 +1709,7 @@ export const fetchProductSummary = async (params: ProductSummaryQueryParams): Pr
 export interface ProductTypeMonthlyData {
   total_invoice: number;
   total_profit: number;
+  margin?: number;
 }
 
 export interface ProductTypeMonthlyResponse {
@@ -1745,6 +1765,7 @@ export const fetchProductTypeMonthly = async (params: ProductTypeMonthlyQueryPar
 export interface ProductCategoryMonthlyData {
   total_invoice: number;
   total_profit: number;
+  margin?: number;
 }
 
 export interface ProductCategoryMonthlyResponse {
@@ -1803,6 +1824,7 @@ export interface FullOrdersQueryParams {
   payment_month?: string;
   agent?: string;
   segment?: string;
+  business_type?: string;
   area?: string;
   status_payment?: string;
 }
@@ -1819,6 +1841,7 @@ export const fetchFullOrders = async (params: FullOrdersQueryParams): Promise<Fu
   if (params.payment_month) queryParams.append('payment_month', params.payment_month);
   if (params.agent) queryParams.append('agent', params.agent);
   if (params.segment) queryParams.append('segment', params.segment);
+  if (params.business_type) queryParams.append('business_type', params.business_type);
   if (params.area) queryParams.append('area', params.area);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   

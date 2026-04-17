@@ -27,7 +27,7 @@ interface ProductTypeMonthlyChartProps {
   };
 }
 
-type ChartType = 'amounts' | 'profit';
+type ChartType = 'amounts' | 'profit' | 'margin';
 
 const ProductTypeMonthlyChart = ({ filters }: ProductTypeMonthlyChartProps) => {
   const [chartData, setChartData] = useState<ProductTypeMonthlyResponse | null>(null);
@@ -202,6 +202,9 @@ const ProductTypeMonthlyChart = ({ filters }: ProductTypeMonthlyChartProps) => {
         maximumFractionDigits: 0,
       }).format(value);
     }
+    if (type === 'margin') {
+      return `${value.toFixed(2)}%`;
+    }
     return value.toLocaleString('id-ID');
   };
 
@@ -264,6 +267,19 @@ const ProductTypeMonthlyChart = ({ filters }: ProductTypeMonthlyChartProps) => {
         data: months.map(month => {
           const monthData = chartData.data[month];
           return monthData && monthData[productType] ? monthData[productType].total_profit : 0;
+        })
+      }));
+    } else if (chartType === 'margin') {
+      series = productTypes.map(productType => ({
+        name: productType,
+        data: months.map(month => {
+          const monthData = chartData.data[month];
+          if (!monthData || !monthData[productType]) return 0;
+          const row = monthData[productType];
+          if (typeof row.margin === 'number') return row.margin;
+          const invoice = row.total_invoice ?? 0;
+          const profit = row.total_profit ?? 0;
+          return invoice > 0 ? (profit / invoice) * 100 : 0;
         })
       }));
     }
@@ -354,6 +370,7 @@ const ProductTypeMonthlyChart = ({ filters }: ProductTypeMonthlyChartProps) => {
               >
                 <MenuItem value="amounts">Total Invoice</MenuItem>
                 <MenuItem value="profit">Total Profit</MenuItem>
+                <MenuItem value="margin">Margin (%)</MenuItem>
               </Select>
             </FormControl>
             

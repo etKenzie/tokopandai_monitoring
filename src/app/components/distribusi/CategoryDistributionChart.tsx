@@ -200,6 +200,7 @@ const CategoryDistributionChart = ({ filters }: CategoryDistributionChartProps) 
       maximumFractionDigits: 0,
     }).format(value);
   };
+  const formatPercent = (value: number) => `${value.toFixed(2)}%`;
 
   // Get all available categories from the data
   const availableCategories = useMemo(() => {
@@ -259,7 +260,7 @@ const CategoryDistributionChart = ({ filters }: CategoryDistributionChartProps) 
     
     const categories = months;
     
-    // Create two series: Total Invoice and Total Profit for the selected category
+    // Create three series: Total Invoice, Total Profit, and Margin for the selected category
     const series = [
       {
         name: 'Total Invoice',
@@ -273,6 +274,18 @@ const CategoryDistributionChart = ({ filters }: CategoryDistributionChartProps) 
         data: months.map(month => {
           const monthData = chartData.data[month];
           return monthData && monthData[selectedCategory] ? monthData[selectedCategory].total_profit : 0;
+        })
+      },
+      {
+        name: 'Margin (%)',
+        data: months.map((month) => {
+          const monthData = chartData.data[month];
+          if (!monthData || !monthData[selectedCategory]) return 0;
+          const row = monthData[selectedCategory];
+          if (typeof row.margin === 'number') return row.margin;
+          const invoice = row.total_invoice ?? 0;
+          const profit = row.total_profit ?? 0;
+          return invoice > 0 ? (profit / invoice) * 100 : 0;
         })
       }
     ];
@@ -313,21 +326,50 @@ const CategoryDistributionChart = ({ filters }: CategoryDistributionChartProps) 
         }
       }
     },
-    yaxis: {
-      labels: {
-        formatter: function(value: number) {
-          return formatValue(value);
+    yaxis: [
+      {
+        labels: {
+          formatter: function(value: number) {
+            return formatValue(value);
+          }
+        },
+        title: {
+          text: 'Invoice / Profit (IDR)'
+        }
+      },
+      {
+        opposite: true,
+        seriesName: 'Margin (%)',
+        labels: {
+          formatter: function(value: number) {
+            return formatPercent(value);
+          }
+        },
+        title: {
+          text: 'Margin (%)'
         }
       }
-    },
+    ],
     tooltip: {
-      y: {
-        formatter: function(value: number) {
-          return formatValue(value);
+      y: [
+        {
+          formatter: function(value: number) {
+            return formatValue(value);
+          }
+        },
+        {
+          formatter: function(value: number) {
+            return formatValue(value);
+          }
+        },
+        {
+          formatter: function(value: number) {
+            return formatPercent(value);
+          }
         }
-      }
+      ]
     },
-    colors: ['#3B82F6', '#10B981'],
+    colors: ['#3B82F6', '#10B981', '#F59E0B'],
     grid: {
       borderColor: '#E5E7EB',
       strokeDashArray: 4

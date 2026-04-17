@@ -42,6 +42,7 @@ interface OrderTypeChartProps {
     agent: string;
     area: string;
     segment: string;
+    business_type?: string;
   };
   goalProfit?: number;
   goalProfitByAgent?: { [agentName: string]: number };
@@ -91,6 +92,10 @@ const OrderTypeChart = ({ filters, goalProfit = 0, goalProfitByAgent = {} }: Ord
         month: formattedMonth,
         group_by: groupBy
       });
+      if (filters.agent) params.append('agent', filters.agent);
+      if (filters.area) params.append('area', filters.area);
+      if (filters.segment) params.append('segment', filters.segment);
+      if (filters.business_type) params.append('business_type', filters.business_type);
 
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/order/type?${params.toString()}`;
       console.log('OrderTypeChart: Fetching data from:', apiUrl);
@@ -120,7 +125,7 @@ const OrderTypeChart = ({ filters, goalProfit = 0, goalProfitByAgent = {} }: Ord
   // Fetch data when filters or groupBy change
   useEffect(() => {
     fetchChartData();
-  }, [filters.month, filters.year, groupBy]);
+  }, [filters.month, filters.year, filters.agent, filters.area, filters.segment, filters.business_type, groupBy]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
