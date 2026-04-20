@@ -1,6 +1,12 @@
 "use client";
 
-import { Store, fetchStores } from "@/app/api/distribusi/StoreSlice";
+import {
+  Store,
+  StoreRollingRange,
+  STORE_ROLLING_RANGE_OPTIONS,
+  fetchStores,
+  normalizeStoresData,
+} from "@/app/api/distribusi/StoreSlice";
 import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import PageContainer from "@/app/components/container/PageContainer";
 import StoreCategorySummary from "@/app/components/distribusi/StoreCategorySummary";
@@ -30,13 +36,20 @@ const StoresOverviewPage = () => {
   console.log('Has restricted role:', hasRestrictedRole);
   console.log('User role for filtering:', userRoleForFiltering);
   
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<{
+    agent_name: string;
+    areas: string;
+    segment: string;
+    user_status: string;
+    category: string;
+    range: StoreRollingRange;
+  }>({
     agent_name: '',
     areas: '',
     segment: '',
     user_status: 'Active',
     category: '',
-    interval_months: 1
+    range: '3m',
   });
   const [stores, setStores] = useState<Store[]>([]);
   const [filteredStores, setFilteredStores] = useState<Store[]>([]);
@@ -52,9 +65,9 @@ const StoresOverviewPage = () => {
           areas: filters.areas,
           segment: filters.segment,
           user_status: filters.user_status,
-          interval_months: filters.interval_months
+          range: filters.range,
         });
-        setStores(response.data);
+        setStores(normalizeStoresData(response.data));
       } catch (error) {
         console.error('Failed to fetch stores:', error);
       } finally {
@@ -63,7 +76,7 @@ const StoresOverviewPage = () => {
     };
 
     fetchStoresData();
-  }, [filters.agent_name, filters.areas, filters.segment, filters.user_status, filters.interval_months, hasRestrictedRole, userRoleForFiltering]);
+  }, [filters.agent_name, filters.areas, filters.segment, filters.user_status, filters.range, hasRestrictedRole, userRoleForFiltering]);
 
   // Handle filtered stores updates from StoresTable
   const handleFilteredStoresChange = useCallback((filtered: Store[]) => {
@@ -105,21 +118,24 @@ const StoresOverviewPage = () => {
                 </Select>
               </FormControl>
             </Grid>
-            {/* <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth>
-                <InputLabel>Time Interval</InputLabel>
+                <InputLabel>Rolling range</InputLabel>
                 <Select
-                  value={filters.interval_months}
-                  label="Time Interval"
-                  onChange={(e) => setFilters(prev => ({ ...prev, interval_months: Number(e.target.value) }))}
+                  value={filters.range}
+                  label="Rolling range"
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, range: e.target.value as StoreRollingRange }))
+                  }
                 >
-                  <MenuItem value={1}>1 Month</MenuItem>
-                  <MenuItem value={3}>3 Months</MenuItem>
-                  <MenuItem value={6}>6 Months</MenuItem>
-                  <MenuItem value={12}>12 Months</MenuItem>
+                  {STORE_ROLLING_RANGE_OPTIONS.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
-            </Grid> */}
+            </Grid>
           </Grid>
         </Box>
 

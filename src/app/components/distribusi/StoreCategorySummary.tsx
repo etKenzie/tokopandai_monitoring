@@ -1,6 +1,6 @@
 'use client';
 
-import { Store } from '@/app/api/distribusi/StoreSlice';
+import { Store, normalizeStoresData } from '@/app/api/distribusi/StoreSlice';
 import {
     Box,
     Card,
@@ -15,6 +15,8 @@ interface StoreCategorySummaryProps {
 }
 
 const StoreCategorySummary = ({ stores }: StoreCategorySummaryProps) => {
+  const rows = normalizeStoresData(stores);
+
   const getCategory = (finalScore: number) => {
     if (finalScore >= 75) return 'A';
     if (finalScore >= 50) return 'B';
@@ -33,12 +35,12 @@ const StoreCategorySummary = ({ stores }: StoreCategorySummaryProps) => {
   };
 
   const getCategoryCount = (category: string) => {
-    return stores.filter(store => getCategory(store.final_score) === category).length;
+    return rows.filter(store => getCategory(store.final_score) === category).length;
   };
 
   const getCategoryPercentage = (category: string) => {
     const count = getCategoryCount(category);
-    const total = stores.length;
+    const total = rows.length;
     return total > 0 ? Math.round((count / total) * 100) : 0;
   };
 

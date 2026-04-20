@@ -30,7 +30,12 @@ import {
 } from '@mui/material';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
-import { Store, fetchStores } from '../../api/distribusi/StoreSlice';
+import {
+  Store,
+  StoreRollingRange,
+  fetchStores,
+  normalizeStoresData,
+} from '../../api/distribusi/StoreSlice';
 import StoreDetailModal from './StoreDetailModal';
 
 type StoreDirection = 'asc' | 'desc';
@@ -42,30 +47,6 @@ interface HeadCell {
   numeric: boolean;
 }
 
-const headCells: HeadCell[] = [
-  { id: 'store_name', label: 'Store Name', numeric: false },
-  { id: 'first_order_date', label: 'First Order Date', numeric: false },
-  { id: 'first_order_month', label: 'First Order Month', numeric: false },
-  { id: 'user_status', label: 'Status', numeric: false },
-  { id: 'payment_status', label: 'Overdue Status', numeric: false },
-  { id: 'segment', label: 'Segment', numeric: false },
-  { id: 'areas', label: 'Area', numeric: false },
-  { id: 'agent_name', label: 'Agent', numeric: false },
-  { id: 'business_type', label: 'Business Type', numeric: false },
-  { id: 'sub_business_type', label: 'Sub Business Type', numeric: false },
-  { id: 'category', label: 'Category', numeric: false },
-  { id: '3_month_profit', label: '3 Month Profit', numeric: true },
-  { id: 'active_months', label: 'Active Months', numeric: true },
-  { id: 'dso', label: 'DSO', numeric: true },
-  { id: 'remaining_limit', label: 'Remaining Limit', numeric: true },
-  { id: 'termin_day', label: 'Termin Day', numeric: true },
-  { id: 'profit_score', label: 'Profit Score', numeric: true },
-  { id: 'owed_score', label: 'Owed Score', numeric: true },
-  { id: 'activity_score', label: 'Activity Score', numeric: true },
-  { id: 'payment_habits_score', label: 'Payment Habits Score', numeric: true },
-  { id: 'final_score', label: 'Final Score', numeric: true },
-];
-
 interface StoresTableProps {
   filters: {
     agent_name?: string;
@@ -73,7 +54,7 @@ interface StoresTableProps {
     segment?: string;
     user_status?: string;
     category?: string;
-    interval_months?: number;
+    range?: StoreRollingRange;
   };
   title?: string;
   agentName?: string;
@@ -108,6 +89,36 @@ const StoresTable = ({
   const [showScoreColumns, setShowScoreColumns] = useState(false);
   const prevFilteredStoresRef = useRef<Store[]>([]);
 
+  const rollingRange = filters.range ?? '3m';
+
+  const headCells = useMemo((): HeadCell[] => {
+    return [
+      { id: 'store_name', label: 'Store Name', numeric: false },
+      { id: 'first_order_date', label: 'First Order Date', numeric: false },
+      { id: 'first_order_month', label: 'First Order Month', numeric: false },
+      { id: 'user_status', label: 'Status', numeric: false },
+      { id: 'payment_status', label: 'Overdue Status', numeric: false },
+      { id: 'segment', label: 'Segment', numeric: false },
+      { id: 'areas', label: 'Area', numeric: false },
+      { id: 'agent_name', label: 'Agent', numeric: false },
+      { id: 'business_type', label: 'Business Type', numeric: false },
+      { id: 'sub_business_type', label: 'Sub Business Type', numeric: false },
+      { id: 'category', label: 'Category', numeric: false },
+      { id: 'rolling_total_profit', label: `Profit (${rollingRange})`, numeric: true },
+      { id: 'rolling_total_invoice', label: `Invoice (${rollingRange})`, numeric: true },
+      { id: 'rolling_margin', label: `Margin (${rollingRange})`, numeric: true },
+      { id: 'active_months', label: 'Active Months', numeric: true },
+      { id: 'dso', label: 'DSO', numeric: true },
+      { id: 'remaining_limit', label: 'Remaining Limit', numeric: true },
+      { id: 'termin_day', label: 'Termin Day', numeric: true },
+      { id: 'profit_score', label: 'Profit Score', numeric: true },
+      { id: 'owed_score', label: 'Owed Score', numeric: true },
+      { id: 'activity_score', label: 'Activity Score', numeric: true },
+      { id: 'payment_habits_score', label: 'Payment Habits Score', numeric: true },
+      { id: 'final_score', label: 'Final Score', numeric: true },
+    ];
+  }, [rollingRange]);
+
   const fetchStoresData = async () => {
     setLoading(true);
     setError(null);
@@ -117,10 +128,10 @@ const StoresTable = ({
         areas: filters.areas,
         segment: filters.segment,
         user_status: filters.user_status,
-        interval_months: filters.interval_months
+        range: filters.range ?? '3m',
       });
       
-      setStores(response.data);
+      setStores(normalizeStoresData(response.data));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       console.error('Failed to fetch stores data:', err);
@@ -133,7 +144,7 @@ const StoresTable = ({
     fetchStoresData();
     // Reset pagination when filters change
     setPage(0);
-  }, [filters.agent_name, filters.areas, filters.segment, filters.user_status, filters.interval_months, agentName]);
+  }, [filters.agent_name, filters.areas, filters.segment, filters.user_status, filters.range, agentName]);
 
   const handleRequestSort = (property: SortableField) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -292,9 +303,21 @@ const StoresTable = ({
       bValue = getCategory(b.final_score);
     }
 
-    if (orderBy === 'profit_score' || orderBy === 'owed_score' || orderBy === 'activity_score' || orderBy === 'payment_habits_score' || orderBy === 'final_score' || orderBy === 'remaining_limit' || orderBy === 'termin_day' || orderBy === 'dso') {
-      aValue = Number(aValue);
-      bValue = Number(bValue);
+    if (
+      orderBy === 'profit_score' ||
+      orderBy === 'owed_score' ||
+      orderBy === 'activity_score' ||
+      orderBy === 'payment_habits_score' ||
+      orderBy === 'final_score' ||
+      orderBy === 'remaining_limit' ||
+      orderBy === 'termin_day' ||
+      orderBy === 'dso' ||
+      orderBy === 'rolling_total_profit' ||
+      orderBy === 'rolling_total_invoice' ||
+      orderBy === 'rolling_margin'
+    ) {
+      aValue = aValue === null || aValue === undefined ? NaN : Number(aValue);
+      bValue = bValue === null || bValue === undefined ? NaN : Number(bValue);
     }
 
     if (orderBy === 'first_order_date') {
@@ -327,6 +350,7 @@ const StoresTable = ({
     Math.round(storesWithTransactions.reduce((sum, s) => sum + s.profit_score, 0) / storesWithTransactions.length) : 0;
 
   const prepareDataForExport = (stores: Store[]) => {
+    const rr = rollingRange;
     return stores.map((s) => ({
       'Store Name': s.store_name,
       'First Order Date': formatDate(s.first_order_date),
@@ -339,6 +363,9 @@ const StoresTable = ({
       'Business Type': s.business_type,
       'Sub Business Type': s.sub_business_type,
       'Category': getCategory(s.final_score),
+      [`Profit (${rr})`]: s.rolling_total_profit ?? '',
+      [`Invoice (${rr})`]: s.rolling_total_invoice ?? '',
+      [`Margin (${rr})`]: s.rolling_margin ?? '',
       'Active Months': s.active_months,
       'DSO': s.dso !== undefined ? s.dso : '',
       'Remaining Limit': s.remaining_limit !== undefined ? s.remaining_limit : '',
@@ -376,7 +403,9 @@ const StoresTable = ({
       { wch: 20 }, // Business Type
       { wch: 25 }, // Sub Business Type
       { wch: 10 }, // Category
-      { wch: 15 }, // 3 Month Profit
+      { wch: 16 }, // Profit (range)
+      { wch: 16 }, // Invoice (range)
+      { wch: 14 }, // Margin (range)
       { wch: 15 }, // Active Months
       { wch: 15 }, // DSO
       { wch: 15 }, // Remaining Limit
@@ -435,6 +464,11 @@ const StoresTable = ({
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const formatRollingMargin = (value: number | null | undefined) => {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
+    return `${(Number(value) * 100).toFixed(2)}%`;
   };
 
   const handleRowClick = (store: Store) => {
@@ -875,7 +909,21 @@ const StoresTable = ({
                       </TableCell>
                       <TableCell align="right">
                         <Typography variant="body2" fontWeight="medium" color="success.main">
-                          {formatCurrency(row["3_month_profit"])}
+                          {row.rolling_total_profit != null && !Number.isNaN(Number(row.rolling_total_profit))
+                            ? formatCurrency(Number(row.rolling_total_profit))
+                            : '-'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2" fontWeight="medium">
+                          {row.rolling_total_invoice != null && !Number.isNaN(Number(row.rolling_total_invoice))
+                            ? formatCurrency(Number(row.rolling_total_invoice))
+                            : '-'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2" fontWeight="medium">
+                          {formatRollingMargin(row.rolling_margin ?? undefined)}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
@@ -890,7 +938,7 @@ const StoresTable = ({
                       </TableCell>
                       <TableCell align="right">
                         <Typography variant="body2" fontWeight="medium">
-                          {row.remaining_limit !== undefined ? formatCurrency(row.remaining_limit) : '-'}
+                          {row.remaining_limit != null ? formatCurrency(Number(row.remaining_limit)) : '-'}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">

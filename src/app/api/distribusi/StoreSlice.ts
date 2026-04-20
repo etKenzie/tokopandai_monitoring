@@ -20,17 +20,45 @@ export interface Store {
   final_score: number;
   order_this_year: number;
   three_month_profit: number;
-  remaining_limit?: number;
-  termin_day?: number;
+  /** Rolling window from `store_daily_summary`; depends on `range` query param. */
+  rolling_total_profit?: number | null;
+  rolling_total_invoice?: number | null;
+  rolling_margin?: number | null;
+  remaining_limit?: number | null;
+  termin_day?: number | null;
   payment_status?: string;
   dso?: number;
 }
+
+/** Valid `range` values for `/api/store` (rolling metrics from store_daily_summary). Omit uses API default (3m). */
+export type StoreRollingRange = '30d' | '3m' | '1y';
+
+export const STORE_ROLLING_RANGE_OPTIONS: { value: StoreRollingRange; label: string }[] = [
+  { value: '30d', label: '30 days' },
+  { value: '3m', label: '3 months' },
+  { value: '1y', label: '1 year' },
+];
 
 export interface StoresResponse {
   code: number;
   status: string;
   message: string;
-  data: Store[];
+  /** Either a flat list or `{ data: Store[] }` depending on API version. */
+  data: Store[] | { data: Store[] };
+}
+
+/** Use when assigning API `data` to state — supports a flat array or nested `{ data: [...] }`. */
+export function normalizeStoresData(data: unknown): Store[] {
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data !== null && typeof data === 'object' && 'data' in data) {
+    const inner = (data as { data?: unknown }).data;
+    if (Array.isArray(inner)) {
+      return inner;
+    }
+  }
+  return [];
 }
 
 // Types for Store Query Parameters
@@ -39,7 +67,8 @@ export interface StoreQueryParams {
   areas?: string;
   segment?: string;
   user_status?: string;
-  interval_months?: number;
+  /** Rolling window for store list metrics; defaults to `3m` when omitted. */
+  range?: StoreRollingRange;
 }
 
 // Get API URL from environment variable with fallback
@@ -56,7 +85,7 @@ export const fetchStores = async (params: StoreQueryParams): Promise<StoresRespo
   if (params.areas) queryParams.append('areas', params.areas);
   if (params.segment) queryParams.append('segment', params.segment);
   if (params.user_status) queryParams.append('user_status', params.user_status);
-  if (params.interval_months) queryParams.append('interval_months', params.interval_months.toString());
+  queryParams.append('range', params.range ?? '3m');
   
   const url = `${baseUrl}/api/store?${queryParams.toString()}`;
   
@@ -331,9 +360,9 @@ export const fetchStoreById = async (userId: string): Promise<Store | null> => {
   }
   
   const result = await response.json();
-  if (result.data && result.data.length > 0) {
-    // Find the store with matching user_id
-    const store = result.data.find((s: Store) => s.user_id === userId);
+  const list = normalizeStoresData(result.data);
+  if (list.length > 0) {
+    const store = list.find((s: Store) => s.user_id === userId);
     return store || null;
   }
   return null;
