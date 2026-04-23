@@ -17,6 +17,8 @@ interface UnpaidOverviewChartProps {
   filters: {
     agent: string;
     area: string;
+    segment?: string;
+    business_type?: string;
   };
 }
 
@@ -30,6 +32,8 @@ const UnpaidOverviewChart = ({ filters }: UnpaidOverviewChartProps) => {
       const response = await fetchUnpaidOverview({
         agent: filters.agent || undefined,
         area: filters.area || undefined,
+        segment: filters.segment || undefined,
+        business_type: filters.business_type || undefined,
       });
       setChartData(response);
     } catch (error) {
@@ -42,7 +46,7 @@ const UnpaidOverviewChart = ({ filters }: UnpaidOverviewChartProps) => {
   // Fetch data when filters change
   useEffect(() => {
     fetchChartData();
-  }, [filters.agent, filters.area]);
+  }, [filters.agent, filters.area, filters.segment, filters.business_type]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', {

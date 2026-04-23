@@ -17,6 +17,7 @@ export interface DistribusiFilterValues {
   agent: string;
   area: string;
   segment: string;
+  business_type: string;
 }
 
 interface DistribusiFiltersProps {
@@ -93,8 +94,8 @@ const DistribusiFilters = ({ filters, onFiltersChange, hasRestrictedRole = false
 
   return (
     <Grid container spacing={2}>
-      {/* Month Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+      {/* Row 1: Month + Year only */}
+      <Grid size={{ xs: 12, sm: 6 }}>
         <FormControl fullWidth size="small">
           <InputLabel>Month</InputLabel>
           <Select
@@ -111,8 +112,7 @@ const DistribusiFilters = ({ filters, onFiltersChange, hasRestrictedRole = false
         </FormControl>
       </Grid>
 
-      {/* Year Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <FormControl fullWidth size="small">
           <InputLabel>Year</InputLabel>
           <Select
@@ -129,7 +129,7 @@ const DistribusiFilters = ({ filters, onFiltersChange, hasRestrictedRole = false
         </FormControl>
       </Grid>
 
-      {/* Agent Filter */}
+      {/* Row 2+: Agent, Area, Segment, Business Type */}
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <FormControl fullWidth size="small">
           <InputLabel>Agent</InputLabel>
@@ -149,7 +149,6 @@ const DistribusiFilters = ({ filters, onFiltersChange, hasRestrictedRole = false
         </FormControl>
       </Grid>
 
-      {/* Area Filter */}
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <FormControl fullWidth size="small">
           <InputLabel>Area</InputLabel>
@@ -165,6 +164,41 @@ const DistribusiFilters = ({ filters, onFiltersChange, hasRestrictedRole = false
                 {area}
               </MenuItem>
             ))}
+          </Select>
+        </FormControl>
+      </Grid>
+
+      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <FormControl fullWidth size="small">
+          <InputLabel>Segment</InputLabel>
+          <Select
+            value={filters.segment}
+            label="Segment"
+            onChange={handleFilterChange('segment')}
+            disabled={loading}
+          >
+            <MenuItem value="">All Segments</MenuItem>
+            <MenuItem value="RESELLER">RESELLER</MenuItem>
+            <MenuItem value="HORECA">HORECA</MenuItem>
+            <MenuItem value="OTHER">OTHER</MenuItem>
+          </Select>
+        </FormControl>
+      </Grid>
+
+      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <FormControl fullWidth size="small">
+          <InputLabel>Business Type</InputLabel>
+          <Select
+            value={filters.business_type}
+            label="Business Type"
+            onChange={handleFilterChange('business_type')}
+            disabled={loading}
+          >
+            <MenuItem value="">All Business Types</MenuItem>
+            <MenuItem value="Hotel">Hotel</MenuItem>
+            <MenuItem value="Resto">Resto</MenuItem>
+            <MenuItem value="Catering">Catering</MenuItem>
+            <MenuItem value="Retail Tradisional">Retail Tradisional</MenuItem>
           </Select>
         </FormControl>
       </Grid>

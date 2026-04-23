@@ -21,6 +21,8 @@ interface CashInMonthlyChartProps {
   filters: {
     agent: string;
     area: string;
+    segment?: string;
+    business_type?: string;
     month?: string;
     year?: string;
   };
@@ -64,12 +66,12 @@ const CashInMonthlyChart = ({ filters }: CashInMonthlyChartProps) => {
   useEffect(() => {
     console.log('Filters changed, updating month range:', filters);
     // Reset manual mode when page filters change (month, year, agent, area)
-    if (filters.month || filters.year || filters.agent || filters.area) {
+    if (filters.month || filters.year || filters.agent || filters.area || filters.segment || filters.business_type) {
       console.log('Page filters changed, resetting to automatic mode');
       setIsManuallySet(false);
     }
     updateMonthRange();
-  }, [filters.month, filters.year, filters.agent, filters.area]);
+  }, [filters.month, filters.year, filters.agent, filters.area, filters.segment, filters.business_type]);
 
   const updateMonthRange = () => {
     console.log('Updating month range with filters:', filters);
@@ -139,7 +141,9 @@ const CashInMonthlyChart = ({ filters }: CashInMonthlyChartProps) => {
         start_month: startMonthYear,
         end_month: endMonthYear,
         agent: filters.agent,
-        area: filters.area
+        area: filters.area,
+        segment: filters.segment,
+        business_type: filters.business_type,
       });
 
       const response = await fetchCashInMonthlyData({
@@ -147,6 +151,8 @@ const CashInMonthlyChart = ({ filters }: CashInMonthlyChartProps) => {
         end_month: endMonthYear,
         agent: filters.agent || undefined,
         area: filters.area || undefined,
+        segment: filters.segment || undefined,
+        business_type: filters.business_type || undefined,
       });
       
       console.log('Chart data response:', response);
@@ -156,7 +162,7 @@ const CashInMonthlyChart = ({ filters }: CashInMonthlyChartProps) => {
     } finally {
       setLoading(false);
     }
-  }, [startMonthYear, endMonthYear, filters.agent, filters.area]);
+  }, [startMonthYear, endMonthYear, filters.agent, filters.area, filters.segment, filters.business_type]);
 
   // Fetch data when month range changes
   useEffect(() => {
@@ -168,11 +174,11 @@ const CashInMonthlyChart = ({ filters }: CashInMonthlyChartProps) => {
 
   // Separate effect for filter changes that should trigger month range updates
   useEffect(() => {
-    if (filters.agent || filters.area) {
-      console.log('Agent/Area filter changed, re-fetching data');
+    if (filters.agent || filters.area || filters.segment || filters.business_type) {
+      console.log('Agent/Area/Segment/Business type filter changed, re-fetching data');
       fetchChartData();
     }
-  }, [filters.agent, filters.area]); // Remove fetchChartData to avoid circular dependency
+  }, [filters.agent, filters.area, filters.segment, filters.business_type]); // Remove fetchChartData to avoid circular dependency
 
   const handleChartTypeChange = (event: SelectChangeEvent<ChartType>) => {
     setChartType(event.target.value as ChartType);

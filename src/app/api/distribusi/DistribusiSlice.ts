@@ -707,6 +707,8 @@ export interface CashInQueryParams {
   year?: string;
   agent?: string;
   area?: string;
+  segment?: string;
+  business_type?: string;
 }
 
 // Types for Cash-In List API
@@ -783,6 +785,8 @@ export const fetchCashInData = async (params: CashInQueryParams): Promise<CashIn
   if (params.year) queryParams.append('year', params.year);
   if (params.agent) queryParams.append('agent', params.agent);
   if (params.area) queryParams.append('area', params.area);
+  if (params.segment) queryParams.append('segment', params.segment);
+  if (params.business_type) queryParams.append('business_type', params.business_type);
   
   const url = `${baseUrl}/api/order/cash-in?${queryParams.toString()}`;
   
@@ -879,6 +883,8 @@ export interface CashInMonthlyQueryParams {
   end_month?: string;
   agent?: string;
   area?: string;
+  segment?: string;
+  business_type?: string;
 }
 
 // Types for Unpaid Overview API
@@ -920,6 +926,8 @@ export interface UnpaidOverviewResponse {
 export interface UnpaidOverviewQueryParams {
   agent?: string;
   area?: string;
+  segment?: string;
+  business_type?: string;
 }
 
 // Fetch Unpaid Overview Data
@@ -930,6 +938,8 @@ export const fetchUnpaidOverview = async (params: UnpaidOverviewQueryParams): Pr
   const queryParams = new URLSearchParams();
   if (params.agent) queryParams.append('agent', params.agent);
   if (params.area) queryParams.append('area', params.area);
+  if (params.segment) queryParams.append('segment', params.segment);
+  if (params.business_type) queryParams.append('business_type', params.business_type);
   
   const url = `${baseUrl}/api/order/unpaid-overview?${queryParams.toString()}`;
   
@@ -962,6 +972,8 @@ export const fetchCashInMonthlyData = async (params: CashInMonthlyQueryParams): 
   if (params.end_month) queryParams.append('end_month', params.end_month);
   if (params.agent) queryParams.append('agent', params.agent);
   if (params.area) queryParams.append('area', params.area);
+  if (params.segment) queryParams.append('segment', params.segment);
+  if (params.business_type) queryParams.append('business_type', params.business_type);
   
   const url = `${baseUrl}/api/order/cash-in-monthly?${queryParams.toString()}`;
   

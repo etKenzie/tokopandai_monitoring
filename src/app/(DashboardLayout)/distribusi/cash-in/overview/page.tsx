@@ -57,7 +57,8 @@ const CashInOverview = () => {
     year: '',
     agent: '',
     area: '',
-    segment: ''
+    segment: '',
+    business_type: ''
   });
 
   // Set initial date values in useEffect to avoid hydration issues
@@ -75,31 +76,35 @@ const CashInOverview = () => {
 
   const fetchCashInDataCallback = useCallback(async (currentFilters: DistribusiFilterValues) => {
     console.log('Fetching cash-in data with filters:', currentFilters);
+    setError(null);
+    if (!currentFilters.month || !currentFilters.year) {
+      setCashInData(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
+    setCashInData(null);
     try {
-      // Only fetch data if we have month and year (required)
-      if (currentFilters.month && currentFilters.year) {
-        // Format month for API (e.g., "08" -> "August 2025")
-        const monthNames = [
-          'January', 'February', 'March', 'April', 'May', 'June',
-          'July', 'August', 'September', 'October', 'November', 'December'
-        ];
-        const monthName = monthNames[parseInt(currentFilters.month) - 1];
-        const formattedMonth = `${monthName} ${currentFilters.year}`;
-        
-        // For users with restricted roles, use their mapped agent name instead of filter selection
-        const agentName = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (currentFilters.agent || undefined);
-        
-        const response = await fetchCashInData({
-          month: formattedMonth,
-          agent: agentName,
-          area: currentFilters.area || undefined,
-        });
-        console.log('Cash-in data response:', response);
-        setCashInData(response.data);
-      } else {
-        setCashInData(null);
-      }
+      // Format month for API (e.g., "08" -> "August 2025")
+      const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      const monthName = monthNames[parseInt(currentFilters.month) - 1];
+      const formattedMonth = `${monthName} ${currentFilters.year}`;
+
+      // For users with restricted roles, use their mapped agent name instead of filter selection
+      const agentName = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (currentFilters.agent || undefined);
+
+      const response = await fetchCashInData({
+        month: formattedMonth,
+        agent: agentName,
+        area: currentFilters.area || undefined,
+        segment: currentFilters.segment || undefined,
+        business_type: currentFilters.business_type || undefined,
+      });
+      console.log('Cash-in data response:', response);
+      setCashInData(response.data);
     } catch (err) {
       console.error('Failed to fetch cash-in data:', err);
       setCashInData(null);
@@ -119,7 +124,7 @@ const CashInOverview = () => {
     if (filters.month && filters.year) {
       fetchCashInDataCallback(filters);
     }
-  }, [filters.month, filters.year, filters.agent, filters.area, fetchCashInDataCallback]);
+  }, [filters.month, filters.year, filters.agent, filters.area, filters.segment, filters.business_type, fetchCashInDataCallback]);
 
   // Fetch cash-in goals from API (same place as sales/overview, goal_type cash-in)
   useEffect(() => {
@@ -288,6 +293,8 @@ const CashInOverview = () => {
     ];
   };
 
+  const showPageLoading = loading && Boolean(filters.month && filters.year);
+
   return (
     <PageContainer title="Cash-In Overview" description="Monitor cash-in performance and metrics">
       <Box>
@@ -334,67 +341,73 @@ const CashInOverview = () => {
             hasRestrictedRole={hasRestrictedRole}
           />
         </Box>
-        {/* Summary Tiles */}
-        <Box mb={3}>
-          {loading ? (
-            <Box display="flex" justifyContent="center" alignItems="center" height="200px">
-              <CircularProgress />
-            </Box>
-          ) : cashInData ? (
-            <SummaryTiles tiles={getSummaryTiles()} md={3} />
-          ) : error ? (
-            <Box display="flex" justifyContent="center" alignItems="center" height="200px">
-              <Typography variant="body1" color="error">
-                {error}
-              </Typography>
-            </Box>
-          ) : (
-            <Box display="flex" justifyContent="center" alignItems="center" height="200px">
-              <Typography variant="body1" color="textSecondary">
-                No data available. Please select month and year filters.
-              </Typography>
-            </Box>
-          )}
-        </Box>
 
-        {/* Cash In Monthly Chart */}
-        <Box mb={3}>
-          <CashInMonthlyChart 
-            filters={{
-              agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent,
-              area: filters.area,
-              month: filters.month,
-              year: filters.year
-            }}
-          />
-        </Box>
-
-        {/* Payment breakdown: Full/Partial row, then Overdue/On Time/Current/Previous row */}
-        {cashInData && (
-          <Box mb={3}>
-            <SummaryTiles tiles={getPaymentBreakdownTiles()} md={3} />
+        {showPageLoading ? (
+          <Box
+            minHeight="55vh"
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+            gap={2}
+            mb={3}
+          >
+            <CircularProgress size={48} />
+            <Typography variant="body1" color="textSecondary">
+              Loading cash-in overview…
+            </Typography>
           </Box>
+        ) : (
+          <>
+            <Box mb={3}>
+              {cashInData ? (
+                <SummaryTiles tiles={getSummaryTiles()} md={3} />
+              ) : error ? (
+                <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
+                  <Typography variant="body1" color="error">
+                    {error}
+                  </Typography>
+                </Box>
+              ) : (
+                <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
+                  <Typography variant="body1" color="textSecondary">
+                    No data available. Please select month and year filters.
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+
+            <Box mb={3}>
+              <CashInMonthlyChart
+                filters={{
+                  agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent,
+                  area: filters.area,
+                  segment: filters.segment,
+                  business_type: filters.business_type,
+                  month: filters.month,
+                  year: filters.year
+                }}
+              />
+            </Box>
+
+            {cashInData && (
+              <Box mb={3}>
+                <SummaryTiles tiles={getPaymentBreakdownTiles()} md={3} />
+              </Box>
+            )}
+
+            <Box mb={3}>
+              <UnpaidOverviewChart
+                filters={{
+                  agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent,
+                  area: filters.area,
+                  segment: filters.segment,
+                  business_type: filters.business_type
+                }}
+              />
+            </Box>
+          </>
         )}
-
-        {/* Unpaid Overview Summary */}
-        {/* <Box mb={3}>
-          <Typography variant="h5" fontWeight="bold" mb={2}>
-            Unpaid Overview
-          </Typography>
-          <Typography variant="body1" color="textSecondary" mb={3}>
-            Monitor unpaid invoices by overdue status
-          </Typography>
-        </Box> */}
-
-        {/* Unpaid Overview Chart */}
-        <Box mb={3}>
-          <UnpaidOverviewChart 
-            filters={{
-              agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : filters.agent,
-              area: filters.area
-            }}
-          />
-        </Box>
       </Box>
     </PageContainer>
   );

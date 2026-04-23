@@ -29,9 +29,7 @@ interface GoalFromApi {
   agent_name: string | null;
 }
 
-interface SalesOverviewFilterValues extends DistribusiFilterValues {
-  business_type: string;
-}
+type SalesOverviewFilterValues = DistribusiFilterValues;
 
 const SalesOverview = () => {
   const { user, roles, refreshRoles } = useAuth();
