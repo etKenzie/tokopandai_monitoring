@@ -1876,3 +1876,185 @@ export const fetchFullOrders = async (params: FullOrdersQueryParams): Promise<Fu
   
   return response.json();
 };
+
+// Types for Tukar Faktur API
+export interface TukarFakturUploadResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: {
+    file_url: string;
+    file_path: string;
+  };
+}
+
+export interface TukarFakturCreateBatchItem {
+  order_code: string;
+}
+
+export interface TukarFakturCreateBatchRequest {
+  due_date: string;
+  recipient_name: string;
+  recipient_address: string;
+  generated_by?: string;
+  items: TukarFakturCreateBatchItem[];
+  customer_store_summary?: string;
+  total_combined_amount?: number;
+  invoice_count?: number;
+  idempotency_key?: string;
+}
+
+export interface TukarFakturBatchListItem {
+  batch_id: string;
+  due_date?: string;
+  generated_by?: string;
+  recipient_name?: string;
+  recipient_address?: string;
+  generated_at?: string;
+  customer_store_summary?: string;
+  total_combined_amount?: number;
+  invoice_count?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TukarFakturBatchDetailItem {
+  id?: string;
+  order_code: string;
+  [key: string]: any;
+}
+
+export interface TukarFakturBatchDetailData extends TukarFakturBatchListItem {
+  items?: TukarFakturBatchDetailItem[];
+  [key: string]: any;
+}
+
+export interface TukarFakturCreateBatchResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: TukarFakturBatchDetailData;
+}
+
+export interface TukarFakturListQueryParams {
+  page?: number;
+  limit?: number;
+  from?: string;
+  to?: string;
+  generated_by?: string;
+  order_code?: string;
+}
+
+export interface TukarFakturListResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: {
+    items?: TukarFakturBatchListItem[];
+    rows?: TukarFakturBatchListItem[];
+    list?: TukarFakturBatchListItem[];
+    data?: TukarFakturBatchListItem[];
+    [key: string]: any;
+  } | TukarFakturBatchListItem[];
+}
+
+export interface TukarFakturBatchDetailResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: TukarFakturBatchDetailData;
+}
+
+const normalizeTukarFakturList = (payload: TukarFakturListResponse): TukarFakturBatchListItem[] => {
+  if (Array.isArray(payload.data)) return payload.data;
+  if (Array.isArray(payload.data?.items)) return payload.data.items;
+  if (Array.isArray(payload.data?.rows)) return payload.data.rows;
+  if (Array.isArray(payload.data?.list)) return payload.data.list;
+  if (Array.isArray(payload.data?.data)) return payload.data.data;
+  return [];
+};
+
+export const uploadTukarFakturPdf = async (
+  file: File,
+  batch_id?: string,
+): Promise<TukarFakturUploadResponse> => {
+  const baseUrl = AM_API_URL;
+  const formData = new FormData();
+  formData.append('file', file);
+  if (batch_id) formData.append('batch_id', batch_id);
+
+  const response = await fetch(`${baseUrl}/api/tukar-faktur/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to upload PDF: ${response.status} ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+export const createTukarFakturBatch = async (
+  payload: TukarFakturCreateBatchRequest,
+): Promise<TukarFakturCreateBatchResponse> => {
+  const baseUrl = AM_API_URL;
+  const response = await fetch(`${baseUrl}/api/tukar-faktur/batch`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to create batch: ${response.status} ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+export const fetchTukarFakturBatches = async (
+  params: TukarFakturListQueryParams,
+): Promise<TukarFakturBatchListItem[]> => {
+  const baseUrl = AM_API_URL;
+  const query = new URLSearchParams();
+  if (typeof params.page === 'number') query.append('page', String(params.page));
+  if (typeof params.limit === 'number') query.append('limit', String(params.limit));
+  if (params.from) query.append('from', params.from);
+  if (params.to) query.append('to', params.to);
+  if (params.generated_by) query.append('generated_by', params.generated_by);
+  if (params.order_code) query.append('order_code', params.order_code);
+
+  const response = await fetch(`${baseUrl}/api/tukar-faktur?${query.toString()}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch batches: ${response.status} ${response.statusText}`);
+  }
+
+  const json: TukarFakturListResponse = await response.json();
+  return normalizeTukarFakturList(json);
+};
+
+export const fetchTukarFakturBatchDetail = async (
+  batchId: string,
+): Promise<TukarFakturBatchDetailResponse> => {
+  const baseUrl = AM_API_URL;
+  const response = await fetch(`${baseUrl}/api/tukar-faktur/${batchId}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch batch detail: ${response.status} ${response.statusText}`);
+  }
+
+  return response.json();
+};

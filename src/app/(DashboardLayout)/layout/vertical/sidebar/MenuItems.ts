@@ -79,6 +79,12 @@ const Menuitems: MenuitemsType[] = [
       },
       {
         id: uniqueId(),
+        title: "Tukar Faktur",
+        icon: IconMenuOrder,
+        href: "/distribusi/sales/tukar-faktur",
+      },
+      {
+        id: uniqueId(),
         title: "NOO",
         icon: IconMapPlus,
         href: "/distribusi/sales/noo",
