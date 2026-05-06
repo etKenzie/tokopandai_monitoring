@@ -252,6 +252,9 @@ const StoresComparePage = () => {
 
   // Calculate summary stats with store lists (using filtered data)
   const summaryStats = useMemo(() => {
+    const sortDesc = (stores: ComparisonData[], value: (s: ComparisonData) => number) =>
+      [...stores].sort((a, b) => value(b) - value(a));
+
     if (viewMode === 'invoice') {
       const storesWithInvoiceUp = filteredComparisonData.filter(
         store => store.invoiceChange !== undefined && store.invoiceChange > 0 && store.lastMonthInvoice !== undefined && store.lastMonthInvoice > 0
@@ -273,24 +276,24 @@ const StoresComparePage = () => {
       return {
         up: {
           count: storesWithInvoiceUp.length,
-          stores: storesWithInvoiceUp,
+          stores: sortDesc(storesWithInvoiceUp, (s) => s.invoiceChange ?? 0),
           label: 'Stores with Invoice Up',
           total: storesWithInvoiceUp.reduce((sum, store) => sum + (store.invoiceChange || 0), 0)
         },
         down: {
           count: storesWithInvoiceDown.length,
-          stores: storesWithInvoiceDown,
+          stores: sortDesc(storesWithInvoiceDown, (s) => Math.abs(s.invoiceChange ?? 0)),
           label: 'Stores with Invoice Down',
           total: storesWithInvoiceDown.reduce((sum, store) => sum + Math.abs(store.invoiceChange || 0), 0)
         },
         noOrderThisMonth: {
           count: storesNoOrderThisMonth.length,
-          stores: storesNoOrderThisMonth,
+          stores: sortDesc(storesNoOrderThisMonth, (s) => s.lastMonthInvoice ?? 0),
           total: storesNoOrderThisMonth.reduce((sum, store) => sum + (store.lastMonthInvoice || 0), 0)
         },
         newThisMonth: {
           count: storesNewThisMonth.length,
-          stores: storesNewThisMonth,
+          stores: sortDesc(storesNewThisMonth, (s) => s.total_invoice ?? 0),
           total: storesNewThisMonth.reduce((sum, store) => sum + (store.total_invoice || 0), 0)
         },
       };
@@ -315,24 +318,24 @@ const StoresComparePage = () => {
       return {
         up: {
           count: storesWithProfitUp.length,
-          stores: storesWithProfitUp,
+          stores: sortDesc(storesWithProfitUp, (s) => s.profitChange ?? 0),
           label: 'Stores with Profit Up',
           total: storesWithProfitUp.reduce((sum, store) => sum + (store.profitChange || 0), 0)
         },
         down: {
           count: storesWithProfitDown.length,
-          stores: storesWithProfitDown,
+          stores: sortDesc(storesWithProfitDown, (s) => Math.abs(s.profitChange ?? 0)),
           label: 'Stores with Profit Down',
           total: storesWithProfitDown.reduce((sum, store) => sum + Math.abs(store.profitChange || 0), 0)
         },
         noOrderThisMonth: {
           count: storesNoOrderThisMonth.length,
-          stores: storesNoOrderThisMonth,
+          stores: sortDesc(storesNoOrderThisMonth, (s) => s.lastMonthProfit ?? 0),
           total: storesNoOrderThisMonth.reduce((sum, store) => sum + (store.lastMonthProfit ?? 0), 0)
         },
         newThisMonth: {
           count: storesNewThisMonth.length,
-          stores: storesNewThisMonth,
+          stores: sortDesc(storesNewThisMonth, (s) => s.total_profit ?? 0),
           total: storesNewThisMonth.reduce((sum, store) => sum + (store.total_profit ?? 0), 0)
         },
       };
