@@ -7,10 +7,12 @@ import {
     CardContent,
     CircularProgress,
     FormControl,
+    FormControlLabel,
     InputLabel,
     MenuItem,
     Select,
     SelectChangeEvent,
+    Switch,
     Typography
 } from '@mui/material';
 import dynamic from "next/dynamic";
@@ -28,6 +30,8 @@ interface CategoryDistributionChartProps {
   };
 }
 
+type CategoryMonthlyMatrix = Record<string, Record<string, { total_invoice: number; total_profit: number; margin?: number }>>;
+
 const CategoryDistributionChart = ({ filters }: CategoryDistributionChartProps) => {
   const [chartData, setChartData] = useState<ProductCategoryMonthlyResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,6 +39,7 @@ const CategoryDistributionChart = ({ filters }: CategoryDistributionChartProps) 
   const [startMonthYear, setStartMonthYear] = useState<string>('');
   const [endMonthYear, setEndMonthYear] = useState<string>('');
   const [isManuallySet, setIsManuallySet] = useState(false);
+  const [showMargin, setShowMargin] = useState(false);
 
   // Generate month-year options (current month - 12 months back)
   const generateMonthYearOptions = () => {
@@ -192,45 +197,79 @@ const CategoryDistributionChart = ({ filters }: CategoryDistributionChartProps) 
     setIsManuallySet(true);
   };
 
-  const formatValue = (value: number) => {
+  const toSafeNumber = (value: unknown): number => {
+    const num = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(num) ? num : 0;
+  };
+
+  const formatValue = (value: unknown) => {
+    const safeValue = toSafeNumber(value);
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(value);
+    }).format(safeValue);
   };
-  const formatPercent = (value: number) => `${value.toFixed(2)}%`;
+  const formatCompactNumber = (value: unknown) =>
+    new Intl.NumberFormat('id-ID', {
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(toSafeNumber(value));
+  const formatPercent = (value: unknown) => `${toSafeNumber(value).toFixed(2)}%`;
+
+  const resolvedCategoryMatrix = useMemo<CategoryMonthlyMatrix>(() => {
+    const payload = chartData?.data as unknown;
+    if (!payload || typeof payload !== 'object') return {};
+
+    // Support both API shapes:
+    // 1) { data: { "Month Year": { "Category": {...} } } }
+    // 2) { data: { data: { "Month Year": { "Category": {...} } } } }
+    if ('data' in (payload as Record<string, unknown>)) {
+      const nested = (payload as { data?: unknown }).data;
+      if (nested && typeof nested === 'object') {
+        return nested as CategoryMonthlyMatrix;
+      }
+    }
+
+    return payload as CategoryMonthlyMatrix;
+  }, [chartData]);
 
   // Get all available categories from the data
   const availableCategories = useMemo(() => {
-    if (!chartData?.data || typeof chartData.data !== 'object') {
+    if (!resolvedCategoryMatrix || typeof resolvedCategoryMatrix !== 'object') {
       return [];
     }
 
     const allCategories = new Set<string>();
-    const months = Object.keys(chartData.data);
+    const months = Object.keys(resolvedCategoryMatrix);
     
     months.forEach(month => {
-      const monthData = chartData.data[month];
+      const monthData = resolvedCategoryMatrix[month];
       if (monthData) {
         Object.keys(monthData).forEach(category => allCategories.add(category));
       }
     });
     
     return Array.from(allCategories).sort();
-  }, [chartData]);
+  }, [resolvedCategoryMatrix]);
 
   // Set default category when data is loaded
   useEffect(() => {
-    if (availableCategories.length > 0 && !selectedCategory) {
+    if (availableCategories.length === 0) {
+      setSelectedCategory('');
+      return;
+    }
+
+    // Keep selected category valid across filter/month changes.
+    if (!selectedCategory || !availableCategories.includes(selectedCategory)) {
       setSelectedCategory(availableCategories[0]);
     }
   }, [availableCategories, selectedCategory]);
 
   // Prepare chart data with proper validation
   const prepareChartData = () => {
-    if (!chartData?.data || typeof chartData.data !== 'object' || !selectedCategory) {
+    if (!resolvedCategoryMatrix || !selectedCategory) {
       console.log('No chart data available or no category selected:', { chartData, selectedCategory });
       return { categories: [], series: [] };
     }
@@ -238,7 +277,7 @@ const CategoryDistributionChart = ({ filters }: CategoryDistributionChartProps) 
     console.log('Processing chart data for category:', selectedCategory);
 
     // Convert the nested object structure to arrays
-    const months = Object.keys(chartData.data).sort((a, b) => {
+    const months = Object.keys(resolvedCategoryMatrix).sort((a, b) => {
       const monthNames = [
         'January', 'February', 'March', 'April', 'May', 'June',
         'July', 'August', 'September', 'October', 'November', 'December'
@@ -260,35 +299,37 @@ const CategoryDistributionChart = ({ filters }: CategoryDistributionChartProps) 
     
     const categories = months;
     
-    // Create three series: Total Invoice, Total Profit, and Margin for the selected category
-    const series = [
-      {
-        name: 'Total Invoice',
-        data: months.map(month => {
-          const monthData = chartData.data[month];
-          return monthData && monthData[selectedCategory] ? monthData[selectedCategory].total_invoice : 0;
-        })
-      },
-      {
-        name: 'Total Profit',
-        data: months.map(month => {
-          const monthData = chartData.data[month];
-          return monthData && monthData[selectedCategory] ? monthData[selectedCategory].total_profit : 0;
-        })
-      },
-      {
-        name: 'Margin (%)',
-        data: months.map((month) => {
-          const monthData = chartData.data[month];
-          if (!monthData || !monthData[selectedCategory]) return 0;
-          const row = monthData[selectedCategory];
-          if (typeof row.margin === 'number') return row.margin;
-          const invoice = row.total_invoice ?? 0;
-          const profit = row.total_profit ?? 0;
-          return invoice > 0 ? (profit / invoice) * 100 : 0;
-        })
-      }
-    ];
+    const series = showMargin
+      ? [
+          {
+            name: 'Margin',
+            data: months.map((month) => {
+              const monthData = resolvedCategoryMatrix[month];
+              if (!monthData || !monthData[selectedCategory]) return 0;
+              const row = monthData[selectedCategory];
+              if (typeof row.margin === 'number') return row.margin;
+              const invoice = row.total_invoice ?? 0;
+              const profit = row.total_profit ?? 0;
+              return invoice > 0 ? (profit / invoice) * 100 : 0;
+            }),
+          },
+        ]
+      : [
+          {
+            name: 'Total Invoice',
+            data: months.map((month) => {
+              const monthData = resolvedCategoryMatrix[month];
+              return monthData && monthData[selectedCategory] ? monthData[selectedCategory].total_invoice : 0;
+            }),
+          },
+          {
+            name: 'Total Profit',
+            data: months.map((month) => {
+              const monthData = resolvedCategoryMatrix[month];
+              return monthData && monthData[selectedCategory] ? monthData[selectedCategory].total_profit : 0;
+            }),
+          },
+        ];
 
     console.log('Prepared chart data:', { categories, series, selectedCategory });
 
@@ -301,7 +342,7 @@ const CategoryDistributionChart = ({ filters }: CategoryDistributionChartProps) 
   const chartDataConfig = useMemo(() => {
     console.log('Recalculating chart data config...', { chartData, selectedCategory });
     return prepareChartData();
-  }, [chartData, selectedCategory]);
+  }, [chartData, selectedCategory, resolvedCategoryMatrix, showMargin]);
 
   // Only render chart if we have valid data
   const shouldRenderChart = chartDataConfig.categories.length > 0 && chartDataConfig.series.length > 0;
@@ -326,50 +367,41 @@ const CategoryDistributionChart = ({ filters }: CategoryDistributionChartProps) 
         }
       }
     },
-    yaxis: [
-      {
-        labels: {
-          formatter: function(value: number) {
-            return formatValue(value);
-          }
-        },
-        title: {
-          text: 'Invoice / Profit (IDR)'
+    yaxis: {
+      min: 0,
+      max: showMargin ? 100 : undefined,
+      labels: {
+        formatter: function(value: unknown) {
+          return showMargin ? formatPercent(value) : formatCompactNumber(value);
         }
       },
-      {
-        opposite: true,
-        seriesName: 'Margin (%)',
-        labels: {
-          formatter: function(value: number) {
-            return formatPercent(value);
-          }
-        },
-        title: {
-          text: 'Margin (%)'
-        }
+      title: {
+        text: showMargin ? 'Margin (%)' : 'Value'
       }
-    ],
-    tooltip: {
-      y: [
-        {
-          formatter: function(value: number) {
-            return formatValue(value);
-          }
-        },
-        {
-          formatter: function(value: number) {
-            return formatValue(value);
-          }
-        },
-        {
-          formatter: function(value: number) {
-            return formatPercent(value);
+    },
+    tooltip: showMargin
+      ? {
+          y: {
+            formatter: function(value: unknown) {
+              return formatPercent(value);
+            }
           }
         }
-      ]
-    },
-    colors: ['#3B82F6', '#10B981', '#F59E0B'],
+      : {
+          y: [
+            {
+              formatter: function(value: unknown) {
+                return formatValue(value);
+              }
+            },
+            {
+              formatter: function(value: unknown) {
+                return formatValue(value);
+              }
+            }
+          ]
+        },
+    colors: showMargin ? ['#F59E0B'] : ['#3B82F6', '#10B981'],
     grid: {
       borderColor: '#E5E7EB',
       strokeDashArray: 4
@@ -396,6 +428,16 @@ const CategoryDistributionChart = ({ filters }: CategoryDistributionChartProps) 
           </Typography>
           
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={showMargin}
+                  onChange={(e) => setShowMargin(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label="Margin view"
+            />
             <FormControl size="small">
               <InputLabel>Category</InputLabel>
               <Select
