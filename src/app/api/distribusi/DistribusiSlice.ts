@@ -656,6 +656,44 @@ export const updateOrderTotalPaid = async (updateData: UpdateTotalPaidRequest): 
   return data;
 };
 
+// Write off overdue order
+export interface WriteOffOverdueOrderRequest {
+  order_code: string;
+  reason: string;
+  written_off_by: string;
+}
+
+export interface WriteOffOverdueOrderResponse {
+  code: number;
+  status: string;
+  message: string;
+}
+
+export const writeOffOverdueOrder = async (
+  payload: WriteOffOverdueOrderRequest
+): Promise<WriteOffOverdueOrderResponse> => {
+  if (!AM_API_URL) {
+    throw new Error('API URL is not configured');
+  }
+
+  const url = `${AM_API_URL}/api/order/overdue/write-off`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const data: WriteOffOverdueOrderResponse = await response.json();
+  return data;
+};
+
 // Update order item buy prices
 export const updateOrderItemBuyPrices = async (updateData: OrderItemUpdateRequest): Promise<OrderItemUpdateResponse> => {
   if (!AM_API_URL) {

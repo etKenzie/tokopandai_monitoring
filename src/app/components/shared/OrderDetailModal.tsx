@@ -24,8 +24,15 @@ import {
   Typography
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { fetchOrderDetail, OrderDetailItem, updateOrderPaymentDate, updateOrderTotalPaid } from '../../api/distribusi/DistribusiSlice';
+import {
+  fetchOrderDetail,
+  OrderDetailItem,
+  updateOrderPaymentDate,
+  updateOrderTotalPaid,
+  writeOffOverdueOrder
+} from '../../api/distribusi/DistribusiSlice';
 import OrderItemUpdateModal from './OrderItemUpdateModal';
+import { useAuth } from '@/app/context/AuthContext';
 
 interface OrderDetailModalProps {
   open: boolean;
@@ -34,6 +41,7 @@ interface OrderDetailModalProps {
 }
 
 const OrderDetailModal = ({ open, onClose, orderCode }: OrderDetailModalProps) => {
+  const { roles } = useAuth();
   const [orderDetails, setOrderDetails] = useState<OrderDetailItem[]>([]);
   const [orderPaymentDate, setOrderPaymentDate] = useState<string | null>(null);
   const [orderTotalPaid, setOrderTotalPaid] = useState<number | null>(null);
@@ -51,6 +59,12 @@ const OrderDetailModal = ({ open, onClose, orderCode }: OrderDetailModalProps) =
   const [updatingTotalPaid, setUpdatingTotalPaid] = useState(false);
   const [totalPaidError, setTotalPaidError] = useState<string | null>(null);
   const [totalPaidSuccess, setTotalPaidSuccess] = useState(false);
+  const [writeOffReason, setWriteOffReason] = useState('');
+  const [writtenOffBy, setWrittenOffBy] = useState('admin');
+  const [writingOff, setWritingOff] = useState(false);
+  const [writeOffError, setWriteOffError] = useState<string | null>(null);
+  const [writeOffSuccess, setWriteOffSuccess] = useState(false);
+  const isAdmin = roles.includes('admin');
 
   useEffect(() => {
     if (open && orderCode) {
@@ -199,6 +213,41 @@ const OrderDetailModal = ({ open, onClose, orderCode }: OrderDetailModalProps) =
       console.error('Failed to update total paid:', err);
     } finally {
       setUpdatingTotalPaid(false);
+    }
+  };
+
+  const handleWriteOffOrder = async () => {
+    if (!orderCode) return;
+    if (!writtenOffBy.trim()) {
+      setWriteOffError('Written off by is required');
+      return;
+    }
+
+    setWritingOff(true);
+    setWriteOffError(null);
+    setWriteOffSuccess(false);
+
+    try {
+      await writeOffOverdueOrder({
+        order_code: orderCode,
+        reason: writeOffReason.trim(),
+        written_off_by: writtenOffBy.trim(),
+      });
+
+      setWriteOffSuccess(true);
+      setWriteOffReason('');
+
+      // Refresh details after write-off to reflect latest backend state
+      await fetchOrderDetails();
+
+      setTimeout(() => {
+        setWriteOffSuccess(false);
+      }, 3000);
+    } catch (err) {
+      setWriteOffError(err instanceof Error ? err.message : 'Failed to write off order');
+      console.error('Failed to write off order:', err);
+    } finally {
+      setWritingOff(false);
     }
   };
 
@@ -486,9 +535,9 @@ const OrderDetailModal = ({ open, onClose, orderCode }: OrderDetailModalProps) =
             <Typography variant="h6" gutterBottom>
               Actions
             </Typography>
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column', alignItems: 'stretch' }}>
               {/* Update Payment Date */}
-              <Paper sx={{ p: 2, flex: 1, minWidth: 0 }}>
+              <Paper sx={{ p: 2, width: '100%' }}>
                 <Typography variant="subtitle2" color="textSecondary" gutterBottom>
                   Update Payment Date
                 </Typography>
@@ -519,7 +568,7 @@ const OrderDetailModal = ({ open, onClose, orderCode }: OrderDetailModalProps) =
 
               {/* Update Total Paid - Only show when total_paid is not 0 */}
               {orderTotalPaid !== null && orderTotalPaid !== 0 && (
-                <Paper sx={{ p: 2, flex: 1, minWidth: 0 }}>
+                <Paper sx={{ p: 2, width: '100%' }}>
                   <Typography variant="subtitle2" color="textSecondary" gutterBottom>
                     Update Total Paid
                   </Typography>
@@ -547,6 +596,44 @@ const OrderDetailModal = ({ open, onClose, orderCode }: OrderDetailModalProps) =
                   </Box>
                   {totalPaidError && <Alert severity="error" sx={{ mt: 1, py: 0 }}>{totalPaidError}</Alert>}
                   {totalPaidSuccess && <Alert severity="success" sx={{ mt: 1, py: 0 }}>Updated!</Alert>}
+                </Paper>
+              )}
+
+              {/* Write Off Order */}
+              {isAdmin && (
+                <Paper sx={{ p: 2, width: '100%' }}>
+                  <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                    Write Off Order
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
+                    <TextField
+                      size="small"
+                      label="Reason"
+                      value={writeOffReason}
+                      onChange={(e) => setWriteOffReason(e.target.value)}
+                      placeholder="Optional reason"
+                      fullWidth
+                    />
+                    <TextField
+                      size="small"
+                      label="Written Off By"
+                      value={writtenOffBy}
+                      onChange={(e) => setWrittenOffBy(e.target.value)}
+                      required
+                      fullWidth
+                    />
+                    <Button
+                      variant="contained"
+                      color="error"
+                      size="small"
+                      onClick={handleWriteOffOrder}
+                      disabled={writingOff || !writtenOffBy.trim()}
+                    >
+                      {writingOff ? <CircularProgress size={16} /> : 'Write Off'}
+                    </Button>
+                  </Box>
+                  {writeOffError && <Alert severity="error" sx={{ mt: 1, py: 0 }}>{writeOffError}</Alert>}
+                  {writeOffSuccess && <Alert severity="success" sx={{ mt: 1, py: 0 }}>Order written off successfully!</Alert>}
                 </Paper>
               )}
             </Box>
