@@ -339,7 +339,6 @@ const StoresTable = ({
   });
 
   const totalStores = filteredStores.length;
-  const activeStores = filteredStores.filter(s => s.user_status === 'Active').length;
   
   // Filter out stores with final score of 0 (no transactions)
   const storesWithTransactions = filteredStores.filter(s => s.final_score > 0);
@@ -348,6 +347,25 @@ const StoresTable = ({
     Math.round(storesWithTransactions.reduce((sum, s) => sum + s.final_score, 0) / storesWithTransactions.length) : 0;
   const avgProfitScore = storesWithTransactions.length > 0 ? 
     Math.round(storesWithTransactions.reduce((sum, s) => sum + s.profit_score, 0) / storesWithTransactions.length) : 0;
+
+  const totalRollingInvoice = filteredStores.reduce((sum, store) => {
+    const invoice = store.rolling_total_invoice;
+    if (invoice == null || Number.isNaN(Number(invoice))) return sum;
+    return sum + Number(invoice);
+  }, 0);
+
+  const totalRollingProfit = filteredStores.reduce((sum, store) => {
+    const profit = store.rolling_total_profit;
+    if (profit == null || Number.isNaN(Number(profit))) return sum;
+    return sum + Number(profit);
+  }, 0);
+
+  const storesWithRollingMargin = filteredStores.filter(
+    (store) => store.rolling_margin != null && !Number.isNaN(Number(store.rolling_margin))
+  );
+  const avgRollingMargin = storesWithRollingMargin.length > 0
+    ? storesWithRollingMargin.reduce((sum, store) => sum + Number(store.rolling_margin), 0) / storesWithRollingMargin.length
+    : 0;
 
   const prepareDataForExport = (stores: Store[]) => {
     const rr = rollingRange;
@@ -534,7 +552,7 @@ const StoresTable = ({
         </Box>
 
         {/* Summary Stats */}
-        <Box mb={3} sx={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
+        <Box mb={3} sx={{ display: 'flex', justifyContent: 'center', gap: 6, flexWrap: 'wrap' }}>
           <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
             <Typography variant="h3" color="primary" fontWeight="bold" mb={1}>
               {totalStores}
@@ -551,20 +569,48 @@ const StoresTable = ({
               Active Stores
             </Typography>
           </Box> */}
-          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
-            <Typography variant="h3" color="info.main" fontWeight="bold" mb={1}>
-              {avgFinalScore}
+          {showScoreColumns && (
+            <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
+              <Typography variant="h3" color="info.main" fontWeight="bold" mb={1}>
+                {avgFinalScore}
+              </Typography>
+              <Typography variant="h6" color="textSecondary" fontWeight="500">
+                Avg Final Score
+              </Typography>
+            </Box>
+          )}
+          {showScoreColumns && (
+            <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
+              <Typography variant="h3" color="warning.main" fontWeight="bold" mb={1}>
+                {avgProfitScore}
+              </Typography>
+              <Typography variant="h6" color="textSecondary" fontWeight="500">
+                Avg Profit Score
+              </Typography>
+            </Box>
+          )}
+          <Box sx={{ textAlign: 'center', minWidth: '220px' }}>
+            <Typography variant="h3" color="primary.main" fontWeight="bold" mb={1}>
+              {formatCurrency(totalRollingInvoice)}
             </Typography>
             <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Avg Final Score
+              Total Invoice ({rollingRange})
             </Typography>
           </Box>
-          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
-            <Typography variant="h3" color="warning.main" fontWeight="bold" mb={1}>
-              {avgProfitScore}
+          <Box sx={{ textAlign: 'center', minWidth: '220px' }}>
+            <Typography variant="h3" color="success.main" fontWeight="bold" mb={1}>
+              {formatCurrency(totalRollingProfit)}
             </Typography>
             <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Avg Profit Score
+              Total Profit ({rollingRange})
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: 'center', minWidth: '220px' }}>
+            <Typography variant="h3" color="info.main" fontWeight="bold" mb={1}>
+              {formatRollingMargin(avgRollingMargin)}
+            </Typography>
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              Avg Margin ({rollingRange})
             </Typography>
           </Box>
           <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
@@ -613,7 +659,7 @@ const StoresTable = ({
                     color="primary"
                   />
                 }
-                label="Show Score Columns (Profit Score, Owed Score, Activity Score, Payment Habits Score)"
+                label="Show Score Columns (Profit Score, Owed Score, Activity Score, Payment Habits Score, Final Score)"
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
@@ -786,7 +832,7 @@ const StoresTable = ({
                   .filter((headCell) => {
                     // Hide score columns if toggle is off
                     if (!showScoreColumns) {
-                      return !['profit_score', 'owed_score', 'activity_score', 'payment_habits_score'].includes(headCell.id);
+                      return !['profit_score', 'owed_score', 'activity_score', 'payment_habits_score', 'final_score'].includes(headCell.id);
                     }
                     return true;
                   })
@@ -810,13 +856,13 @@ const StoresTable = ({
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={headCells.filter((h) => showScoreColumns || !['profit_score', 'owed_score', 'activity_score', 'payment_habits_score'].includes(h.id)).length} align="center">
+                  <TableCell colSpan={headCells.filter((h) => showScoreColumns || !['profit_score', 'owed_score', 'activity_score', 'payment_habits_score', 'final_score'].includes(h.id)).length} align="center">
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={headCells.filter((h) => showScoreColumns || !['profit_score', 'owed_score', 'activity_score', 'payment_habits_score'].includes(h.id)).length} align="center">
+                  <TableCell colSpan={headCells.filter((h) => showScoreColumns || !['profit_score', 'owed_score', 'activity_score', 'payment_habits_score', 'final_score'].includes(h.id)).length} align="center">
                     <Typography variant="body2" color="error">
                       {error}
                     </Typography>
@@ -824,7 +870,7 @@ const StoresTable = ({
                 </TableRow>
               ) : sortedStores.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={headCells.filter((h) => showScoreColumns || !['profit_score', 'owed_score', 'activity_score', 'payment_habits_score'].includes(h.id)).length} align="center">
+                  <TableCell colSpan={headCells.filter((h) => showScoreColumns || !['profit_score', 'owed_score', 'activity_score', 'payment_habits_score', 'final_score'].includes(h.id)).length} align="center">
                     <Typography variant="body2" color="textSecondary">
                       No stores found
                     </Typography>
@@ -978,14 +1024,16 @@ const StoresTable = ({
                           </TableCell>
                         </>
                       )}
-                      <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                        <Chip
-                          label={row.final_score}
-                          color={getScoreColor(row.final_score) as any}
-                          size="small"
-                          variant="filled"
-                        />
-                      </TableCell>
+                      {showScoreColumns && (
+                        <TableCell align="right" sx={{ fontWeight: 'bold' }}>
+                          <Chip
+                            label={row.final_score}
+                            color={getScoreColor(row.final_score) as any}
+                            size="small"
+                            variant="filled"
+                          />
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
               )}
