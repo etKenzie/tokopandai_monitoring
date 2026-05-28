@@ -140,6 +140,27 @@ const OrderTypeChart = ({ filters, goalProfit = 0, goalProfitByAgent = {} }: Ord
     return new Intl.NumberFormat('en-US').format(value);
   };
 
+  const getGoalForAgent = (agentName: string): number => {
+    const normalizedAgent = (agentName || '').trim().toLowerCase();
+    if (!normalizedAgent) return goalProfit || 0;
+
+    // Exact match first
+    if (goalProfitByAgent[agentName] !== undefined) {
+      return goalProfitByAgent[agentName];
+    }
+
+    // Case-insensitive key match
+    const matchedKey = Object.keys(goalProfitByAgent).find(
+      (key) => key.trim().toLowerCase() === normalizedAgent
+    );
+    if (matchedKey) {
+      return goalProfitByAgent[matchedKey];
+    }
+
+    // Fallback to NATIONAL goal if available, otherwise parent fallback.
+    return 0;
+  };
+
   // Get chart configuration based on metric type
   const getChartConfig = () => {
     switch (metricType) {
@@ -167,7 +188,7 @@ const OrderTypeChart = ({ filters, goalProfit = 0, goalProfitByAgent = {} }: Ord
         }
         
         // When grouping by agent, show both goal profit and total profit on same axis
-        const goalProfitData = chartData.map(item => goalProfitByAgent[item.type_name] || 0);
+        const goalProfitData = chartData.map(item => getGoalForAgent(item.type_name));
         
         return {
           yaxis: [
