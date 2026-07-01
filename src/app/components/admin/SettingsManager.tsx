@@ -17,6 +17,7 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
+  FormControlLabel,
   Grid,
   IconButton,
   InputLabel,
@@ -25,6 +26,7 @@ import {
   Menu,
   MenuItem,
   Select,
+  Switch,
   Tab,
   Table,
   TableBody,
@@ -127,6 +129,20 @@ interface BonusFromApi {
   period_title: string;
 }
 
+interface GuardrailsFromApi {
+  overdue_segment?: string;
+  overdue_status?: string;
+  order_count?: number;
+  total_invoice?: number;
+  percentage_of_total_invoice?: number;
+  overdue_60_plus_ok?: boolean;
+  period_id?: number;
+  national_goal_progress_percentage?: number;
+  national_cash_in_progress_percentage?: number;
+  ebitda?: boolean;
+  fraud?: boolean;
+}
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
 
 /** POST /api/goals and filters only accept these `goal_type` values (do not use open-ended /filters goal_types for pickers). */
@@ -184,7 +200,7 @@ const SettingsManager = () => {
   const [goalsGoalType, setGoalsGoalType] = useState<string>(ALLOWED_GOAL_TYPES[0]);
   const [goalsMonth, setGoalsMonth] = useState<string>(''); // 1-12 or ''
   const [goalsYear, setGoalsYear] = useState<string>(() => String(new Date().getFullYear()));
-  const [activeTab, setActiveTab] = useState(0); // 0 = Goals, 1 = Settings, 2 = Periods, 3 = Goal progress, 4 = Bonus
+  const [activeTab, setActiveTab] = useState(0); // 0 = Goals, 1 = Settings, 2 = Periods, 3 = Goal progress, 4 = Bonus, 5 = Guardrails
   const [progressMonth, setProgressMonth] = useState<string>(() => String(new Date().getMonth() + 1));
   const [progressYear, setProgressYear] = useState<string>(() => String(new Date().getFullYear()));
   const [progressGoalType, setProgressGoalType] = useState<string>('profit');
@@ -268,6 +284,16 @@ const SettingsManager = () => {
   const [bonusCreateError, setBonusCreateError] = useState<string | null>(null);
   const [bonusCreateForm, setBonusCreateForm] = useState({ agent_id: 0, period_id: 0, period_label: '', bonus_amount: 0 });
   const [periodPickerFor, setPeriodPickerFor] = useState<'goal' | 'bonus' | null>(null);
+  const [guardrailsPeriodSelection, setGuardrailsPeriodSelection] = useState<'current' | number>('current');
+  const [guardrailsQuarterPeriods, setGuardrailsQuarterPeriods] = useState<GoalPeriodFromApi[]>([]);
+  const [guardrailsData, setGuardrailsData] = useState<GuardrailsFromApi | null>(null);
+  const [guardrailsLoading, setGuardrailsLoading] = useState(false);
+  const [guardrailsSaving, setGuardrailsSaving] = useState(false);
+  const [guardrailsError, setGuardrailsError] = useState<string | null>(null);
+  const [guardrailsSaveMessage, setGuardrailsSaveMessage] = useState<string | null>(null);
+  const [editEbitda, setEditEbitda] = useState(false);
+  const [editFraud, setEditFraud] = useState(false);
+  const [editOverdue60PlusOk, setEditOverdue60PlusOk] = useState(false);
 
   // Available agents from settings data
   const availableAgents = settings?.goal_profit ? Object.keys(settings.goal_profit).sort() : [];
@@ -547,6 +573,104 @@ const SettingsManager = () => {
       fetchBonusPeriods(bonusYear);
     }
   }, [activeTab, bonusYear, fetchGoalsFilters, fetchBonusPeriods]);
+
+  const fetchGuardrailsQuarterPeriods = useCallback(async () => {
+    if (!API_BASE) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/goals/periods`);
+      const json = await res.json();
+      const all: GoalPeriodFromApi[] = Array.isArray(json?.data) ? json.data : [];
+      const quarters = all
+        .filter((p) => p.period_type === 'quarter')
+        .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
+      setGuardrailsQuarterPeriods(quarters);
+      setGuardrailsPeriodSelection((prev) => {
+        if (prev === 'current') return 'current';
+        if (typeof prev === 'number' && quarters.some((q) => q.id === prev)) return prev;
+        return 'current';
+      });
+    } catch (e) {
+      console.error('Failed to fetch guardrails periods:', e);
+      setGuardrailsQuarterPeriods([]);
+    }
+  }, []);
+
+  const fetchGuardrails = useCallback(async () => {
+    if (!API_BASE) return;
+    setGuardrailsLoading(true);
+    setGuardrailsError(null);
+    setGuardrailsSaveMessage(null);
+    try {
+      const params = new URLSearchParams();
+      if (guardrailsPeriodSelection === 'current') {
+        params.set('current', 'true');
+      } else {
+        params.set('period_id', String(guardrailsPeriodSelection));
+      }
+      const res = await fetch(`${API_BASE}/api/goals/guardrails?${params.toString()}`);
+      const json = await res.json();
+      if (json?.code === 200 && json?.data && typeof json.data === 'object') {
+        const data = json.data as GuardrailsFromApi;
+        setGuardrailsData(data);
+        setEditEbitda(Boolean(data.ebitda));
+        setEditFraud(Boolean(data.fraud));
+        setEditOverdue60PlusOk(Boolean(data.overdue_60_plus_ok));
+      } else {
+        setGuardrailsData(null);
+        setGuardrailsError(json?.message || 'Could not load guardrails.');
+      }
+    } catch (e) {
+      console.error('Failed to fetch guardrails:', e);
+      setGuardrailsData(null);
+      setGuardrailsError('Failed to load guardrails.');
+    } finally {
+      setGuardrailsLoading(false);
+    }
+  }, [guardrailsPeriodSelection]);
+
+  useEffect(() => {
+    if (activeTab === 5) fetchGuardrailsQuarterPeriods();
+  }, [activeTab, fetchGuardrailsQuarterPeriods]);
+
+  useEffect(() => {
+    if (activeTab === 5) fetchGuardrails();
+  }, [activeTab, fetchGuardrails]);
+
+  const handleGuardrailsSave = async () => {
+    const periodId =
+      guardrailsPeriodSelection === 'current'
+        ? guardrailsData?.period_id
+        : guardrailsPeriodSelection;
+    if (!API_BASE || periodId == null) {
+      setGuardrailsError('No period selected. Load guardrails data first.');
+      return;
+    }
+    setGuardrailsSaving(true);
+    setGuardrailsError(null);
+    setGuardrailsSaveMessage(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/goals/guardrails/${periodId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ebitda: editEbitda,
+          fraud: editFraud,
+          overdue_60_plus_ok: editOverdue60PlusOk,
+        }),
+      });
+      const json = await res.json();
+      if (json?.code === 200) {
+        setGuardrailsSaveMessage(json?.message || 'Guardrails updated successfully.');
+        fetchGuardrails();
+      } else {
+        setGuardrailsError(json?.message || 'Failed to update guardrails.');
+      }
+    } catch (e) {
+      setGuardrailsError('Failed to update guardrails.');
+    } finally {
+      setGuardrailsSaving(false);
+    }
+  };
 
   const openEditBonus = (b: BonusFromApi) => {
     setBonusEditId(b.id);
@@ -1204,6 +1328,7 @@ const SettingsManager = () => {
         <Tab label="Periods" />
         <Tab label="Goal progress" />
         <Tab label="Bonus" />
+        <Tab label="Guardrails" />
       </Tabs>
 
       {activeTab === 0 && (
@@ -2711,6 +2836,179 @@ const SettingsManager = () => {
                     </Box>
                   );
                 })()}
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Guardrails tab */}
+      {activeTab === 5 && (
+        <Card>
+          <CardHeader
+            title="Guardrails"
+            subheader="View 60+ overdue metrics and edit guardrail flags (60+ OK, EBITDA, fraud) per quarter."
+          />
+          <CardContent>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3, alignItems: 'center' }}>
+              <FormControl size="small" sx={{ minWidth: 220 }}>
+                <InputLabel id="guardrails-period-label">Quarter</InputLabel>
+                <Select
+                  labelId="guardrails-period-label"
+                  label="Quarter"
+                  value={
+                    guardrailsPeriodSelection === 'current'
+                      ? 'current'
+                      : String(guardrailsPeriodSelection)
+                  }
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === 'current') setGuardrailsPeriodSelection('current');
+                    else setGuardrailsPeriodSelection(Number(v));
+                  }}
+                >
+                  <MenuItem value="current">Current quarter</MenuItem>
+                  {guardrailsQuarterPeriods.map((p) => (
+                    <MenuItem key={p.id} value={String(p.id)}>
+                      {formatPeriodLabel(p)}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              {guardrailsData?.period_id != null && (
+                <Typography variant="body2" color="text.secondary">
+                  Period ID: {guardrailsData.period_id}
+                </Typography>
+              )}
+            </Box>
+
+            {guardrailsError && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setGuardrailsError(null)}>
+                {guardrailsError}
+              </Alert>
+            )}
+            {guardrailsSaveMessage && (
+              <Alert severity="success" sx={{ mb: 2 }} onClose={() => setGuardrailsSaveMessage(null)}>
+                {guardrailsSaveMessage}
+              </Alert>
+            )}
+
+            {guardrailsLoading ? (
+              <Box display="flex" justifyContent="center" py={4}>
+                <CircularProgress />
+              </Box>
+            ) : !guardrailsData ? (
+              <Typography variant="body2" color="text.secondary">
+                No guardrails data for this period.
+              </Typography>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    60+ overdue snapshot
+                  </Typography>
+                  <TableContainer>
+                    <Table size="small" sx={{ maxWidth: 720 }}>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 600, width: '40%' }}>Segment</TableCell>
+                          <TableCell>{guardrailsData.overdue_segment ?? '—'}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 600 }}>Overdue status</TableCell>
+                          <TableCell>{guardrailsData.overdue_status ?? '—'}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 600 }}>Order count</TableCell>
+                          <TableCell>{guardrailsData.order_count ?? '—'}</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 600 }}>Total invoice</TableCell>
+                          <TableCell>
+                            {guardrailsData.total_invoice != null
+                              ? formatCurrency(guardrailsData.total_invoice)
+                              : '—'}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 600 }}>% of total invoice</TableCell>
+                          <TableCell>
+                            {guardrailsData.percentage_of_total_invoice != null
+                              ? `${guardrailsData.percentage_of_total_invoice}%`
+                              : '—'}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 600 }}>National goal progress</TableCell>
+                          <TableCell>
+                            {guardrailsData.national_goal_progress_percentage != null
+                              ? `${guardrailsData.national_goal_progress_percentage}%`
+                              : '—'}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 600 }}>National cash-in progress</TableCell>
+                          <TableCell>
+                            {guardrailsData.national_cash_in_progress_percentage != null
+                              ? `${guardrailsData.national_cash_in_progress_percentage}%`
+                              : '—'}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Editable guardrails
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={editOverdue60PlusOk}
+                          onChange={(_, checked) => setEditOverdue60PlusOk(checked)}
+                          color="primary"
+                        />
+                      }
+                      label={`60+ OK — ${editOverdue60PlusOk ? 'Pass' : 'Fail'}`}
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={editEbitda}
+                          onChange={(_, checked) => setEditEbitda(checked)}
+                          color="primary"
+                        />
+                      }
+                      label={`EBITDA — ${editEbitda ? 'Pass' : 'Fail'}`}
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={!editFraud}
+                          onChange={(_, checked) => setEditFraud(!checked)}
+                          color="primary"
+                        />
+                      }
+                      label={`Fraud — ${editFraud ? 'Fail' : 'Pass'}${editFraud ? ' (flag raised)' : ' (no flags)'}`}
+                    />
+                  </Box>
+                  <Button
+                    variant="contained"
+                    onClick={handleGuardrailsSave}
+                    disabled={
+                      guardrailsSaving ||
+                      (guardrailsPeriodSelection === 'current'
+                        ? guardrailsData?.period_id == null
+                        : false)
+                    }
+                    startIcon={guardrailsSaving ? <CircularProgress size={16} /> : <Save />}
+                  >
+                    Save guardrails
+                  </Button>
+                </Box>
               </Box>
             )}
           </CardContent>
