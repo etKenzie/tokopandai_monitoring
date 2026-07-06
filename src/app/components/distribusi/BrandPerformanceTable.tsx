@@ -58,6 +58,12 @@ const formatNumber = (value: number) =>
 const formatPercent = (value: number) =>
   new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 
+type PerformanceRow = ProductBrandRow | ProductPrincipalRow;
+
+function getRowValue(row: PerformanceRow, key: string): unknown {
+  return (row as unknown as Record<string, unknown>)[key];
+}
+
 const BrandPerformanceTable = ({
   viewMode,
   brandRows,
@@ -100,8 +106,8 @@ const BrandPerformanceTable = ({
 
   const sortedRows = useMemo(() => {
     return [...filteredRows].sort((a, b) => {
-      const aValue = (a as Record<string, unknown>)[orderBy];
-      const bValue = (b as Record<string, unknown>)[orderBy];
+      const aValue = getRowValue(a, orderBy);
+      const bValue = getRowValue(b, orderBy);
 
       if (typeof aValue === 'number' && typeof bValue === 'number') {
         return order === 'asc' ? aValue - bValue : bValue - aValue;
@@ -195,7 +201,7 @@ const BrandPerformanceTable = ({
     row: ProductBrandRow | ProductPrincipalRow,
     columnId: string
   ) => {
-    const value = (row as Record<string, unknown>)[columnId];
+    const value = getRowValue(row, columnId);
 
     if (columnId === 'principal_name') {
       return (
