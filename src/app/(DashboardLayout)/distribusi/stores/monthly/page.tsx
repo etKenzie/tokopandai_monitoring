@@ -5,6 +5,7 @@ import { fetchStoreMonthly, StoreMonthly } from "@/app/api/distribusi/StoreSlice
 import { Store } from "@/app/api/distribusi/StoreSlice";
 import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import PageContainer from "@/app/components/container/PageContainer";
+import StoreAreaMap from "@/app/components/distribusi/StoreAreaMap";
 import StoreDetailModal from "@/app/components/distribusi/StoreDetailModal";
 import StoreMonthlyTable from "@/app/components/distribusi/StoreMonthlyTable";
 import { useAuth } from "@/app/context/AuthContext";
@@ -85,13 +86,14 @@ const StoresMonthlyPage = () => {
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [tabValue, setTabValue] = useState(0);
   
-  // Store summary data for stores without orders
+  // Store summary data (has_order for map, no_order for second tab)
+  const [hasOrderStores, setHasOrderStores] = useState<StoreSummaryItem[]>([]);
   const [noOrderStores, setNoOrderStores] = useState<StoreSummaryItem[]>([]);
-  const [noOrderLoading, setNoOrderLoading] = useState(false);
-  const [noOrderError, setNoOrderError] = useState<string | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [summaryDataFetched, setSummaryDataFetched] = useState(false);
   const [noOrderPage, setNoOrderPage] = useState(0);
   const [noOrderRowsPerPage, setNoOrderRowsPerPage] = useState(10);
-  const [noOrderDataFetched, setNoOrderDataFetched] = useState(false); // Track if data has been fetched for current month
   const [noOrderSearchQuery, setNoOrderSearchQuery] = useState<string>('');
   const [noOrderAgentFilter, setNoOrderAgentFilter] = useState<string>('');
   const [noOrderSegmentFilter, setNoOrderSegmentFilter] = useState<string>('');
@@ -151,41 +153,39 @@ const StoresMonthlyPage = () => {
     }
   }, [selectedMonth, hasRestrictedRole, userRoleForFiltering]);
 
-  // Fetch stores without orders
-  const fetchNoOrderStores = useCallback(async () => {
+  // Fetch store summary (has_order + no_order)
+  const fetchStoreSummaryData = useCallback(async () => {
     if (!selectedMonth) return;
-    
-    // Don't fetch if data already exists for this month
-    if (noOrderDataFetched) {
+
+    if (summaryDataFetched) {
       return;
     }
-    
-    setNoOrderLoading(true);
-    setNoOrderError(null);
+
+    setSummaryLoading(true);
+    setSummaryError(null);
     try {
-      // For users with restricted roles, use their mapped agent name
       const agentName = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : undefined;
-      
+
       const response = await fetchStoreSummary(selectedMonth, agentName);
+      setHasOrderStores(response.data.has_order || []);
       setNoOrderStores(response.data.no_order || []);
-      setNoOrderDataFetched(true); // Mark as fetched
+      setSummaryDataFetched(true);
     } catch (err) {
-      setNoOrderError(err instanceof Error ? err.message : 'Failed to fetch stores without orders');
-      console.error('Failed to fetch stores without orders:', err);
+      setSummaryError(err instanceof Error ? err.message : 'Failed to fetch store summary');
+      console.error('Failed to fetch store summary:', err);
     } finally {
-      setNoOrderLoading(false);
+      setSummaryLoading(false);
     }
-  }, [selectedMonth, hasRestrictedRole, userRoleForFiltering, noOrderDataFetched]);
+  }, [selectedMonth, hasRestrictedRole, userRoleForFiltering, summaryDataFetched]);
 
   // Fetch stores data when month changes
   useEffect(() => {
     fetchStoresData();
-    // Reset no order data when month changes
+    setHasOrderStores([]);
     setNoOrderStores([]);
-    setNoOrderDataFetched(false);
-    setNoOrderError(null);
-    setNoOrderPage(0);
-    setNoOrderLoading(false);
+    setSummaryDataFetched(false);
+    setSummaryError(null);
+    setSummaryLoading(false);
     // Reset filters
     setNoOrderSearchQuery('');
     setNoOrderAgentFilter('');
@@ -193,14 +193,14 @@ const StoresMonthlyPage = () => {
     setNoOrderUserStatusFilter('');
     setNoOrderBusinessTypeFilter('');
     setNoOrderPaymentStatusFilter('');
+    setNoOrderPage(0);
   }, [selectedMonth, fetchStoresData]);
 
-  // Fetch no order stores when month is set (on page load and when month changes)
   useEffect(() => {
-    if (selectedMonth && !noOrderDataFetched && !noOrderLoading) {
-      fetchNoOrderStores();
+    if (selectedMonth && !summaryDataFetched && !summaryLoading) {
+      fetchStoreSummaryData();
     }
-  }, [selectedMonth, noOrderDataFetched, noOrderLoading, fetchNoOrderStores]);
+  }, [selectedMonth, summaryDataFetched, summaryLoading, fetchStoreSummaryData]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -228,7 +228,8 @@ const StoresMonthlyPage = () => {
           store.agent_name.toLowerCase().includes(query) ||
           store.user_status.toLowerCase().includes(query) ||
           (store.business_type && store.business_type.toLowerCase().includes(query)) ||
-          (store.payment_status && store.payment_status.toLowerCase().includes(query));
+          (store.payment_status && store.payment_status.toLowerCase().includes(query)) ||
+          (store.address && store.address.toLowerCase().includes(query));
         if (!matchesSearch) return false;
       }
       
@@ -311,6 +312,7 @@ const StoresMonthlyPage = () => {
       'User Status': store.user_status,
       'Business Type': store.business_type || '',
       'Payment Status': store.payment_status || '',
+      'Address': store.address || '',
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -418,7 +420,7 @@ const StoresMonthlyPage = () => {
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <span>Stores without Orders</span>
-                  {noOrderLoading ? (
+                  {summaryLoading ? (
                     <CircularProgress size={16} />
                   ) : (
                     <span>({noOrderStores.length})</span>
@@ -441,6 +443,10 @@ const StoresMonthlyPage = () => {
             flexDirection: 'column',
             gap: 3
           }}>
+            <StoreAreaMap
+              stores={hasOrderStores}
+              title={`Stores with Orders by Area — ${selectedMonth}`}
+            />
             <StoreMonthlyTable 
               stores={stores}
               loading={loading}
@@ -451,20 +457,24 @@ const StoresMonthlyPage = () => {
         </TabPanel>
 
         <TabPanel value={tabValue} index={1}>
-          {noOrderLoading ? (
+          {summaryLoading ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', py: 4, gap: 2 }}>
               <CircularProgress />
               <Typography variant="body2" color="textSecondary">
                 Loading stores without orders...
               </Typography>
             </Box>
-          ) : noOrderError ? (
+          ) : summaryError ? (
             <Box sx={{ py: 2 }}>
-              <Typography color="error">{noOrderError}</Typography>
+              <Typography color="error">{summaryError}</Typography>
             </Box>
           ) : (
             <Card>
               <CardContent>
+                <StoreAreaMap
+                  stores={filteredNoOrderStores}
+                  title={`Stores without Orders by Area — ${selectedMonth}`}
+                />
                 {/* Header */}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                   <Typography variant="h6" fontWeight="bold">

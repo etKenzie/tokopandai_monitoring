@@ -10,6 +10,7 @@ import {
   IconMenu2,
   IconMenuOrder,
   IconPackage,
+  IconTag,
   IconTimeDuration0,
   IconTrendingUp
 } from "@tabler/icons-react";
@@ -94,6 +95,12 @@ const Menuitems: MenuitemsType[] = [
         title: "Products",
         icon: IconPackage,
         href: "/distribusi/sales/product",
+      },
+      {
+        id: uniqueId(),
+        title: "Principal",
+        icon: IconTag,
+        href: "/distribusi/sales/principal",
       },
       
       

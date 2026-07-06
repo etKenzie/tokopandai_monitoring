@@ -517,6 +517,11 @@ export interface StoreSummaryItem {
   user_status: string;
   business_type?: string;
   payment_status?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  lat?: number;
+  lng?: number;
   total_invoice?: number;
   total_profit?: number;
 }
@@ -1864,6 +1869,183 @@ export const fetchProductCategory = async (params: ProductCategoryMonthlyQueryPa
     throw new Error(`Failed to fetch product category monthly data: ${response.status} ${response.statusText}`);
   }
   
+  return response.json();
+};
+
+// Types for Product Brand / Principal API
+export interface ProductBrandRow {
+  brand_id: string;
+  brand_name: string;
+  principal_id: string;
+  principal_name: string;
+  total_invoice: number;
+  total_profit: number;
+  total_quantity: number;
+  order_count: number;
+  product_count: number;
+  store_count: number;
+  margin_percentage: number;
+}
+
+export interface ProductPrincipalRow {
+  principal_id: string;
+  principal_name: string;
+  total_invoice: number;
+  total_profit: number;
+  total_quantity: number;
+  order_count: number;
+  product_count: number;
+  brand_count: number;
+  store_count: number;
+  margin_percentage: number;
+}
+
+export interface ProductBrandTotals {
+  total_invoice: number;
+  total_profit: number;
+  total_quantity: number;
+  order_count: number;
+  product_count: number;
+  store_count: number;
+  margin_percentage: number;
+}
+
+export interface ProductBrandData {
+  month: string;
+  by_brand: ProductBrandRow[];
+  by_principal: ProductPrincipalRow[];
+  totals: ProductBrandTotals;
+}
+
+export interface ProductBrandResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: ProductBrandData;
+}
+
+export interface ProductBrandQueryParams {
+  month?: string;
+  agent_name?: string;
+  area?: string;
+  segment?: string;
+  business_type?: string;
+  sub_business_type?: string;
+}
+
+export const fetchProductBrand = async (params: ProductBrandQueryParams): Promise<ProductBrandResponse> => {
+  const baseUrl = AM_API_URL;
+
+  const queryParams = new URLSearchParams();
+  if (params.month) queryParams.append('month', params.month);
+  if (params.agent_name) queryParams.append('agent_name', params.agent_name);
+  if (params.area) queryParams.append('area', params.area);
+  if (params.segment) queryParams.append('segment', params.segment);
+  if (params.business_type) queryParams.append('business_type', params.business_type);
+  if (params.sub_business_type) queryParams.append('sub_business_type', params.sub_business_type);
+
+  const url = `${baseUrl}/api/product/brand?${queryParams.toString()}`;
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch product brand data: ${response.status} ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// Types for Principal Orders API
+export interface PrincipalOrderProduct {
+  order_item_id: string;
+  product_id: string;
+  product_name: string;
+  sku: string;
+  brand_id: string;
+  brand_name: string;
+  variant_name: string;
+  order_quantity: number;
+  price: number;
+  total_invoice: number;
+  buy_price: number;
+  serve_price: number;
+  profit: number;
+}
+
+export interface PrincipalOrder {
+  order_id: string;
+  order_code: string;
+  user_id: string;
+  store_name: string;
+  segment: string;
+  area: string;
+  status_order: string;
+  status_payment: string;
+  payment_type: string;
+  order_date: string;
+  faktur_date: string | null;
+  payment_due_date: string | null;
+  process_hub: string;
+  order_type: string;
+  month: string;
+  payment_date: string | null;
+  total_invoice: number;
+  agent_name: string;
+  admin_name: string;
+  business_type: string;
+  sub_business_type: string;
+  profit: number;
+  principal_total_invoice: number;
+  principal_total_profit: number;
+  principal_total_quantity: number;
+  overdue_status: string | null;
+  products?: PrincipalOrderProduct[];
+}
+
+export interface PrincipalOrdersResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: {
+    data: PrincipalOrder[];
+  };
+}
+
+export interface PrincipalOrdersQueryParams {
+  principal_id: string;
+  sortTime?: 'asc' | 'desc';
+  start_date?: string;
+  end_date?: string;
+}
+
+export const fetchPrincipalOrders = async (
+  params: PrincipalOrdersQueryParams
+): Promise<PrincipalOrdersResponse> => {
+  const baseUrl = AM_API_URL;
+  const queryParams = new URLSearchParams();
+  queryParams.append('principal_id', params.principal_id);
+  if (params.sortTime) queryParams.append('sortTime', params.sortTime);
+  if (params.start_date) queryParams.append('start_date', params.start_date);
+  if (params.end_date) queryParams.append('end_date', params.end_date);
+
+  const url = `${baseUrl}/api/product/principal/orders?${queryParams.toString()}`;
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch principal orders: ${response.status} ${response.statusText}`);
+  }
+
   return response.json();
 };
 

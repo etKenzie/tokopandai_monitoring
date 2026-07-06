@@ -409,3 +409,44 @@ export const fetchStoresOwed = async (): Promise<StoreOwedResponse> => {
   
   return response.json();
 };
+
+export interface StoreAddressGeocode {
+  id: number;
+  user_id: string;
+  store_name: string;
+  address_normalized: string;
+  address_raw: string;
+  latitude: number;
+  longitude: number;
+  geocode_source: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StoreAddressGeocodesResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: {
+    geocodes: StoreAddressGeocode[];
+  };
+}
+
+export const fetchStoreAddressGeocodes = async (): Promise<StoreAddressGeocode[]> => {
+  const baseUrl = AM_API_URL;
+  const url = `${baseUrl}/api/store/addresses/geocodes`;
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch store address geocodes: ${response.status} ${response.statusText}`);
+  }
+
+  const json: StoreAddressGeocodesResponse = await response.json();
+  return json.data?.geocodes ?? [];
+};

@@ -210,9 +210,8 @@ const ProductPage = () => {
 
         {/* Filters */}
         <Box mb={3}>
-          <Grid container spacing={2}>
-            {/* Month Filter */}
-            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Month</InputLabel>
                 <Select
@@ -233,8 +232,7 @@ const ProductPage = () => {
               </FormControl>
             </Grid>
 
-            {/* Year Filter */}
-            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Year</InputLabel>
                 <Select
@@ -253,10 +251,10 @@ const ProductPage = () => {
                 </Select>
               </FormControl>
             </Grid>
+          </Grid>
 
-
-            {/* Area Filter */}
-            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Area</InputLabel>
                 <Select
@@ -279,8 +277,7 @@ const ProductPage = () => {
               </FormControl>
             </Grid>
 
-            {/* Segment Filter */}
-            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Segment</InputLabel>
                 <Select
@@ -296,8 +293,7 @@ const ProductPage = () => {
               </FormControl>
             </Grid>
 
-            {/* Agent Filter */}
-            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Agent</InputLabel>
                 <Select
