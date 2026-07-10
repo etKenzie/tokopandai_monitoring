@@ -10,13 +10,14 @@ export const ROLES = {
   MANAGER: 'manager',
   ANALYST: 'analyst',
   VIEWER: 'viewer',
+  BUY_PRICE: 'buy-price',
 } as const;
 
 // Role definitions for different pages/features
 export const PAGE_ROLES = {
   // Dashboard pages
   KASBON_DASHBOARD: [ROLES.ADMIN],
-  DISTRIBUSI_DASHBOARD: [ROLES.ADMIN, "rully", "rifqi", "oki", "mardi", "distribusi"],
+  DISTRIBUSI_DASHBOARD: [ROLES.ADMIN, ROLES.BUY_PRICE, "rully", "rifqi", "oki", "mardi", "distribusi"],
   CASH_IN_SECTION: [ROLES.ADMIN, "distribusi", "cash-in", "rully", "rifqi", "oki", "mardi"],
   TOP_SECTION: [ROLES.ADMIN, "distribusi", "top", "rully", "rifqi", "oki", "mardi"],
   ANALYTICS_DASHBOARD: [ROLES.ANALYST, ROLES.ADMIN],

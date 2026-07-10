@@ -16,8 +16,9 @@ import {
   TextField,
   Typography
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { OrderDetailItem, OrderItemUpdate, updateOrderItemBuyPrices } from '../../api/distribusi/DistribusiSlice';
+import { ROLES } from '@/config/roles';
 import { useAuth } from '../../context/AuthContext';
 
 interface OrderItemUpdateModalProps {
@@ -34,17 +35,20 @@ const OrderItemUpdateModal = ({ open, onClose, orderItem, onUpdate }: OrderItemU
   const [success, setSuccess] = useState(false);
   const { roles } = useAuth();
   
-  // Check if user has admin role
-  const isAdmin = roles.includes('admin');
+  // Admin or buy-price role can update buy prices
+  const normalizedRoles = roles.map((role) => role.trim().toLowerCase());
+  const canEditBuyPrice =
+    normalizedRoles.includes(ROLES.ADMIN) ||
+    normalizedRoles.includes(ROLES.BUY_PRICE);
 
-  // Reset form when modal opens/closes
-  useState(() => {
+  // Reset form when modal opens
+  useEffect(() => {
     if (open && orderItem) {
       setNewBuyPrice(orderItem.buy_price.toString());
       setError(null);
       setSuccess(false);
     }
-  });
+  }, [open, orderItem]);
 
   const formatCurrency = (amount: string | number) => {
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -116,10 +120,10 @@ const OrderItemUpdateModal = ({ open, onClose, orderItem, onUpdate }: OrderItemU
             <Typography variant="h6" component="div">
               Update Buy Price
             </Typography>
-            {!isAdmin && (
+            {!canEditBuyPrice && (
               <Chip
                 icon={<LockIcon />}
-                label="Admin Only"
+                label="Restricted"
                 size="small"
                 color="warning"
                 variant="outlined"
@@ -223,19 +227,19 @@ const OrderItemUpdateModal = ({ open, onClose, orderItem, onUpdate }: OrderItemU
                 <Typography variant="h6">
                   Update Buy Price
                 </Typography>
-                {!isAdmin && (
+                {!canEditBuyPrice && (
                   <Chip
                     icon={<LockIcon />}
-                    label="Admin Only"
+                    label="Restricted"
                     size="small"
                     color="warning"
                     variant="outlined"
                   />
                 )}
               </Box>
-              {!isAdmin && (
+              {!canEditBuyPrice && (
                 <Alert severity="info" sx={{ mb: 2 }}>
-                  Only administrators can update buy prices. Contact your system administrator if you need to make changes.
+                  You need the admin or buy-price role to update buy prices. Contact your system administrator if you need access.
                 </Alert>
               )}
               <TextField
@@ -244,8 +248,8 @@ const OrderItemUpdateModal = ({ open, onClose, orderItem, onUpdate }: OrderItemU
                 type="number"
                 value={newBuyPrice}
                 onChange={(e) => setNewBuyPrice(e.target.value)}
-                placeholder={isAdmin ? "Enter new buy price" : "Admin access required"}
-                disabled={loading || !isAdmin}
+                placeholder={canEditBuyPrice ? "Enter new buy price" : "Access required"}
+                disabled={loading || !canEditBuyPrice}
                 InputProps={{
                   startAdornment: (
                     <Typography variant="body2" sx={{ mr: 1 }}>
@@ -253,7 +257,7 @@ const OrderItemUpdateModal = ({ open, onClose, orderItem, onUpdate }: OrderItemU
                     </Typography>
                   ),
                 }}
-                helperText={isAdmin ? "Enter the new buy price for this order item" : "Only administrators can update buy prices"}
+                helperText={canEditBuyPrice ? "Enter the new buy price for this order item" : "Admin or buy-price role required"}
                 error={!!error}
               />
               {error && (
@@ -274,7 +278,7 @@ const OrderItemUpdateModal = ({ open, onClose, orderItem, onUpdate }: OrderItemU
         >
           {success ? 'Close' : 'Cancel'}
         </Button>
-        {!success && isAdmin && (
+        {!success && canEditBuyPrice && (
           <Button
             onClick={handleSave}
             variant="contained"
