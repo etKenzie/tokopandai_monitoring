@@ -205,7 +205,7 @@ export const fetchOrders = async (params: OrderQueryParams): Promise<OrdersRespo
   if (params.business_type) queryParams.append('business_type', params.business_type);
   if (params.area) queryParams.append('area', params.area);
   
-  const url = `${baseUrl}/api/order?${queryParams.toString()}`;
+  const url = `${baseUrl}/order?${queryParams.toString()}`;
   
   console.log('Fetching orders from:', url);
   console.log('Query params:', queryParams.toString());
@@ -286,7 +286,7 @@ export const fetchOverdueOrders = async (params: OverdueOrdersQueryParams): Prom
   if (params.agent) queryParams.append('agent', params.agent);
   if (params.business_type) queryParams.append('business_type', params.business_type);
   
-  const url = `${baseUrl}/api/order/overdue?${queryParams.toString()}`;
+  const url = `${baseUrl}/order/overdue?${queryParams.toString()}`;
   
   console.log('Fetching overdue orders from:', url);
   console.log('Query params:', queryParams.toString());
@@ -377,7 +377,7 @@ export const fetchOverdueSnapshot = async (params: OverdueSnapshotQueryParams): 
   if (params.month) queryParams.append('month', params.month);
   if (params.agent) queryParams.append('agent', params.agent);
   
-  const url = `${baseUrl}/api/order/overdue-snapshot?${queryParams.toString()}`;
+  const url = `${baseUrl}/order/overdue-snapshot?${queryParams.toString()}`;
   
   console.log('Fetching overdue snapshot from:', url);
   console.log('Query params:', queryParams.toString());
@@ -428,7 +428,7 @@ export const fetchOverdueSnapshotMonthly = async (params: OverdueSnapshotMonthly
   if (params.end_month) queryParams.append('end_month', params.end_month);
   if (params.agent) queryParams.append('agent', params.agent);
   
-  const url = `${baseUrl}/api/order/overdue-snapshot-monthly?${queryParams.toString()}`;
+  const url = `${baseUrl}/order/overdue-snapshot-monthly?${queryParams.toString()}`;
   
   console.log('Fetching overdue snapshot monthly from:', url);
   console.log('Query params:', queryParams.toString());
@@ -487,7 +487,7 @@ export const fetchOverdueSnapshotList = async (params: OverdueSnapshotListQueryP
     queryParams.append('agent', params.agent);
   }
   
-  const url = `${baseUrl}/api/order/overdue-snapshot/list?${queryParams.toString()}`;
+  const url = `${baseUrl}/order/overdue-snapshot/list?${queryParams.toString()}`;
   
   console.log('Fetching overdue snapshot list from:', url);
   
@@ -549,7 +549,7 @@ export const fetchStoreSummary = async (
   if (agent) queryParams.append('agent', agent);
   if (business_type) queryParams.append('business_type', business_type);
   
-  const url = `${baseUrl}/api/order/store-summary?${queryParams.toString()}`;
+  const url = `${baseUrl}/order/store-summary?${queryParams.toString()}`;
   
   console.log('Fetching store summary from:', url);
   console.log('Month:', month, 'Agent:', agent);
@@ -797,7 +797,7 @@ export const fetchCashInList = async (params: CashInListQueryParams): Promise<Ca
   if (params.segment) queryParams.append('segment', params.segment);
   if (params.area) queryParams.append('area', params.area);
   
-  const url = `${baseUrl}/api/order/cash-in/list?${queryParams.toString()}`;
+  const url = `${baseUrl}/order/cash-in/list?${queryParams.toString()}`;
   
   console.log('Fetching cash-in list from:', url);
   console.log('Query params:', queryParams.toString());
@@ -831,7 +831,7 @@ export const fetchCashInData = async (params: CashInQueryParams): Promise<CashIn
   if (params.segment) queryParams.append('segment', params.segment);
   if (params.business_type) queryParams.append('business_type', params.business_type);
   
-  const url = `${baseUrl}/api/order/cash-in?${queryParams.toString()}`;
+  const url = `${baseUrl}/order/cash-in?${queryParams.toString()}`;
   
   console.log('Fetching cash-in data from:', url);
   console.log('Query params:', queryParams.toString());
@@ -880,7 +880,7 @@ export const fetchOrderFilters = async (params: OrderFiltersQueryParams): Promis
   if (params.month) queryParams.append('month', params.month);
   if (params.year) queryParams.append('year', params.year);
   
-  const url = `${baseUrl}/api/order/filters?${queryParams.toString()}`;
+  const url = `${baseUrl}/order/filters?${queryParams.toString()}`;
   
   console.log('Fetching order filters from:', url);
   console.log('Query params:', queryParams.toString());
@@ -984,7 +984,7 @@ export const fetchUnpaidOverview = async (params: UnpaidOverviewQueryParams): Pr
   if (params.segment) queryParams.append('segment', params.segment);
   if (params.business_type) queryParams.append('business_type', params.business_type);
   
-  const url = `${baseUrl}/api/order/unpaid-overview?${queryParams.toString()}`;
+  const url = `${baseUrl}/order/unpaid-overview?${queryParams.toString()}`;
   
   console.log('Fetching unpaid overview data from:', url);
   console.log('Query params:', queryParams.toString());
@@ -1018,7 +1018,7 @@ export const fetchCashInMonthlyData = async (params: CashInMonthlyQueryParams): 
   if (params.segment) queryParams.append('segment', params.segment);
   if (params.business_type) queryParams.append('business_type', params.business_type);
   
-  const url = `${baseUrl}/api/order/cash-in-monthly?${queryParams.toString()}`;
+  const url = `${baseUrl}/order/cash-in-monthly?${queryParams.toString()}`;
   
   console.log('Fetching cash-in monthly data from:', url);
   console.log('Query params:', queryParams.toString());
@@ -1099,7 +1099,7 @@ export const fetchSalesSummary = async (params: SalesSummaryQueryParams): Promis
   if (params.business_type) queryParams.append('business_type', params.business_type);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
-  const url = `${baseUrl}/api/order/summary?${queryParams.toString()}`;
+  const url = `${baseUrl}/order/summary?${queryParams.toString()}`;
   
   console.log('Fetching sales summary data from:', url);
   console.log('Query params:', queryParams.toString());
@@ -1164,7 +1164,7 @@ export const fetchSalesSummaryMonthly = async (params: SalesSummaryMonthlyQueryP
   if (params.business_type) queryParams.append('business_type', params.business_type);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
-  const url = `${baseUrl}/api/order/summary-monthly?${queryParams.toString()}`;
+  const url = `${baseUrl}/order/summary-monthly?${queryParams.toString()}`;
   
   console.log('Fetching sales summary monthly data from:', url);
   console.log('Query params:', queryParams.toString());
@@ -1222,7 +1222,7 @@ export const fetchTotalStores = async (params: TotalStoresQueryParams): Promise<
   if (params.business_type) queryParams.append('business_type', params.business_type);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
-  const url = `${baseUrl}/api/order/total-stores?${queryParams.toString()}`;
+  const url = `${baseUrl}/order/total-stores?${queryParams.toString()}`;
   
   console.log('Fetching total stores data from:', url);
   console.log('Query params:', queryParams.toString());
@@ -1288,7 +1288,7 @@ export const fetchTotalStoresMonthly = async (
   if (params.business_type) queryParams.append('business_type', params.business_type);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
-  const url = `${baseUrl}/api/order/total-stores-monthly?${queryParams.toString()}`;
+  const url = `${baseUrl}/order/total-stores-monthly?${queryParams.toString()}`;
   
   console.log('Fetching total stores monthly data from:', url);
   console.log('Query params:', queryParams.toString());
@@ -1383,7 +1383,7 @@ export const fetchOrdersData = async (params: OrderPaginationQueryParams): Promi
   if (params.area) queryParams.append('area', params.area);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
-  const url = `${baseUrl}/api/order?${queryParams.toString()}`;
+  const url = `${baseUrl}/order?${queryParams.toString()}`;
   
   console.log('Fetching orders data from:', url);
   console.log('Query params:', queryParams.toString());
@@ -1418,7 +1418,7 @@ export const fetchUpdatedSalesSummary = async (params: SalesSummaryQueryParams):
   if (params.business_type) queryParams.append('business_type', params.business_type);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
-  const url = `${baseUrl}/api/order/summary?${queryParams.toString()}`;
+  const url = `${baseUrl}/order/summary?${queryParams.toString()}`;
   
   console.log('Fetching updated sales summary data from:', url);
   console.log('Query params:', queryParams.toString());
@@ -1453,7 +1453,7 @@ export const fetchUpdatedSalesSummaryMonthly = async (params: SalesSummaryMonthl
   if (params.business_type) queryParams.append('business_type', params.business_type);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
-  const url = `${baseUrl}/api/order/summary-monthly?${queryParams.toString()}`;
+  const url = `${baseUrl}/order/summary-monthly?${queryParams.toString()}`;
   
   console.log('Fetching updated sales summary monthly data from:', url);
   console.log('Query params:', queryParams.toString());
@@ -1532,7 +1532,7 @@ export const fetchNOOData = async (params: NOOQueryParams): Promise<NOOResponse>
   if (params.area) queryParams.append('area', params.area);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
-  const url = `${baseUrl}/api/order/stores-order-once?${queryParams.toString()}`;
+  const url = `${baseUrl}/order/stores-order-once?${queryParams.toString()}`;
   
   console.log('Fetching NOO data from:', url);
   console.log('Query params:', queryParams.toString());
@@ -1588,7 +1588,7 @@ export const fetchStoresOrderOnceMonthly = async (
   const queryParams = new URLSearchParams();
   if (params.start_month) queryParams.append('start_month', params.start_month);
   if (params.end_month) queryParams.append('end_month', params.end_month);
-  const url = `${baseUrl}/api/order/stores-order-once/monthly?${queryParams.toString()}`;
+  const url = `${baseUrl}/order/stores-order-once/monthly?${queryParams.toString()}`;
   const response = await fetch(url, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
@@ -1740,7 +1740,7 @@ export const fetchProductSummary = async (params: ProductSummaryQueryParams): Pr
   if (params.area) queryParams.append('area', params.area);
   if (params.segment) queryParams.append('segment', params.segment);
   
-  const url = `${baseUrl}/api/product/summary?${queryParams.toString()}`;
+  const url = `${baseUrl}/product/summary?${queryParams.toString()}`;
   
   console.log('Fetching product summary data from:', url);
   console.log('Query params:', queryParams.toString());
@@ -1796,7 +1796,7 @@ export const fetchProductTypeMonthly = async (params: ProductTypeMonthlyQueryPar
   if (params.area) queryParams.append('area', params.area);
   if (params.segment) queryParams.append('segment', params.segment);
   
-  const url = `${baseUrl}/api/product/type?${queryParams.toString()}`;
+  const url = `${baseUrl}/product/type?${queryParams.toString()}`;
   
   console.log('Fetching product type monthly data from:', url);
   console.log('Query params:', queryParams.toString());
@@ -1852,7 +1852,7 @@ export const fetchProductCategory = async (params: ProductCategoryMonthlyQueryPa
   if (params.area) queryParams.append('area', params.area);
   if (params.segment) queryParams.append('segment', params.segment);
   
-  const url = `${baseUrl}/api/product/category?${queryParams.toString()}`;
+  const url = `${baseUrl}/product/category?${queryParams.toString()}`;
   
   console.log('Fetching product category monthly data from:', url);
   console.log('Query params:', queryParams.toString());
@@ -1944,7 +1944,7 @@ export const fetchProductBrand = async (params: ProductBrandQueryParams): Promis
   if (params.business_type) queryParams.append('business_type', params.business_type);
   if (params.sub_business_type) queryParams.append('sub_business_type', params.sub_business_type);
 
-  const url = `${baseUrl}/api/product/brand?${queryParams.toString()}`;
+  const url = `${baseUrl}/product/brand?${queryParams.toString()}`;
 
   const response = await fetch(url, {
     method: 'GET',
@@ -2033,7 +2033,7 @@ export const fetchPrincipalOrders = async (
   if (params.start_date) queryParams.append('start_date', params.start_date);
   if (params.end_date) queryParams.append('end_date', params.end_date);
 
-  const url = `${baseUrl}/api/product/principal/orders?${queryParams.toString()}`;
+  const url = `${baseUrl}/product/principal/orders?${queryParams.toString()}`;
 
   const response = await fetch(url, {
     method: 'GET',
@@ -2077,7 +2077,7 @@ export const fetchFullOrders = async (params: FullOrdersQueryParams): Promise<Fu
   if (params.area) queryParams.append('area', params.area);
   if (params.status_payment) queryParams.append('status_payment', params.status_payment);
   
-  const url = `${baseUrl}/api/order/dashboard?${queryParams.toString()}`;
+  const url = `${baseUrl}/order/dashboard?${queryParams.toString()}`;
   
   console.log('Fetching full orders from:', url);
   console.log('Query params:', queryParams.toString());
@@ -2203,7 +2203,7 @@ export const uploadTukarFakturPdf = async (
   formData.append('file', file);
   if (batch_id) formData.append('batch_id', batch_id);
 
-  const response = await fetch(`${baseUrl}/api/tukar-faktur/upload`, {
+  const response = await fetch(`${baseUrl}/tukar-faktur/upload`, {
     method: 'POST',
     body: formData,
   });
@@ -2219,7 +2219,7 @@ export const createTukarFakturBatch = async (
   payload: TukarFakturCreateBatchRequest,
 ): Promise<TukarFakturCreateBatchResponse> => {
   const baseUrl = AM_API_URL;
-  const response = await fetch(`${baseUrl}/api/tukar-faktur/batch`, {
+  const response = await fetch(`${baseUrl}/tukar-faktur/batch`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -2246,7 +2246,7 @@ export const fetchTukarFakturBatches = async (
   if (params.generated_by) query.append('generated_by', params.generated_by);
   if (params.order_code) query.append('order_code', params.order_code);
 
-  const response = await fetch(`${baseUrl}/api/tukar-faktur?${query.toString()}`, {
+  const response = await fetch(`${baseUrl}/tukar-faktur?${query.toString()}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -2265,7 +2265,7 @@ export const fetchTukarFakturBatchDetail = async (
   batchId: string,
 ): Promise<TukarFakturBatchDetailResponse> => {
   const baseUrl = AM_API_URL;
-  const response = await fetch(`${baseUrl}/api/tukar-faktur/${batchId}`, {
+  const response = await fetch(`${baseUrl}/tukar-faktur/${batchId}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',

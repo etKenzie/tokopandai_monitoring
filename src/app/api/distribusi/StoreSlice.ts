@@ -87,7 +87,7 @@ export const fetchStores = async (params: StoreQueryParams): Promise<StoresRespo
   if (params.user_status) queryParams.append('user_status', params.user_status);
   queryParams.append('range', params.range ?? '3m');
   
-  const url = `${baseUrl}/api/store?${queryParams.toString()}`;
+  const url = `${baseUrl}/store?${queryParams.toString()}`;
   
   console.log('Fetching stores from:', url);
   console.log('Query params:', queryParams.toString());
@@ -213,7 +213,7 @@ export const fetchStoreOrders = async (userId: string, intervalMonths?: number):
     queryParams.append('interval_months', intervalMonths.toString());
   }
   
-  const url = `${baseUrl}/api/store/orders?${queryParams.toString()}`;
+  const url = `${baseUrl}/store/orders?${queryParams.toString()}`;
   
   console.log('Fetching store orders from:', url);
   console.log('User ID:', userId);
@@ -266,7 +266,7 @@ export const fetchStoreProducts = async (userId: string, intervalMonths?: number
     queryParams.append('interval_months', intervalMonths.toString());
   }
   
-  const url = `${baseUrl}/api/store/products?${queryParams.toString()}`;
+  const url = `${baseUrl}/store/products?${queryParams.toString()}`;
   
   console.log('Fetching store products from:', url);
   console.log('User ID:', userId);
@@ -318,7 +318,7 @@ export const fetchStoreMonthly = async (month: string, agent_name?: string): Pro
     queryParams.append('agent', agent_name);
   }
   
-  const url = `${baseUrl}/api/store/monthly?${queryParams.toString()}`;
+  const url = `${baseUrl}/store/monthly?${queryParams.toString()}`;
   
   console.log('Fetching store monthly from:', url);
   console.log('Month:', month);
@@ -343,7 +343,7 @@ export const fetchStoreById = async (userId: string): Promise<Store | null> => {
   const baseUrl = AM_API_URL;
   
   // Since the API might not support user_id filtering, let's fetch all stores and filter
-  const url = `${baseUrl}/api/store`;
+  const url = `${baseUrl}/store`;
   
   console.log('Fetching store by ID from:', url);
   console.log('User ID:', userId);
@@ -392,7 +392,7 @@ export interface StoreOwedResponse {
 export const fetchStoresOwed = async (): Promise<StoreOwedResponse> => {
   const baseUrl = AM_API_URL;
   
-  const url = `${baseUrl}/api/store/owed`;
+  const url = `${baseUrl}/store/owed`;
   
   console.log('Fetching stores with owed amounts from:', url);
   
@@ -434,7 +434,7 @@ export interface StoreAddressGeocodesResponse {
 
 export const fetchStoreAddressGeocodes = async (): Promise<StoreAddressGeocode[]> => {
   const baseUrl = AM_API_URL;
-  const url = `${baseUrl}/api/store/addresses/geocodes`;
+  const url = `${baseUrl}/store/addresses/geocodes`;
 
   const response = await fetch(url, {
     method: 'GET',
