@@ -1673,7 +1673,7 @@ export const fetchCompareData = async (params: CompareQueryParams): Promise<Comp
     searchParams.append('agent_name', params.agent_name);
   }
   
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/order/compare?${searchParams.toString()}`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/order/compare?${searchParams.toString()}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
