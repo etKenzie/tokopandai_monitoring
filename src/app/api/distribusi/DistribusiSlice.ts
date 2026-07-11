@@ -574,7 +574,7 @@ export const fetchOrderDetail = async (orderCode: string): Promise<OrderDetailRe
     throw new Error('API URL is not configured');
   }
 
-  const url = `${AM_API_URL}/api/order/detail?order_code=${encodeURIComponent(orderCode)}`;
+  const url = `${AM_API_URL}/order/detail?order_code=${encodeURIComponent(orderCode)}`;
   
   const response = await fetch(url, {
     method: 'GET',
@@ -608,7 +608,7 @@ export const updateOrderPaymentDate = async (updateData: UpdatePaymentDateReques
     throw new Error('API URL is not configured');
   }
 
-  const url = `${AM_API_URL}/api/order/payment-date`;
+  const url = `${AM_API_URL}/order/payment-date`;
   
   const response = await fetch(url, {
     method: 'PATCH',
@@ -643,7 +643,7 @@ export const updateOrderTotalPaid = async (updateData: UpdateTotalPaidRequest): 
     throw new Error('API URL is not configured');
   }
 
-  const url = `${AM_API_URL}/api/order/total-paid`;
+  const url = `${AM_API_URL}/order/total-paid`;
   
   const response = await fetch(url, {
     method: 'PATCH',
@@ -681,7 +681,7 @@ export const writeOffOverdueOrder = async (
     throw new Error('API URL is not configured');
   }
 
-  const url = `${AM_API_URL}/api/order/overdue/write-off`;
+  const url = `${AM_API_URL}/order/overdue/write-off`;
 
   const response = await fetch(url, {
     method: 'POST',
@@ -705,7 +705,7 @@ export const updateOrderItemBuyPrices = async (updateData: OrderItemUpdateReques
     throw new Error('API URL is not configured');
   }
 
-  const url = `${AM_API_URL}/api/order/order-items`;
+  const url = `${AM_API_URL}/order/order-items`;
   
   const response = await fetch(url, {
     method: 'PATCH',
