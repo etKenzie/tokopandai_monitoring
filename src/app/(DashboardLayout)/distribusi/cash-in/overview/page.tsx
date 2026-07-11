@@ -189,9 +189,7 @@ const CashInOverview = () => {
           month: String(monthNum),
           year,
         });
-        const res = await fetch(
-          `${API_BASE}/api-dashboard/goals?${params.toString()}`,
-        );
+        const res = await fetch(`${API_BASE}/goals?${params.toString()}`);
         const json = await res.json();
         if (cancelled) return;
         if (json?.data?.goals) setGoalsFromApi(json.data.goals);

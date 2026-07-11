@@ -407,7 +407,7 @@ export default function Dashboard() {
       }
       if (agentIdForApi !== undefined)
         params.set('agent_id', String(agentIdForApi));
-      const progressUrl = `${API_BASE}/api-dashboard/goals/progress?${params.toString()}`;
+      const progressUrl = `${API_BASE}/goals/progress?${params.toString()}`;
       console.log('[Dashboard] GET /api/goals/progress', {
         url: progressUrl,
         query: params.toString(),
@@ -450,7 +450,7 @@ export default function Dashboard() {
     (async () => {
       setBonusPeriodsLoading(true);
       try {
-        const periodsUrl = `${API_BASE}/api-dashboard/goals/periods`;
+        const periodsUrl = `${API_BASE}/goals/periods`;
         const res = await fetch(periodsUrl, { cache: 'no-store' });
         const json = await res.json();
         console.log('[Dashboard] GET /api/goals/periods result:', json);
@@ -510,7 +510,7 @@ export default function Dashboard() {
         } else {
           params.set('period_id', String(bonusQuarterSelection));
         }
-        const url = `${API_BASE}/api-dashboard/goals/guardrails?${params.toString()}`;
+        const url = `${API_BASE}/goals/guardrails?${params.toString()}`;
         const res = await fetch(url, { cache: 'no-store' });
         const json = await res.json();
         if (cancelled) return;
@@ -548,7 +548,7 @@ export default function Dashboard() {
       }
       if (agentIdForApi !== undefined)
         params.set('agent_id', String(agentIdForApi));
-      const bonusUrl = `${API_BASE}/api-dashboard/bonus?${params.toString()}`;
+      const bonusUrl = `${API_BASE}/bonus?${params.toString()}`;
       console.log('[Dashboard] GET /api/bonus', {
         url: bonusUrl,
         query: params.toString(),
@@ -595,7 +595,7 @@ export default function Dashboard() {
       } else {
         params.set('period_id', String(bonusQuarterSelection));
       }
-      const rulesUrl = `${API_BASE}/api-dashboard/bonus/rules?${params.toString()}`;
+      const rulesUrl = `${API_BASE}/bonus/rules?${params.toString()}`;
       console.log('[Dashboard] GET /api/bonus/rules', {
         url: rulesUrl,
         query: params.toString(),

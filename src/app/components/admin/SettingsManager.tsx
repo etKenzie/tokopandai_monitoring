@@ -376,7 +376,7 @@ const SettingsManager = () => {
     if (!API_BASE || !year) return;
     try {
       const res = await fetch(
-        `${API_BASE}/api-dashboard/goals/filters?year=${encodeURIComponent(year)}`,
+        `${API_BASE}/goals/filters?year=${encodeURIComponent(year)}`,
       );
       const json = await res.json();
       if (json?.data) {
@@ -405,7 +405,7 @@ const SettingsManager = () => {
       if (goalsScope) params.set('scope', goalsScope);
       if (goalsAgentId) params.set('agent_id', goalsAgentId);
       if (goalsMonth) params.set('month', String(goalsMonth)); // integer 1-12
-      const url = `${API_BASE}/api-dashboard/goals?${params.toString()}`;
+      const url = `${API_BASE}/goals?${params.toString()}`;
       const res = await fetch(url);
       const json = await res.json();
       if (json?.data?.goals) setGoalsFromApi(json.data.goals);
@@ -423,7 +423,7 @@ const SettingsManager = () => {
   const fetchGoalsPeriods = useCallback(async () => {
     if (!API_BASE) return;
     try {
-      const res = await fetch(`${API_BASE}/api-dashboard/goals/periods`);
+      const res = await fetch(`${API_BASE}/goals/periods`);
       const json = await res.json();
       if (Array.isArray(json?.data)) setPeriodsFromApi(json.data);
       else setPeriodsFromApi([]);
@@ -449,7 +449,7 @@ const SettingsManager = () => {
     setPeriodsPageLoading(true);
     try {
       const res = await fetch(
-        `${API_BASE}/api-dashboard/goals/periods?year=${encodeURIComponent(year)}`,
+        `${API_BASE}/goals/periods?year=${encodeURIComponent(year)}`,
       );
       const json = await res.json();
       if (Array.isArray(json?.data)) setPeriodsPageList(json.data);
@@ -473,17 +473,14 @@ const SettingsManager = () => {
     if (!API_BASE || periodEditId == null) return;
     setPeriodEditSaving(true);
     try {
-      const res = await fetch(
-        `${API_BASE}/api-dashboard/goals/periods/${periodEditId}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            start_date: periodEditStartDate,
-            end_date: periodEditEndDate,
-          }),
-        },
-      );
+      const res = await fetch(`${API_BASE}/goals/periods/${periodEditId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          start_date: periodEditStartDate,
+          end_date: periodEditEndDate,
+        }),
+      });
       const json = await res.json();
       if (json?.code === 200) {
         setPeriodEditOpen(false);
@@ -513,7 +510,7 @@ const SettingsManager = () => {
         start_date: periodCreateForm.start_date,
         end_date: periodCreateForm.end_date,
       };
-      const res = await fetch(`${API_BASE}/api-dashboard/goals/periods`, {
+      const res = await fetch(`${API_BASE}/goals/periods`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -542,7 +539,7 @@ const SettingsManager = () => {
     setPeriodDeleteSaving(true);
     try {
       const res = await fetch(
-        `${API_BASE}/api-dashboard/goals/periods/${periodDeleteConfirmId}`,
+        `${API_BASE}/goals/periods/${periodDeleteConfirmId}`,
         { method: 'DELETE' },
       );
       const json = await res.json();
@@ -592,7 +589,7 @@ const SettingsManager = () => {
       setProgressLoading(true);
       try {
         const res = await fetch(
-          `${API_BASE}/api-dashboard/goals/progress?month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}&goal_type=${encodeURIComponent(goalType)}`,
+          `${API_BASE}/goals/progress?month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}&goal_type=${encodeURIComponent(goalType)}`,
         );
         const json = await res.json();
         if (json?.data) {
@@ -642,7 +639,7 @@ const SettingsManager = () => {
     setBonusLoading(true);
     try {
       const res = await fetch(
-        `${API_BASE}/api-dashboard/bonus?year=${encodeURIComponent(year)}`,
+        `${API_BASE}/bonus?year=${encodeURIComponent(year)}`,
       );
       const json = await res.json();
       if (json?.data?.bonuses) {
@@ -666,7 +663,7 @@ const SettingsManager = () => {
     if (!API_BASE || !year) return;
     try {
       const res = await fetch(
-        `${API_BASE}/api-dashboard/goals/periods?year=${encodeURIComponent(year)}`,
+        `${API_BASE}/goals/periods?year=${encodeURIComponent(year)}`,
       );
       const json = await res.json();
       setBonusPeriods(json?.data?.periods ?? []);
@@ -686,7 +683,7 @@ const SettingsManager = () => {
   const fetchGuardrailsQuarterPeriods = useCallback(async () => {
     if (!API_BASE) return;
     try {
-      const res = await fetch(`${API_BASE}/api-dashboard/goals/periods`);
+      const res = await fetch(`${API_BASE}/goals/periods`);
       const json = await res.json();
       const all: GoalPeriodFromApi[] = Array.isArray(json?.data)
         ? json.data
@@ -723,7 +720,7 @@ const SettingsManager = () => {
         params.set('period_id', String(guardrailsPeriodSelection));
       }
       const res = await fetch(
-        `${API_BASE}/api-dashboard/goals/guardrails?${params.toString()}`,
+        `${API_BASE}/goals/guardrails?${params.toString()}`,
       );
       const json = await res.json();
       if (json?.code === 200 && json?.data && typeof json.data === 'object') {
@@ -766,18 +763,15 @@ const SettingsManager = () => {
     setGuardrailsError(null);
     setGuardrailsSaveMessage(null);
     try {
-      const res = await fetch(
-        `${API_BASE}/api-dashboard/goals/guardrails/${periodId}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ebitda: editEbitda,
-            fraud: editFraud,
-            overdue_60_plus_ok: editOverdue60PlusOk,
-          }),
-        },
-      );
+      const res = await fetch(`${API_BASE}/goals/guardrails/${periodId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ebitda: editEbitda,
+          fraud: editFraud,
+          overdue_60_plus_ok: editOverdue60PlusOk,
+        }),
+      });
       const json = await res.json();
       if (json?.code === 200) {
         setGuardrailsSaveMessage(
@@ -806,14 +800,11 @@ const SettingsManager = () => {
     setBonusEditSaving(true);
     setBonusEditError(null);
     try {
-      const res = await fetch(
-        `${API_BASE}/api-dashboard/bonus/${bonusEditId}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bonus_amount: Number(bonusEditAmount) || 0 }),
-        },
-      );
+      const res = await fetch(`${API_BASE}/bonus/${bonusEditId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bonus_amount: Number(bonusEditAmount) || 0 }),
+      });
       const json = await res.json();
       if (json?.code === 200) {
         setBonusEditOpen(false);
@@ -833,10 +824,9 @@ const SettingsManager = () => {
     setBonusDeleting(true);
     setBonusEditError(null);
     try {
-      const res = await fetch(
-        `${API_BASE}/api-dashboard/bonus/${bonusEditId}`,
-        { method: 'DELETE' },
-      );
+      const res = await fetch(`${API_BASE}/bonus/${bonusEditId}`, {
+        method: 'DELETE',
+      });
       const json = await res.json();
       if (json?.code === 200) {
         setBonusDeleteConfirmOpen(false);
@@ -858,7 +848,7 @@ const SettingsManager = () => {
     setBonusCreateSaving(true);
     setBonusCreateError(null);
     try {
-      const res = await fetch(`${API_BASE}/api-dashboard/bonus`, {
+      const res = await fetch(`${API_BASE}/bonus`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -931,17 +921,14 @@ const SettingsManager = () => {
     if (!API_BASE || progressEditId == null) return;
     setProgressEditSaving(true);
     try {
-      const res = await fetch(
-        `${API_BASE}/api-dashboard/goals/progress/${progressEditId}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            actual_value: Number(progressEditActualValue) || 0,
-            notes: progressEditNotes || '',
-          }),
-        },
-      );
+      const res = await fetch(`${API_BASE}/goals/progress/${progressEditId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          actual_value: Number(progressEditActualValue) || 0,
+          notes: progressEditNotes || '',
+        }),
+      });
       const json = await res.json();
       if (json?.code === 200) {
         setProgressEditOpen(false);
@@ -1118,7 +1105,7 @@ const SettingsManager = () => {
           body.weight = Number(createGoalForm.weight) ?? 0.5;
         }
       }
-      const res = await fetch(`${API_BASE}/api-dashboard/goals`, {
+      const res = await fetch(`${API_BASE}/goals`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -1152,7 +1139,7 @@ const SettingsManager = () => {
     setEditGoalSaving(true);
     setEditGoalError(null);
     try {
-      const res = await fetch(`${API_BASE}/api-dashboard/goals/${editGoalId}`, {
+      const res = await fetch(`${API_BASE}/goals/${editGoalId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1181,7 +1168,7 @@ const SettingsManager = () => {
     setEditGoalDeleting(true);
     setEditGoalError(null);
     try {
-      const res = await fetch(`${API_BASE}/api-dashboard/goals/${editGoalId}`, {
+      const res = await fetch(`${API_BASE}/goals/${editGoalId}`, {
         method: 'DELETE',
       });
       const json = await res.json();
