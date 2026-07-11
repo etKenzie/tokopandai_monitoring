@@ -1,12 +1,17 @@
-"use client";
+'use client';
 
-import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
-import PageContainer from "@/app/components/container/PageContainer";
+import ProtectedRoute from '@/app/components/auth/ProtectedRoute';
+import PageContainer from '@/app/components/container/PageContainer';
 import DashboardCard from '@/app/components/shared/DashboardCard';
 import { useAuth } from '@/app/context/AuthContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
-import { getAgentIdFromRole, getAgentNameFromRole, getPageRoles, getRestrictedRoles } from '@/config/roles';
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import {
+  getAgentIdFromRole,
+  getAgentNameFromRole,
+  getPageRoles,
+  getRestrictedRoles,
+} from '@/config/roles';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
   Accordion,
   AccordionDetails,
@@ -32,9 +37,15 @@ import {
   TableHead,
   TableRow,
   Typography,
-} from "@mui/material";
+} from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -109,7 +120,8 @@ function resolveNationalCompanyMetrics(bonusData: BonusApiResponse): {
       list.find((b) => b.company_factor != null) ??
       list.find((b) => !b.agent_name?.trim()) ??
       list[0];
-    if (factorRow?.company_factor != null) companyFactor = factorRow.company_factor;
+    if (factorRow?.company_factor != null)
+      companyFactor = factorRow.company_factor;
   }
 
   let companyMultiplier: number | null = null;
@@ -121,7 +133,8 @@ function resolveNationalCompanyMetrics(bonusData: BonusApiResponse): {
     factorRow &&
     (factorRow.company_multiplier != null || factorRow.multiplier != null)
   ) {
-    companyMultiplier = factorRow.company_multiplier ?? factorRow.multiplier ?? null;
+    companyMultiplier =
+      factorRow.company_multiplier ?? factorRow.multiplier ?? null;
   } else {
     const row =
       list.find((b) => b.company_multiplier != null) ??
@@ -206,26 +219,43 @@ function calculateDisplayedGoalProgressPct(g: GoalProgressItem): number {
 }
 
 /** Compact IDR-style for monetary goals; plain number for noo / 60+. */
-function formatGoalProgressValue(value: number, goalType?: string | null): string {
+function formatGoalProgressValue(
+  value: number,
+  goalType?: string | null,
+): string {
   if (isPlainNumberGoalType(goalType)) {
-    return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(value);
+    return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(
+      value,
+    );
   }
   return formatCurrency(value);
 }
 
 function formatPercentValue(value: number): string {
-  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(value);
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(
+    value,
+  );
 }
 
 function formatBonusAmount(value: number): string {
-  return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+  return new Intl.NumberFormat('id-ID', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
 }
 
 function formatPeriodTitle(p: GoalPeriodFromApi): string {
   if (p.period_type === 'month' && p.month != null) {
-    return new Intl.DateTimeFormat('en', { month: 'long' }).format(new Date(2000, p.month - 1)) + ' ' + p.year;
+    return (
+      new Intl.DateTimeFormat('en', { month: 'long' }).format(
+        new Date(2000, p.month - 1),
+      ) +
+      ' ' +
+      p.year
+    );
   }
-  if (p.period_type === 'quarter' && p.quarter != null) return `Q${p.quarter} ${p.year}`;
+  if (p.period_type === 'quarter' && p.quarter != null)
+    return `Q${p.quarter} ${p.year}`;
   if (p.period_type === 'year') return `Year ${p.year}`;
   return `Period ${p.id}`;
 }
@@ -308,7 +338,10 @@ function estimateAgentFinalBonusFromRow(b: BonusFromApi): number {
   return Math.round(base * ind * comp);
 }
 
-function goalMeetsQuarterThreshold(g: GoalProgressItem | undefined, thresholdPct: number): boolean | null {
+function goalMeetsQuarterThreshold(
+  g: GoalProgressItem | undefined,
+  thresholdPct: number,
+): boolean | null {
   const p = goalProgressPercent(g);
   if (p === null) return null;
   return p >= thresholdPct;
@@ -319,14 +352,20 @@ export default function Dashboard() {
   useCheckRoles(getPageRoles('AUTHENTICATED_ONLY'));
   const restrictedRoles = getRestrictedRoles();
   const isAdmin = roles.includes('admin');
-  const hasRestrictedRole = roles.some((role: string) => restrictedRoles.includes(role));
-  const userRoleForFiltering = roles.find((role: string) => restrictedRoles.includes(role));
-  const agentIdForApi = !isAdmin && hasRestrictedRole && userRoleForFiltering
-    ? getAgentIdFromRole(userRoleForFiltering)
-    : undefined;
-  const agentNameForDisplay = !isAdmin && hasRestrictedRole && userRoleForFiltering
-    ? getAgentNameFromRole(userRoleForFiltering)
-    : null;
+  const hasRestrictedRole = roles.some((role: string) =>
+    restrictedRoles.includes(role),
+  );
+  const userRoleForFiltering = roles.find((role: string) =>
+    restrictedRoles.includes(role),
+  );
+  const agentIdForApi =
+    !isAdmin && hasRestrictedRole && userRoleForFiltering
+      ? getAgentIdFromRole(userRoleForFiltering)
+      : undefined;
+  const agentNameForDisplay =
+    !isAdmin && hasRestrictedRole && userRoleForFiltering
+      ? getAgentNameFromRole(userRoleForFiltering)
+      : null;
 
   const [periods, setPeriods] = useState<GoalPeriodFromApi[]>([]);
   const [goals, setGoals] = useState<GoalProgressItem[]>([]);
@@ -335,16 +374,23 @@ export default function Dashboard() {
   const [bonuses, setBonuses] = useState<BonusFromApi[]>([]);
   const [bonusLoading, setBonusLoading] = useState(true);
   const [showAllocatedBonus, setShowAllocatedBonus] = useState(false);
-  const [companyMultiplier, setCompanyMultiplier] = useState<number | null>(null);
+  const [companyMultiplier, setCompanyMultiplier] = useState<number | null>(
+    null,
+  );
   const [companyFactor, setCompanyFactor] = useState<number | null>(null);
   const [bonusRules, setBonusRules] = useState<BonusRule[]>([]);
   /** Quarter rows from GET /api/goals/periods (filter dropdown). */
-  const [bonusQuarterPeriods, setBonusQuarterPeriods] = useState<GoalPeriodFromApi[]>([]);
+  const [bonusQuarterPeriods, setBonusQuarterPeriods] = useState<
+    GoalPeriodFromApi[]
+  >([]);
   /** Default "Current" → `current=true`; numeric goal period `id` → `period_id` on progress/bonus/rules. */
-  const [bonusQuarterSelection, setBonusQuarterSelection] = useState<'current' | number>('current');
+  const [bonusQuarterSelection, setBonusQuarterSelection] = useState<
+    'current' | number
+  >('current');
   const [bonusPeriodsLoading, setBonusPeriodsLoading] = useState(true);
   const [bonusRulesLoading, setBonusRulesLoading] = useState(false);
-  const [guardrailsData, setGuardrailsData] = useState<GoalsGuardrailsData | null>(null);
+  const [guardrailsData, setGuardrailsData] =
+    useState<GoalsGuardrailsData | null>(null);
   const [guardrailsLoading, setGuardrailsLoading] = useState(false);
   const [guardrailsError, setGuardrailsError] = useState<string | null>(null);
 
@@ -359,12 +405,14 @@ export default function Dashboard() {
       } else {
         params.set('period_id', String(bonusQuarterSelection));
       }
-      if (agentIdForApi !== undefined) params.set('agent_id', String(agentIdForApi));
-      const progressUrl = `${API_BASE}/api/goals/progress?${params.toString()}`;
+      if (agentIdForApi !== undefined)
+        params.set('agent_id', String(agentIdForApi));
+      const progressUrl = `${API_BASE}/api-dashboard/goals/progress?${params.toString()}`;
       console.log('[Dashboard] GET /api/goals/progress', {
         url: progressUrl,
         query: params.toString(),
-        period_id: bonusQuarterSelection === 'current' ? null : bonusQuarterSelection,
+        period_id:
+          bonusQuarterSelection === 'current' ? null : bonusQuarterSelection,
       });
       const res = await fetch(progressUrl, {
         cache: 'no-store',
@@ -402,23 +450,30 @@ export default function Dashboard() {
     (async () => {
       setBonusPeriodsLoading(true);
       try {
-        const periodsUrl = `${API_BASE}/api/goals/periods`;
+        const periodsUrl = `${API_BASE}/api-dashboard/goals/periods`;
         const res = await fetch(periodsUrl, { cache: 'no-store' });
         const json = await res.json();
         console.log('[Dashboard] GET /api/goals/periods result:', json);
-        const all: GoalPeriodFromApi[] = Array.isArray(json?.data) ? json.data : [];
+        const all: GoalPeriodFromApi[] = Array.isArray(json?.data)
+          ? json.data
+          : [];
         const quarters = all
           .filter((p) => p.period_type === 'quarter')
           .sort(
             (a, b) =>
-              new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
+              new Date(b.start_date).getTime() -
+              new Date(a.start_date).getTime(),
           );
-        console.log('[Dashboard] Quarter filter options (from goals/periods):', quarters);
+        console.log(
+          '[Dashboard] Quarter filter options (from goals/periods):',
+          quarters,
+        );
         if (!cancelled) {
           setBonusQuarterPeriods(quarters);
           setBonusQuarterSelection((prev) => {
             if (prev === 'current') return 'current';
-            if (typeof prev === 'number' && quarters.some((q) => q.id === prev)) return prev;
+            if (typeof prev === 'number' && quarters.some((q) => q.id === prev))
+              return prev;
             return 'current';
           });
         }
@@ -455,7 +510,7 @@ export default function Dashboard() {
         } else {
           params.set('period_id', String(bonusQuarterSelection));
         }
-        const url = `${API_BASE}/api/goals/guardrails?${params.toString()}`;
+        const url = `${API_BASE}/api-dashboard/goals/guardrails?${params.toString()}`;
         const res = await fetch(url, { cache: 'no-store' });
         const json = await res.json();
         if (cancelled) return;
@@ -491,12 +546,14 @@ export default function Dashboard() {
       } else {
         params.set('period_id', String(bonusQuarterSelection));
       }
-      if (agentIdForApi !== undefined) params.set('agent_id', String(agentIdForApi));
-      const bonusUrl = `${API_BASE}/api/bonus?${params.toString()}`;
+      if (agentIdForApi !== undefined)
+        params.set('agent_id', String(agentIdForApi));
+      const bonusUrl = `${API_BASE}/api-dashboard/bonus?${params.toString()}`;
       console.log('[Dashboard] GET /api/bonus', {
         url: bonusUrl,
         query: params.toString(),
-        period_id: bonusQuarterSelection === 'current' ? null : bonusQuarterSelection,
+        period_id:
+          bonusQuarterSelection === 'current' ? null : bonusQuarterSelection,
       });
       const res = await fetch(bonusUrl, { cache: 'no-store' });
       const json = await res.json();
@@ -509,7 +566,8 @@ export default function Dashboard() {
         const bonusData = json.data as BonusApiResponse;
         if (bonusData.bonuses) setBonuses(bonusData.bonuses);
         else setBonuses([]);
-        const { companyFactor, companyMultiplier } = resolveNationalCompanyMetrics(bonusData);
+        const { companyFactor, companyMultiplier } =
+          resolveNationalCompanyMetrics(bonusData);
         setCompanyFactor(companyFactor);
         setCompanyMultiplier(companyMultiplier);
       } else {
@@ -537,11 +595,12 @@ export default function Dashboard() {
       } else {
         params.set('period_id', String(bonusQuarterSelection));
       }
-      const rulesUrl = `${API_BASE}/api/bonus/rules?${params.toString()}`;
+      const rulesUrl = `${API_BASE}/api-dashboard/bonus/rules?${params.toString()}`;
       console.log('[Dashboard] GET /api/bonus/rules', {
         url: rulesUrl,
         query: params.toString(),
-        period_id: bonusQuarterSelection === 'current' ? null : bonusQuarterSelection,
+        period_id:
+          bonusQuarterSelection === 'current' ? null : bonusQuarterSelection,
       });
       const res = await fetch(rulesUrl, {
         cache: 'no-store',
@@ -587,8 +646,11 @@ export default function Dashboard() {
 
   /** National section title includes selected quarter+year when filtering by period (e.g. "National — Q1 2026"). */
   const nationalScopeTitle = useMemo(
-    () => (selectedBonusPeriodLabel ? `National — ${selectedBonusPeriodLabel}` : 'National'),
-    [selectedBonusPeriodLabel]
+    () =>
+      selectedBonusPeriodLabel
+        ? `National — ${selectedBonusPeriodLabel}`
+        : 'National',
+    [selectedBonusPeriodLabel],
   );
 
   const bonusQuarterFilterDisabled =
@@ -596,7 +658,9 @@ export default function Dashboard() {
 
   const periodById = useMemo(() => {
     const map: Record<number, GoalPeriodFromApi> = {};
-    periods.forEach((p) => { map[p.id] = p; });
+    periods.forEach((p) => {
+      map[p.id] = p;
+    });
     return map;
   }, [periods]);
 
@@ -614,11 +678,13 @@ export default function Dashboard() {
     const byScope = (list: GoalProgressItem[]) => {
       const national = list.filter((x) => x.scope === 'national');
       const agent: Record<string, GoalProgressItem[]> = {};
-      list.filter((x) => x.scope === 'agent').forEach((x) => {
-        const key = x.agent_name || x.agent_key || 'Unknown';
-        if (!agent[key]) agent[key] = [];
-        agent[key].push(x);
-      });
+      list
+        .filter((x) => x.scope === 'agent')
+        .forEach((x) => {
+          const key = x.agent_name || x.agent_key || 'Unknown';
+          if (!agent[key]) agent[key] = [];
+          agent[key].push(x);
+        });
       return { national, agent };
     };
     return {
@@ -633,8 +699,10 @@ export default function Dashboard() {
     return p ? formatPeriodTitle(p) : `Period ${g.period_id}`;
   };
 
-  const getGoalsForPeriod = (list: GoalProgressItem[], periodType: 'quarter' | 'month' | 'year') =>
-    list.filter((g) => periodById[g.period_id]?.period_type === periodType);
+  const getGoalsForPeriod = (
+    list: GoalProgressItem[],
+    periodType: 'quarter' | 'month' | 'year',
+  ) => list.filter((g) => periodById[g.period_id]?.period_type === periodType);
 
   /** Period title from first goal in list (e.g. "Q1 2026", "February 2026", "Year 2026") */
   const getPeriodTitleFromGoals = (list: GoalProgressItem[]): string => {
@@ -651,7 +719,15 @@ export default function Dashboard() {
     const barPct = Math.min(100, Math.max(0, pct));
     const fillColor = progressFillColor(pct);
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 2 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          py: 2,
+        }}
+      >
         <Box sx={{ position: 'relative', display: 'inline-flex' }}>
           {/* Grey track (full circle) — unfilled part */}
           <CircularProgress
@@ -662,13 +738,47 @@ export default function Dashboard() {
             sx={{ position: 'absolute', color: 'grey.300' }}
           />
           {/* Colored progress — filled part (red → green by pct); ring caps at 100% for MUI */}
-          <CircularProgress variant="determinate" value={barPct} size={160} thickness={5} sx={{ color: fillColor }} />
-          <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <Typography variant="h4" fontWeight="bold" sx={{ fontSize: '2rem' }}>{pct}%</Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1rem', mt: 0.5 }}>profit</Typography>
+          <CircularProgress
+            variant="determinate"
+            value={barPct}
+            size={160}
+            thickness={5}
+            sx={{ color: fillColor }}
+          />
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Typography
+              variant="h4"
+              fontWeight="bold"
+              sx={{ fontSize: '2rem' }}
+            >
+              {pct}%
+            </Typography>
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ fontSize: '1rem', mt: 0.5 }}
+            >
+              profit
+            </Typography>
           </Box>
         </Box>
-        <Typography variant="body1" color="text.secondary" sx={{ mt: 1, fontSize: '1.1rem' }}>
+        <Typography
+          variant="body1"
+          color="text.secondary"
+          sx={{ mt: 1, fontSize: '1.1rem' }}
+        >
           {formatCurrency(actual)} / {formatCurrency(g.target_value)}
         </Typography>
       </Box>
@@ -682,7 +792,9 @@ export default function Dashboard() {
     const isInverseType = isInverseGoalProgressType(g.goal_type);
     const isThresholdOk = !isInverseType || actual <= target;
     // For 60+, backend actual_value is already a percentage; do not derive from target.
-    const pct = isInverseType ? actual : Math.round(calculateDisplayedGoalProgressPct(g));
+    const pct = isInverseType
+      ? actual
+      : Math.round(calculateDisplayedGoalProgressPct(g));
     const barPct = Math.min(100, Math.max(0, pct));
     const fillColor = progressFillColor(pct);
     return (
@@ -694,22 +806,49 @@ export default function Dashboard() {
           '&:last-of-type': { borderBottom: 0 },
         }}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-          <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>{goalTypeDisplayLabel(g.goal_type)}</Typography>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 1,
+          }}
+        >
           <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>
-            {isInverseType ? <strong>{formatPercentValue(pct)}%</strong> : (
+            {goalTypeDisplayLabel(g.goal_type)}
+          </Typography>
+          <Typography variant="body1" sx={{ fontSize: '1.1rem' }}>
+            {isInverseType ? (
+              <strong>{formatPercentValue(pct)}%</strong>
+            ) : (
               <>
-                {formatGoalProgressValue(actual, g.goal_type)} / {formatGoalProgressValue(g.target_value, g.goal_type)} · <strong>{pct}%</strong>
+                {formatGoalProgressValue(actual, g.goal_type)} /{' '}
+                {formatGoalProgressValue(g.target_value, g.goal_type)} ·{' '}
+                <strong>{pct}%</strong>
               </>
             )}
           </Typography>
         </Box>
         {isInverseType ? (
-          <Box sx={{ mt: 0.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+          <Box
+            sx={{
+              mt: 0.5,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 1,
+              flexWrap: 'wrap',
+            }}
+          >
             <Typography variant="caption" color="text.secondary">
-              Goal boundary: {'<='} {formatGoalProgressValue(g.target_value, g.goal_type)}
+              Goal boundary: {'<='}{' '}
+              {formatGoalProgressValue(g.target_value, g.goal_type)}
             </Typography>
-            <Typography variant="caption" color={isThresholdOk ? 'success.main' : 'error.main'}>
+            <Typography
+              variant="caption"
+              color={isThresholdOk ? 'success.main' : 'error.main'}
+            >
               {isThresholdOk ? 'Within boundary' : 'Above boundary'}
             </Typography>
           </Box>
@@ -730,40 +869,59 @@ export default function Dashboard() {
     );
   };
 
-  const nationalGoals = useMemo(() => (
-    byType.quarter.national.concat(byType.month.national).concat(byType.year.national)
-  ), [byType]);
-  const agentNames = useMemo(() => Array.from(new Set([
-    ...Object.keys(byType.quarter.agent),
-    ...Object.keys(byType.month.agent),
-    ...Object.keys(byType.year.agent),
-  ])), [byType]);
+  const nationalGoals = useMemo(
+    () =>
+      byType.quarter.national
+        .concat(byType.month.national)
+        .concat(byType.year.national),
+    [byType],
+  );
+  const agentNames = useMemo(
+    () =>
+      Array.from(
+        new Set([
+          ...Object.keys(byType.quarter.agent),
+          ...Object.keys(byType.month.agent),
+          ...Object.keys(byType.year.agent),
+        ]),
+      ),
+    [byType],
+  );
 
-  const isQuarterPeriod = (period_title: string) => /^Q\d+\s+\d+/.test(period_title);
-  const isYearPeriod = (period_title: string) => /^Year\s+\d+/.test(period_title);
+  const isQuarterPeriod = (period_title: string) =>
+    /^Q\d+\s+\d+/.test(period_title);
+  const isYearPeriod = (period_title: string) =>
+    /^Year\s+\d+/.test(period_title);
 
   /** Calculate next threshold and potential bonus for a given factor and rule type */
-  const getNextThresholdInfo = (currentFactor: number, ruleType: 'company' | 'individual', bonusAmount: number) => {
+  const getNextThresholdInfo = (
+    currentFactor: number,
+    ruleType: 'company' | 'individual',
+    bonusAmount: number,
+  ) => {
     const relevantRules = bonusRules
-      .filter(rule => rule.rule_type === ruleType)
+      .filter((rule) => rule.rule_type === ruleType)
       .sort((a, b) => a.min_factor - b.min_factor);
-    
+
     // Find current rule
-    const currentRule = relevantRules.find(rule => 
-      currentFactor >= rule.min_factor && currentFactor <= rule.max_factor
+    const currentRule = relevantRules.find(
+      (rule) =>
+        currentFactor >= rule.min_factor && currentFactor <= rule.max_factor,
     );
-    
+
     if (!currentRule) return null;
-    
+
     // Find next rule (higher multiplier)
     const currentIndex = relevantRules.indexOf(currentRule);
-    const nextRule = relevantRules.slice(currentIndex + 1).find(rule => rule.multiplier > currentRule.multiplier);
-    
+    const nextRule = relevantRules
+      .slice(currentIndex + 1)
+      .find((rule) => rule.multiplier > currentRule.multiplier);
+
     if (!nextRule) return null; // Already at highest tier
-    
+
     const nextThreshold = nextRule.min_factor;
     const potentialBonus = bonusAmount * nextRule.multiplier;
-    
+
     return {
       nextThreshold,
       nextMultiplier: nextRule.multiplier,
@@ -771,7 +929,10 @@ export default function Dashboard() {
     };
   };
   const bonusesByAgent = useMemo(() => {
-    const byAgent: Record<string, { quarter: BonusFromApi[]; year: BonusFromApi[] }> = {};
+    const byAgent: Record<
+      string,
+      { quarter: BonusFromApi[]; year: BonusFromApi[] }
+    > = {};
     bonuses.forEach((b) => {
       const name = b.agent_name || 'Unknown';
       if (!byAgent[name]) byAgent[name] = { quarter: [], year: [] };
@@ -801,19 +962,40 @@ export default function Dashboard() {
   }) => {
     const list = getGoalsForPeriod(goals, periodType);
     // For now, 60+ is only shown in Quarter cards (hide it in Year cards).
-    const visibleList = periodType === 'year'
-      ? list.filter((g) => !isInverseGoalProgressType(g.goal_type))
-      : list;
-    if (visibleList.length === 0 && !allocatedBonus && !companyMultiplier) return null;
-    const title = periodTitle || (periodType === 'quarter' ? 'Quarter' : periodType === 'month' ? 'Month' : 'Year');
+    const visibleList =
+      periodType === 'year'
+        ? list.filter((g) => !isInverseGoalProgressType(g.goal_type))
+        : list;
+    if (visibleList.length === 0 && !allocatedBonus && !companyMultiplier)
+      return null;
+    const title =
+      periodTitle ||
+      (periodType === 'quarter'
+        ? 'Quarter'
+        : periodType === 'month'
+          ? 'Month'
+          : 'Year');
     const isQuarterOrMonth = periodType === 'quarter' || periodType === 'month';
-    const profitGoal = isQuarterOrMonth ? visibleList.find((g) => (g.goal_type || '').toLowerCase() === 'profit') : null;
-    const otherGoals = isQuarterOrMonth && profitGoal ? visibleList.filter((g) => g.id !== profitGoal.id) : visibleList;
+    const profitGoal = isQuarterOrMonth
+      ? visibleList.find((g) => (g.goal_type || '').toLowerCase() === 'profit')
+      : null;
+    const otherGoals =
+      isQuarterOrMonth && profitGoal
+        ? visibleList.filter((g) => g.id !== profitGoal.id)
+        : visibleList;
 
     return (
       <Card variant="outlined" sx={{ height: '100%' }}>
         <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, mb: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              gap: 2,
+              mb: 1,
+            }}
+          >
             <Typography variant="h6" fontWeight="bold" color={titleColor}>
               {title}
             </Typography>
@@ -822,61 +1004,132 @@ export default function Dashboard() {
                 <Typography variant="body2" fontWeight="medium" display="block">
                   {formatBonusAmount(allocatedBonus.bonus_amount)}
                 </Typography>
-                <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.1, lineHeight: 1.2, fontSize: '0.7rem' }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  display="block"
+                  sx={{ mt: 0.1, lineHeight: 1.2, fontSize: '0.7rem' }}
+                >
                   Alokasi Bonus
                 </Typography>
               </Box>
             )}
           </Box>
           <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-            {profitGoal && (
-              <ProfitCircularProgress g={profitGoal} />
-            )}
+            {profitGoal && <ProfitCircularProgress g={profitGoal} />}
             {profitGoal && otherGoals.length > 0 && (
-              <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 2, mt: 1 }} />
+              <Box
+                sx={{ borderTop: 1, borderColor: 'divider', pt: 2, mt: 1 }}
+              />
             )}
             {otherGoals.map((g) => (
               <LinearGoalRow key={g.id} g={g} />
             ))}
             {/* Bonus details for agent cards - only when bonus toggle is on (not for quarter since it's shown at top) */}
-            {allocatedBonus && !isNational && periodType !== 'quarter' && shouldShowBonus && (
-              <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 2, mt: 2 }}>
-                <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1, fontWeight: 'medium' }}>
-                  Bonus Details
-                </Typography>
-                {allocatedBonus.individual_factor !== undefined && (
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                    <Typography variant="caption" color="text.secondary">Individual Factor:</Typography>
-                    <Typography variant="caption" fontWeight="medium">{allocatedBonus.individual_factor.toFixed(2)}</Typography>
-                  </Box>
-                )}
-                {allocatedBonus.multiplier !== undefined && (
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                    <Typography variant="caption" color="text.secondary">Multiplier:</Typography>
-                    <Typography variant="caption" fontWeight="medium">{allocatedBonus.multiplier.toFixed(2)}</Typography>
-                  </Box>
-                )}
-                {allocatedBonus.final_bonus_amount !== undefined && (
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                    <Typography variant="caption" color="text.secondary" fontWeight="medium">Final Bonus:</Typography>
-                    <Typography variant="caption" fontWeight="bold" color="primary">
-                      {formatBonusAmount(allocatedBonus.final_bonus_amount)}
+            {allocatedBonus &&
+              !isNational &&
+              periodType !== 'quarter' &&
+              shouldShowBonus && (
+                <Box
+                  sx={{ borderTop: 1, borderColor: 'divider', pt: 2, mt: 2 }}
+                >
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                    sx={{ mb: 1, fontWeight: 'medium' }}
+                  >
+                    Bonus Details
+                  </Typography>
+                  {allocatedBonus.individual_factor !== undefined && (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        mb: 0.5,
+                      }}
+                    >
+                      <Typography variant="caption" color="text.secondary">
+                        Individual Factor:
+                      </Typography>
+                      <Typography variant="caption" fontWeight="medium">
+                        {allocatedBonus.individual_factor.toFixed(2)}
+                      </Typography>
+                    </Box>
+                  )}
+                  {allocatedBonus.multiplier !== undefined && (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        mb: 0.5,
+                      }}
+                    >
+                      <Typography variant="caption" color="text.secondary">
+                        Multiplier:
+                      </Typography>
+                      <Typography variant="caption" fontWeight="medium">
+                        {allocatedBonus.multiplier.toFixed(2)}
+                      </Typography>
+                    </Box>
+                  )}
+                  {allocatedBonus.final_bonus_amount !== undefined && (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        mt: 1,
+                      }}
+                    >
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        fontWeight="medium"
+                      >
+                        Final Bonus:
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        fontWeight="bold"
+                        color="primary"
+                      >
+                        {formatBonusAmount(allocatedBonus.final_bonus_amount)}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              )}
+            {/* Company multiplier for national card */}
+            {isNational &&
+              companyMultiplier !== null &&
+              companyMultiplier !== undefined && (
+                <Box
+                  sx={{ borderTop: 1, borderColor: 'divider', pt: 2, mt: 2 }}
+                >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      fontWeight="medium"
+                    >
+                      Company Multiplier:
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      fontWeight="bold"
+                      color="primary"
+                    >
+                      {companyMultiplier.toFixed(2)}
                     </Typography>
                   </Box>
-                )}
-              </Box>
-            )}
-            {/* Company multiplier for national card */}
-            {isNational && companyMultiplier !== null && companyMultiplier !== undefined && (
-              <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 2, mt: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="medium">Company Multiplier:</Typography>
-                  <Typography variant="body2" fontWeight="bold" color="primary">
-                    {companyMultiplier.toFixed(2)}
-                  </Typography>
                 </Box>
-              </Box>
-            )}
+              )}
           </Box>
         </CardContent>
       </Card>
@@ -923,26 +1176,35 @@ export default function Dashboard() {
     const quarterBonus = agentBonuses?.quarter[0] ?? null;
     const yearBonus = agentBonuses?.year[0] ?? null;
     // Calculate next threshold info for Agents
-    const agentNextInfo = !isNational && quarterBonus?.individual_factor !== undefined && quarterBonus?.bonus_amount !== undefined
-      ? getNextThresholdInfo(quarterBonus.individual_factor, 'individual', quarterBonus.bonus_amount)
-      : null;
+    const agentNextInfo =
+      !isNational &&
+      quarterBonus?.individual_factor !== undefined &&
+      quarterBonus?.bonus_amount !== undefined
+        ? getNextThresholdInfo(
+            quarterBonus.individual_factor,
+            'individual',
+            quarterBonus.bonus_amount,
+          )
+        : null;
 
     /** Goals API with period_id returns quarter rows only — hide month/year goal cards. */
     const isHistoricalQuarterView = bonusQuarterSelection !== 'current';
-    const quarterPeriodTitle = isHistoricalQuarterView && selectedBonusPeriodLabel
-      ? selectedBonusPeriodLabel
-      : getPeriodTitleFromGoals(quarterList);
+    const quarterPeriodTitle =
+      isHistoricalQuarterView && selectedBonusPeriodLabel
+        ? selectedBonusPeriodLabel
+        : getPeriodTitleFromGoals(quarterList);
 
     const nationalQuarterProfitGoal = quarterList.find(
-      (g) => (g.goal_type || '').toLowerCase() === 'profit'
+      (g) => (g.goal_type || '').toLowerCase() === 'profit',
     );
     const nationalQuarterCashInGoal = quarterList.find(
-      (g) => (g.goal_type || '').toLowerCase() === 'cash-in'
+      (g) => (g.goal_type || '').toLowerCase() === 'cash-in',
     );
     // National: may fall back to quarter goal progress. Agent: only use guardrails API national % —
     // do not substitute the agent's own goal % (that wrongly failed guardrails and zeroed bonus).
     const profitPct =
-      typeof sectionGuardrailsData?.national_goal_progress_percentage === 'number'
+      typeof sectionGuardrailsData?.national_goal_progress_percentage ===
+      'number'
         ? sectionGuardrailsData.national_goal_progress_percentage
         : isNational
           ? goalProgressPercent(nationalQuarterProfitGoal)
@@ -950,7 +1212,8 @@ export default function Dashboard() {
     const profitOk =
       profitPct == null ? null : profitPct >= GUARDRAIL_QUARTER_PCT_THRESHOLD;
     const cashInPct =
-      typeof sectionGuardrailsData?.national_cash_in_progress_percentage === 'number'
+      typeof sectionGuardrailsData?.national_cash_in_progress_percentage ===
+      'number'
         ? sectionGuardrailsData.national_cash_in_progress_percentage
         : isNational
           ? goalProgressPercent(nationalQuarterCashInGoal)
@@ -967,8 +1230,10 @@ export default function Dashboard() {
             : sectionGuardrailsData.overdue_60_plus_ok === false
               ? false
               : null
-          : typeof sectionGuardrailsData.percentage_of_total_invoice === 'number'
-            ? sectionGuardrailsData.percentage_of_total_invoice <= GUARDRAIL_60_INVOICE_PCT_THRESHOLD
+          : typeof sectionGuardrailsData.percentage_of_total_invoice ===
+              'number'
+            ? sectionGuardrailsData.percentage_of_total_invoice <=
+              GUARDRAIL_60_INVOICE_PCT_THRESHOLD
             : sectionGuardrailsData.overdue_60_plus_ok === true
               ? true
               : sectionGuardrailsData.overdue_60_plus_ok === false
@@ -994,9 +1259,12 @@ export default function Dashboard() {
         ? 0
         : companyMultiplier
       : companyMultiplier;
-    const shouldZeroAgentQuarterBonus = !isNational && hasNationalGuardrailFailure;
+    const shouldZeroAgentQuarterBonus =
+      !isNational && hasNationalGuardrailFailure;
     const estimatedQuarterFinal =
-      quarterBonus != null ? estimateAgentFinalBonusFromRow(quarterBonus) : null;
+      quarterBonus != null
+        ? estimateAgentFinalBonusFromRow(quarterBonus)
+        : null;
     const apiFinal = quarterBonus?.final_bonus_amount;
     const effectiveQuarterFinalBonus =
       shouldZeroAgentQuarterBonus && quarterBonus
@@ -1007,7 +1275,7 @@ export default function Dashboard() {
               estimatedQuarterFinal != null &&
               estimatedQuarterFinal > 0
             ? estimatedQuarterFinal
-            : apiFinal ?? estimatedQuarterFinal ?? 0;
+            : (apiFinal ?? estimatedQuarterFinal ?? 0);
 
     // National: always show the bonus dashboard (factor / multiplier / rules) when any data exists — not gated by Bonus switch.
     // Agents: Bonus switch + quarter bonus row (allocation and/or final from API).
@@ -1019,24 +1287,33 @@ export default function Dashboard() {
     const showCurrentBonus = isNational
       ? showNationalBonusBlock
       : showAllocatedBonus &&
-          !!quarterBonus &&
-          (quarterBonus.final_bonus_amount !== undefined ||
-            quarterBonus.bonus_amount !== undefined);
+        !!quarterBonus &&
+        (quarterBonus.final_bonus_amount !== undefined ||
+          quarterBonus.bonus_amount !== undefined);
 
     // Calculate next threshold info for National
-    const nationalBonusAmount = isNational && allBonuses
-      ? (allBonuses.find((b) => b.company_factor !== undefined)?.bonus_amount ?? 0)
-      : 0;
-    const nationalNextInfo = isNational && effectiveCompanyFactor !== null && effectiveCompanyFactor !== undefined
-      ? getNextThresholdInfo(effectiveCompanyFactor, 'company', nationalBonusAmount)
-      : null;
+    const nationalBonusAmount =
+      isNational && allBonuses
+        ? (allBonuses.find((b) => b.company_factor !== undefined)
+            ?.bonus_amount ?? 0)
+        : 0;
+    const nationalNextInfo =
+      isNational &&
+      effectiveCompanyFactor !== null &&
+      effectiveCompanyFactor !== undefined
+        ? getNextThresholdInfo(
+            effectiveCompanyFactor,
+            'company',
+            nationalBonusAmount,
+          )
+        : null;
 
     const guardrailTile = (
       label: string,
       body: ReactNode,
       statusLine?: ReactNode,
       statusOk?: boolean | null,
-      fullBleedBottomBar?: ReactNode
+      fullBleedBottomBar?: ReactNode,
     ) => (
       <Paper
         key={label}
@@ -1058,10 +1335,19 @@ export default function Dashboard() {
                 : alpha(theme.palette.error.main, 0.28),
           bgcolor: (theme) =>
             statusOk === null
-              ? alpha(theme.palette.grey[500], theme.palette.mode === 'dark' ? 0.08 : 0.04)
+              ? alpha(
+                  theme.palette.grey[500],
+                  theme.palette.mode === 'dark' ? 0.08 : 0.04,
+                )
               : statusOk
-                ? alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.12 : 0.07)
-                : alpha(theme.palette.error.main, theme.palette.mode === 'dark' ? 0.12 : 0.07),
+                ? alpha(
+                    theme.palette.success.main,
+                    theme.palette.mode === 'dark' ? 0.12 : 0.07,
+                  )
+                : alpha(
+                    theme.palette.error.main,
+                    theme.palette.mode === 'dark' ? 0.12 : 0.07,
+                  ),
           boxShadow: (theme) =>
             theme.palette.mode === 'dark'
               ? `inset 0 1px 0 ${alpha(theme.palette.common.white, 0.04)}`
@@ -1126,9 +1412,7 @@ export default function Dashboard() {
           )}
         </Stack>
         {fullBleedBottomBar != null ? (
-          <Box sx={{ px: 0, pb: 3 }}>
-            {fullBleedBottomBar}
-          </Box>
+          <Box sx={{ px: 0, pb: 3 }}>{fullBleedBottomBar}</Box>
         ) : null}
       </Paper>
     );
@@ -1138,7 +1422,13 @@ export default function Dashboard() {
     return (
       <Box sx={{ mb: 3, p: 2 }}>
         {!hideTitle && (
-          <Typography variant="h6" fontWeight="bold" color={titleColor} gutterBottom sx={{ mb: 2 }}>
+          <Typography
+            variant="h6"
+            fontWeight="bold"
+            color={titleColor}
+            gutterBottom
+            sx={{ mb: 2 }}
+          >
             {scopeTitle}
           </Typography>
         )}
@@ -1148,228 +1438,359 @@ export default function Dashboard() {
             {isNational ? (
               <>
                 {/* For National: Two column layout - Company Factor/Multiplier on left, Next Threshold on right */}
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                    gap: 3,
+                  }}
+                >
                   {/* Left Column: Company Factor and Company Multiplier */}
                   <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
-                    {effectiveCompanyFactor !== null && effectiveCompanyFactor !== undefined && (
-                      <Box sx={{ flex: 1, display: 'flex', minHeight: NATIONAL_SUMMARY_CARD_HEIGHT }}>
-                        <DashboardCard>
-                          <Box p={2} sx={{ 
-                            display: 'flex', 
-                            flexDirection: 'column', 
-                            justifyContent: 'center',
-                            alignItems: 'flex-start',
-                            height: '100%',
-                          }}>
+                    {effectiveCompanyFactor !== null &&
+                      effectiveCompanyFactor !== undefined && (
+                        <Box
+                          sx={{
+                            flex: 1,
+                            display: 'flex',
+                            minHeight: NATIONAL_SUMMARY_CARD_HEIGHT,
+                          }}
+                        >
+                          <DashboardCard>
                             <Box
+                              p={2}
                               sx={{
-                                fontSize: '1rem',
-                                color: 'text.secondary',
-                                mb: 2,
-                                fontWeight: 500,
-                                lineHeight: '1.2',
-                                textAlign: 'left',
-                                width: '100%',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                alignItems: 'flex-start',
+                                height: '100%',
                               }}
                             >
-                              Company Factor
+                              <Box
+                                sx={{
+                                  fontSize: '1rem',
+                                  color: 'text.secondary',
+                                  mb: 2,
+                                  fontWeight: 500,
+                                  lineHeight: '1.2',
+                                  textAlign: 'left',
+                                  width: '100%',
+                                }}
+                              >
+                                Company Factor
+                              </Box>
+                              <Box
+                                sx={{
+                                  fontSize: '3.5rem',
+                                  fontWeight: 'bold',
+                                  color: 'text.primary',
+                                  lineHeight: '1.2',
+                                  textAlign: 'left',
+                                  width: '100%',
+                                }}
+                              >
+                                {effectiveCompanyFactor.toFixed(2)}
+                              </Box>
                             </Box>
+                          </DashboardCard>
+                        </Box>
+                      )}
+                    {effectiveCompanyMultiplier !== null &&
+                      effectiveCompanyMultiplier !== undefined && (
+                        <Box
+                          sx={{
+                            flex: 1,
+                            display: 'flex',
+                            minHeight: NATIONAL_SUMMARY_CARD_HEIGHT,
+                          }}
+                        >
+                          <DashboardCard>
                             <Box
+                              p={2}
                               sx={{
-                                fontSize: '3.5rem',
-                                fontWeight: 'bold',
-                                color: 'text.primary',
-                                lineHeight: '1.2',
-                                textAlign: 'left',
-                                width: '100%',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                alignItems: 'flex-start',
+                                height: '100%',
                               }}
                             >
-                              {effectiveCompanyFactor.toFixed(2)}
+                              <Box
+                                sx={{
+                                  fontSize: '1rem',
+                                  color: 'text.secondary',
+                                  mb: 2,
+                                  fontWeight: 500,
+                                  lineHeight: '1.2',
+                                  textAlign: 'left',
+                                  width: '100%',
+                                }}
+                              >
+                                Company Multiplier
+                              </Box>
+                              <Box
+                                sx={{
+                                  fontSize: '3.5rem',
+                                  fontWeight: 'bold',
+                                  color: 'text.primary',
+                                  lineHeight: '1.2',
+                                  textAlign: 'left',
+                                  width: '100%',
+                                }}
+                              >
+                                {effectiveCompanyMultiplier.toFixed(2)}
+                              </Box>
                             </Box>
-                          </Box>
-                        </DashboardCard>
-                      </Box>
-                    )}
-                    {effectiveCompanyMultiplier !== null && effectiveCompanyMultiplier !== undefined && (
-                      <Box sx={{ flex: 1, display: 'flex', minHeight: NATIONAL_SUMMARY_CARD_HEIGHT }}>
-                        <DashboardCard>
-                          <Box p={2} sx={{ 
-                            display: 'flex', 
-                            flexDirection: 'column', 
-                            justifyContent: 'center',
-                            alignItems: 'flex-start',
-                            height: '100%',
-                          }}>
-                            <Box
-                              sx={{
-                                fontSize: '1rem',
-                                color: 'text.secondary',
-                                mb: 2,
-                                fontWeight: 500,
-                                lineHeight: '1.2',
-                                textAlign: 'left',
-                                width: '100%',
-                              }}
-                            >
-                              Company Multiplier
-                            </Box>
-                            <Box
-                              sx={{
-                                fontSize: '3.5rem',
-                                fontWeight: 'bold',
-                                color: 'text.primary',
-                                lineHeight: '1.2',
-                                textAlign: 'left',
-                                width: '100%',
-                              }}
-                            >
-                              {effectiveCompanyMultiplier.toFixed(2)}
-                            </Box>
-                          </Box>
-                        </DashboardCard>
-                      </Box>
-                    )}
+                          </DashboardCard>
+                        </Box>
+                      )}
                   </Box>
-                  
+
                   {/* Right Column: All Company Multiplier Rules */}
-                  {sectionBonusRules && sectionBonusRules.length > 0 && (() => {
-                    const companyRules = sectionBonusRules
-                      .filter(rule => rule.rule_type === 'company')
-                      .sort((a, b) => a.min_factor - b.min_factor);
-                    
-                    return (
-                      <Box sx={{ 
-                        p: 2, 
-                        bgcolor: 'background.paper', 
-                        borderRadius: 2,
-                        boxShadow: 1,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        height: NATIONAL_SUMMARY_CARD_HEIGHT,
-                        display: 'flex',
-                        flexDirection: 'column',
-                      }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'center', fontWeight: 'bold' }}>
-                          Multiplier Rules
-                        </Typography>
-                        <TableContainer sx={{ maxHeight: 165, overflowY: 'auto' }}>
-                        <Table stickyHeader size="small" sx={{ bgcolor: 'background.paper' }}>
-                          <TableHead>
-                            <TableRow>
-                              <TableCell sx={{ 
-                                fontWeight: 'bold', 
-                                borderBottom: '2px solid', 
-                                borderColor: 'divider',
-                                bgcolor: 'background.paper'
-                              }}>
-                                Factor Range
-                              </TableCell>
-                              <TableCell sx={{ 
-                                fontWeight: 'bold', 
-                                borderBottom: '2px solid', 
-                                borderColor: 'divider', 
-                                textAlign: 'right',
-                                bgcolor: 'background.paper'
-                              }}>
-                                Multiplier
-                              </TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            <TableRow
-                              sx={{
-                                bgcolor: !allNationalGuardrailsPassed ? 'warning.light' : 'background.paper',
-                                '&:hover': { bgcolor: !allNationalGuardrailsPassed ? 'warning.light' : 'action.hover' }
-                              }}
+                  {sectionBonusRules &&
+                    sectionBonusRules.length > 0 &&
+                    (() => {
+                      const companyRules = sectionBonusRules
+                        .filter((rule) => rule.rule_type === 'company')
+                        .sort((a, b) => a.min_factor - b.min_factor);
+
+                      return (
+                        <Box
+                          sx={{
+                            p: 2,
+                            bgcolor: 'background.paper',
+                            borderRadius: 2,
+                            boxShadow: 1,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            height: NATIONAL_SUMMARY_CARD_HEIGHT,
+                            display: 'flex',
+                            flexDirection: 'column',
+                          }}
+                        >
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                              mb: 2,
+                              textAlign: 'center',
+                              fontWeight: 'bold',
+                            }}
+                          >
+                            Multiplier Rules
+                          </Typography>
+                          <TableContainer
+                            sx={{ maxHeight: 165, overflowY: 'auto' }}
+                          >
+                            <Table
+                              stickyHeader
+                              size="small"
+                              sx={{ bgcolor: 'background.paper' }}
                             >
-                              <TableCell
-                                sx={{
-                                  borderBottom: '1px solid',
-                                  borderColor: 'divider',
-                                  bgcolor: 'transparent'
-                                }}
-                              >
-                                <Typography variant="body1" fontWeight="bold" color={!allNationalGuardrailsPassed ? 'warning.dark' : 'text.primary'}>
-                                  Guardrail
-                                </Typography>
-                              </TableCell>
-                              <TableCell
-                                sx={{
-                                  borderBottom: '1px solid',
-                                  borderColor: 'divider',
-                                  textAlign: 'right',
-                                  bgcolor: 'transparent'
-                                }}
-                              >
-                                <Typography variant="h6" fontWeight="bold" color={!allNationalGuardrailsPassed ? 'warning.dark' : 'text.primary'}>
-                                  0x
-                                </Typography>
-                              </TableCell>
-                            </TableRow>
-                            {companyRules.map((rule) => {
-                              const isActive =
-                                allNationalGuardrailsPassed &&
-                                effectiveCompanyFactor !== null &&
-                                effectiveCompanyFactor !== undefined &&
-                                effectiveCompanyFactor >= rule.min_factor &&
-                                effectiveCompanyFactor <= rule.max_factor;
-                              
-                              return (
-                                <TableRow 
-                                  key={rule.id}
-                                  sx={{ 
-                                    bgcolor: isActive ? 'primary.light' : 'background.paper',
-                                    '&:hover': { bgcolor: isActive ? 'primary.light' : 'action.hover' }
+                              <TableHead>
+                                <TableRow>
+                                  <TableCell
+                                    sx={{
+                                      fontWeight: 'bold',
+                                      borderBottom: '2px solid',
+                                      borderColor: 'divider',
+                                      bgcolor: 'background.paper',
+                                    }}
+                                  >
+                                    Factor Range
+                                  </TableCell>
+                                  <TableCell
+                                    sx={{
+                                      fontWeight: 'bold',
+                                      borderBottom: '2px solid',
+                                      borderColor: 'divider',
+                                      textAlign: 'right',
+                                      bgcolor: 'background.paper',
+                                    }}
+                                  >
+                                    Multiplier
+                                  </TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                <TableRow
+                                  sx={{
+                                    bgcolor: !allNationalGuardrailsPassed
+                                      ? 'warning.light'
+                                      : 'background.paper',
+                                    '&:hover': {
+                                      bgcolor: !allNationalGuardrailsPassed
+                                        ? 'warning.light'
+                                        : 'action.hover',
+                                    },
                                   }}
                                 >
-                                  <TableCell sx={{ 
-                                    borderBottom: '1px solid', 
-                                    borderColor: 'divider',
-                                    bgcolor: 'transparent'
-                                  }}>
-                                    <Typography variant="body1" fontWeight="bold" color="primary">
-                                      {rule.min_factor.toFixed(2)} - {rule.max_factor.toFixed(2)}
+                                  <TableCell
+                                    sx={{
+                                      borderBottom: '1px solid',
+                                      borderColor: 'divider',
+                                      bgcolor: 'transparent',
+                                    }}
+                                  >
+                                    <Typography
+                                      variant="body1"
+                                      fontWeight="bold"
+                                      color={
+                                        !allNationalGuardrailsPassed
+                                          ? 'warning.dark'
+                                          : 'text.primary'
+                                      }
+                                    >
+                                      Guardrail
                                     </Typography>
                                   </TableCell>
-                                  <TableCell sx={{ 
-                                    borderBottom: '1px solid', 
-                                    borderColor: 'divider', 
-                                    textAlign: 'right',
-                                    bgcolor: 'transparent'
-                                  }}>
-                                    <Typography variant="h6" fontWeight="bold" color="primary">
-                                      {rule.multiplier.toFixed(2)}x
+                                  <TableCell
+                                    sx={{
+                                      borderBottom: '1px solid',
+                                      borderColor: 'divider',
+                                      textAlign: 'right',
+                                      bgcolor: 'transparent',
+                                    }}
+                                  >
+                                    <Typography
+                                      variant="h6"
+                                      fontWeight="bold"
+                                      color={
+                                        !allNationalGuardrailsPassed
+                                          ? 'warning.dark'
+                                          : 'text.primary'
+                                      }
+                                    >
+                                      0x
                                     </Typography>
                                   </TableCell>
                                 </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
-                        </TableContainer>
-                      </Box>
-                    );
-                  })()}
+                                {companyRules.map((rule) => {
+                                  const isActive =
+                                    allNationalGuardrailsPassed &&
+                                    effectiveCompanyFactor !== null &&
+                                    effectiveCompanyFactor !== undefined &&
+                                    effectiveCompanyFactor >= rule.min_factor &&
+                                    effectiveCompanyFactor <= rule.max_factor;
+
+                                  return (
+                                    <TableRow
+                                      key={rule.id}
+                                      sx={{
+                                        bgcolor: isActive
+                                          ? 'primary.light'
+                                          : 'background.paper',
+                                        '&:hover': {
+                                          bgcolor: isActive
+                                            ? 'primary.light'
+                                            : 'action.hover',
+                                        },
+                                      }}
+                                    >
+                                      <TableCell
+                                        sx={{
+                                          borderBottom: '1px solid',
+                                          borderColor: 'divider',
+                                          bgcolor: 'transparent',
+                                        }}
+                                      >
+                                        <Typography
+                                          variant="body1"
+                                          fontWeight="bold"
+                                          color="primary"
+                                        >
+                                          {rule.min_factor.toFixed(2)} -{' '}
+                                          {rule.max_factor.toFixed(2)}
+                                        </Typography>
+                                      </TableCell>
+                                      <TableCell
+                                        sx={{
+                                          borderBottom: '1px solid',
+                                          borderColor: 'divider',
+                                          textAlign: 'right',
+                                          bgcolor: 'transparent',
+                                        }}
+                                      >
+                                        <Typography
+                                          variant="h6"
+                                          fontWeight="bold"
+                                          color="primary"
+                                        >
+                                          {rule.multiplier.toFixed(2)}x
+                                        </Typography>
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
+                        </Box>
+                      );
+                    })()}
                 </Box>
               </>
             ) : (
               /* For Agents: Split layout - Summary cards on left, Multiplier Rules table on right */
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                  gap: 2,
+                }}
+              >
                 {/* Left Column: Summary Cards */}
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' },
+                    gap: 2,
+                  }}
+                >
                   {/* Quarter Bonus - Emphasized with primary background, spans 2 columns */}
-                  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' }, height: '100%', display: 'flex' }}>
-                    <Box sx={{ width: '100%', height: '100%', display: 'flex', '& .MuiCard-root': { bgcolor: 'primary.main', border: 'none', boxShadow: 'none', height: '100%', display: 'flex', padding: 0 }, '& .MuiCardContent-root': { bgcolor: 'primary.main', p: '30px', height: '100%', display: 'flex', flexDirection: 'column' } }}>
-                      <DashboardCard>
-                        <Box p={2} sx={{ 
-                          height: '100%',
-                          display: 'flex', 
-                          flexDirection: 'column', 
-                          justifyContent: 'space-between',
-                          alignItems: 'flex-start',
+                  <Box
+                    sx={{
+                      gridColumn: { xs: 'span 1', md: 'span 2' },
+                      height: '100%',
+                      display: 'flex',
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        '& .MuiCard-root': {
                           bgcolor: 'primary.main',
-                          color: 'primary.contrastText',
-                        }}>
+                          border: 'none',
+                          boxShadow: 'none',
+                          height: '100%',
+                          display: 'flex',
+                          padding: 0,
+                        },
+                        '& .MuiCardContent-root': {
+                          bgcolor: 'primary.main',
+                          p: '30px',
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: 'column',
+                        },
+                      }}
+                    >
+                      <DashboardCard>
+                        <Box
+                          p={2}
+                          sx={{
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            bgcolor: 'primary.main',
+                            color: 'primary.contrastText',
+                          }}
+                        >
                           <Box
                             sx={{
                               fontSize: '1rem',
@@ -1383,7 +1804,11 @@ export default function Dashboard() {
                               opacity: 0.9,
                             }}
                           >
-                            {isQuarterPeriod(quarterBonus!.period_title) ? 'Quarter Bonus' : isYearPeriod(quarterBonus!.period_title) ? 'Year Bonus' : 'Current Bonus'}
+                            {isQuarterPeriod(quarterBonus!.period_title)
+                              ? 'Quarter Bonus'
+                              : isYearPeriod(quarterBonus!.period_title)
+                                ? 'Year Bonus'
+                                : 'Current Bonus'}
                           </Box>
                           <Box
                             sx={{
@@ -1395,24 +1820,28 @@ export default function Dashboard() {
                               width: '100%',
                             }}
                           >
-                            Rp {formatBonusAmount(effectiveQuarterFinalBonus ?? 0)}
+                            Rp{' '}
+                            {formatBonusAmount(effectiveQuarterFinalBonus ?? 0)}
                           </Box>
                         </Box>
                       </DashboardCard>
                     </Box>
                   </Box>
-                  
+
                   {/* Individual Factor - 1 column */}
                   {quarterBonus?.individual_factor !== undefined && (
                     <Box sx={{ height: '100%', display: 'flex' }}>
                       <DashboardCard>
-                        <Box p={2} sx={{ 
-                          height: '100%',
-                          display: 'flex', 
-                          flexDirection: 'column', 
-                          justifyContent: 'space-between',
-                          alignItems: 'flex-start',
-                        }}>
+                        <Box
+                          p={2}
+                          sx={{
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                          }}
+                        >
                           <Box
                             sx={{
                               fontSize: '0.75rem',
@@ -1443,17 +1872,26 @@ export default function Dashboard() {
                       </DashboardCard>
                     </Box>
                   )}
-                  
+
                   {/* Alokasi Bonus - spans 2 columns */}
-                  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' }, height: '100%', display: 'flex' }}>
+                  <Box
+                    sx={{
+                      gridColumn: { xs: 'span 1', md: 'span 2' },
+                      height: '100%',
+                      display: 'flex',
+                    }}
+                  >
                     <DashboardCard>
-                      <Box p={2} sx={{ 
-                        height: '100%',
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                      }}>
+                      <Box
+                        p={2}
+                        sx={{
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                        }}
+                      >
                         <Box
                           sx={{
                             fontSize: '0.75rem',
@@ -1483,18 +1921,22 @@ export default function Dashboard() {
                       </Box>
                     </DashboardCard>
                   </Box>
-                  
+
                   {/* Individual Multiplier - 1 column */}
-                  {(quarterBonus?.individual_multiplier !== undefined || quarterBonus?.multiplier !== undefined) && (
+                  {(quarterBonus?.individual_multiplier !== undefined ||
+                    quarterBonus?.multiplier !== undefined) && (
                     <Box sx={{ height: '100%', display: 'flex' }}>
                       <DashboardCard>
-                        <Box p={2} sx={{ 
-                          height: '100%',
-                          display: 'flex', 
-                          flexDirection: 'column', 
-                          justifyContent: 'space-between',
-                          alignItems: 'flex-start',
-                        }}>
+                        <Box
+                          p={2}
+                          sx={{
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                          }}
+                        >
                           <Box
                             sx={{
                               fontSize: '0.75rem',
@@ -1519,142 +1961,220 @@ export default function Dashboard() {
                               width: '100%',
                             }}
                           >
-                            {(quarterBonus.individual_multiplier ?? quarterBonus.multiplier ?? 0).toFixed(2)}
+                            {(
+                              quarterBonus.individual_multiplier ??
+                              quarterBonus.multiplier ??
+                              0
+                            ).toFixed(2)}
                           </Box>
                         </Box>
                       </DashboardCard>
                     </Box>
                   )}
                 </Box>
-                
+
                 {/* Right Column: Individual Multiplier Rules Table */}
-                {bonusRules && bonusRules.length > 0 && (() => {
-                  const individualRules = bonusRules
-                    .filter(rule => rule.rule_type === 'individual')
-                    .sort((a, b) => a.min_factor - b.min_factor);
-                  
-                  const currentIndividualFactor = quarterBonus?.individual_factor;
-                  
-                  return (
-                    <Box sx={{ 
-                      p: 2, 
-                      bgcolor: 'background.paper', 
-                      borderRadius: 2,
-                      boxShadow: 1,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column'
-                    }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'center', fontWeight: 'bold' }}>
-                        Multiplier Rules
-                      </Typography>
-                      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                        <Table size="small" sx={{ bgcolor: 'background.paper', width: '100%', tableLayout: 'fixed' }}>
-                          <TableHead>
-                            <TableRow>
-                              <TableCell sx={{ 
-                                fontWeight: 'bold', 
-                                borderBottom: '2px solid', 
-                                borderColor: 'divider',
-                                bgcolor: 'background.paper',
-                                width: '33.33%'
-                              }}>
-                                Factor Range
-                              </TableCell>
-                              <TableCell sx={{ 
-                                fontWeight: 'bold', 
-                                borderBottom: '2px solid', 
-                                borderColor: 'divider', 
-                                textAlign: 'right',
-                                bgcolor: 'background.paper',
-                                width: '33.33%'
-                              }}>
-                                Multiplier
-                              </TableCell>
-                              <TableCell sx={{ 
-                                fontWeight: 'bold', 
-                                borderBottom: '2px solid', 
-                                borderColor: 'divider', 
-                                textAlign: 'right',
-                                bgcolor: 'background.paper',
-                                width: '33.33%'
-                              }}>
-                                Potential Bonus
-                              </TableCell>
-                            </TableRow>
-                          </TableHead>
-                        </Table>
-                        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
-                          <Box sx={{ 
-                            position: 'absolute', 
-                            top: 0, 
-                            left: 0, 
-                            right: 0, 
-                            bottom: 0, 
-                            display: 'flex', 
-                            flexDirection: 'column' 
-                          }}>
-                            {individualRules.map((rule) => {
-                              const isActive = currentIndividualFactor !== null && currentIndividualFactor !== undefined &&
-                                currentIndividualFactor >= rule.min_factor && currentIndividualFactor <= rule.max_factor;
-                              
-                              const potentialBonus = quarterBonus?.bonus_amount 
-                                ? quarterBonus.bonus_amount * rule.multiplier 
-                                : 0;
-                              
-                              return (
-                                <Box
-                                  key={rule.id}
+                {bonusRules &&
+                  bonusRules.length > 0 &&
+                  (() => {
+                    const individualRules = bonusRules
+                      .filter((rule) => rule.rule_type === 'individual')
+                      .sort((a, b) => a.min_factor - b.min_factor);
+
+                    const currentIndividualFactor =
+                      quarterBonus?.individual_factor;
+
+                    return (
+                      <Box
+                        sx={{
+                          p: 2,
+                          bgcolor: 'background.paper',
+                          borderRadius: 2,
+                          boxShadow: 1,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: 'column',
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{
+                            mb: 2,
+                            textAlign: 'center',
+                            fontWeight: 'bold',
+                          }}
+                        >
+                          Multiplier Rules
+                        </Typography>
+                        <Box
+                          sx={{
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            minHeight: 0,
+                          }}
+                        >
+                          <Table
+                            size="small"
+                            sx={{
+                              bgcolor: 'background.paper',
+                              width: '100%',
+                              tableLayout: 'fixed',
+                            }}
+                          >
+                            <TableHead>
+                              <TableRow>
+                                <TableCell
                                   sx={{
-                                    flex: 1,
-                                    display: 'grid',
-                                    gridTemplateColumns: '33.33% 33.33% 33.33%',
-                                    bgcolor: isActive ? 'primary.light' : 'background.paper',
-                                    borderBottom: '1px solid',
+                                    fontWeight: 'bold',
+                                    borderBottom: '2px solid',
                                     borderColor: 'divider',
-                                    '&:hover': { bgcolor: isActive ? 'primary.light' : 'action.hover' }
+                                    bgcolor: 'background.paper',
+                                    width: '33.33%',
                                   }}
                                 >
-                                  <Box sx={{ 
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    p: 1.5
-                                  }}>
-                                    <Typography variant="body1" fontWeight="bold" color="primary">
-                                      {rule.min_factor.toFixed(2)} - {rule.max_factor.toFixed(2)}
-                                    </Typography>
+                                  Factor Range
+                                </TableCell>
+                                <TableCell
+                                  sx={{
+                                    fontWeight: 'bold',
+                                    borderBottom: '2px solid',
+                                    borderColor: 'divider',
+                                    textAlign: 'right',
+                                    bgcolor: 'background.paper',
+                                    width: '33.33%',
+                                  }}
+                                >
+                                  Multiplier
+                                </TableCell>
+                                <TableCell
+                                  sx={{
+                                    fontWeight: 'bold',
+                                    borderBottom: '2px solid',
+                                    borderColor: 'divider',
+                                    textAlign: 'right',
+                                    bgcolor: 'background.paper',
+                                    width: '33.33%',
+                                  }}
+                                >
+                                  Potential Bonus
+                                </TableCell>
+                              </TableRow>
+                            </TableHead>
+                          </Table>
+                          <Box
+                            sx={{
+                              flex: 1,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              overflow: 'hidden',
+                              position: 'relative',
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                display: 'flex',
+                                flexDirection: 'column',
+                              }}
+                            >
+                              {individualRules.map((rule) => {
+                                const isActive =
+                                  currentIndividualFactor !== null &&
+                                  currentIndividualFactor !== undefined &&
+                                  currentIndividualFactor >= rule.min_factor &&
+                                  currentIndividualFactor <= rule.max_factor;
+
+                                const potentialBonus =
+                                  quarterBonus?.bonus_amount
+                                    ? quarterBonus.bonus_amount *
+                                      rule.multiplier
+                                    : 0;
+
+                                return (
+                                  <Box
+                                    key={rule.id}
+                                    sx={{
+                                      flex: 1,
+                                      display: 'grid',
+                                      gridTemplateColumns:
+                                        '33.33% 33.33% 33.33%',
+                                      bgcolor: isActive
+                                        ? 'primary.light'
+                                        : 'background.paper',
+                                      borderBottom: '1px solid',
+                                      borderColor: 'divider',
+                                      '&:hover': {
+                                        bgcolor: isActive
+                                          ? 'primary.light'
+                                          : 'action.hover',
+                                      },
+                                    }}
+                                  >
+                                    <Box
+                                      sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        p: 1.5,
+                                      }}
+                                    >
+                                      <Typography
+                                        variant="body1"
+                                        fontWeight="bold"
+                                        color="primary"
+                                      >
+                                        {rule.min_factor.toFixed(2)} -{' '}
+                                        {rule.max_factor.toFixed(2)}
+                                      </Typography>
+                                    </Box>
+                                    <Box
+                                      sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'flex-end',
+                                        p: 1.5,
+                                      }}
+                                    >
+                                      <Typography
+                                        variant="h6"
+                                        fontWeight="bold"
+                                        color="primary"
+                                      >
+                                        {rule.multiplier.toFixed(2)}x
+                                      </Typography>
+                                    </Box>
+                                    <Box
+                                      sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'flex-end',
+                                        p: 1.5,
+                                      }}
+                                    >
+                                      <Typography
+                                        variant="body1"
+                                        fontWeight="bold"
+                                        color="primary"
+                                      >
+                                        Rp {formatBonusAmount(potentialBonus)}
+                                      </Typography>
+                                    </Box>
                                   </Box>
-                                  <Box sx={{ 
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'flex-end',
-                                    p: 1.5
-                                  }}>
-                                    <Typography variant="h6" fontWeight="bold" color="primary">
-                                      {rule.multiplier.toFixed(2)}x
-                                    </Typography>
-                                  </Box>
-                                  <Box sx={{ 
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'flex-end',
-                                    p: 1.5
-                                  }}>
-                                    <Typography variant="body1" fontWeight="bold" color="primary">
-                                      Rp {formatBonusAmount(potentialBonus)}
-                                    </Typography>
-                                  </Box>
-                                </Box>
-                              );
-                            })}
+                                );
+                              })}
+                            </Box>
                           </Box>
                         </Box>
                       </Box>
-                    </Box>
-                  );
-                })()}
+                    );
+                  })()}
               </Box>
             )}
           </Box>
@@ -1672,7 +2192,14 @@ export default function Dashboard() {
             />
           </Box>
         ) : (
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 2 }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+              gap: 2,
+              mb: 2,
+            }}
+          >
             <PeriodCard
               periodType="quarter"
               periodTitle={getPeriodTitleFromGoals(quarterList)}
@@ -1693,268 +2220,296 @@ export default function Dashboard() {
           </Box>
         )}
         {showGuardrailsInSection && (
-              <Box sx={{ mb: 2 }}>
-                {sectionGuardrailsError && (
-                  <Typography variant="caption" color="error" display="block" sx={{ mb: 1.5 }}>
-                    {sectionGuardrailsError}
+          <Box sx={{ mb: 2 }}>
+            {sectionGuardrailsError && (
+              <Typography
+                variant="caption"
+                color="error"
+                display="block"
+                sx={{ mb: 1.5 }}
+              >
+                {sectionGuardrailsError}
+              </Typography>
+            )}
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr 1fr',
+                  sm: 'repeat(3, 1fr)',
+                  md: 'repeat(5, 1fr)',
+                },
+                gap: { xs: 1.5, sm: 2 },
+                alignItems: 'stretch',
+              }}
+            >
+              {guardrailTile(
+                'Profit',
+                profitPct != null ? (
+                  <Stack
+                    spacing={0.5}
+                    sx={{ width: '100%', alignItems: 'flex-start' }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: { xs: '2.6rem', sm: '3rem' },
+                        fontWeight: 800,
+                        lineHeight: 1.1,
+                        letterSpacing: '-0.03em',
+                      }}
+                    >
+                      {Math.round(profitPct)}%
+                    </Typography>
+                  </Stack>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    No quarter goal
                   </Typography>
-                )}
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                      xs: '1fr 1fr',
-                      sm: 'repeat(3, 1fr)',
-                      md: 'repeat(5, 1fr)',
-                    },
-                    gap: { xs: 1.5, sm: 2 },
-                    alignItems: 'stretch',
-                  }}
-                >
-                  {guardrailTile(
-                    'Profit',
-                    profitPct != null ? (
-                      <Stack spacing={0.5} sx={{ width: '100%', alignItems: 'flex-start' }}>
-                        <Typography
-                          sx={{
-                            fontSize: { xs: '2.6rem', sm: '3rem' },
-                            fontWeight: 800,
-                            lineHeight: 1.1,
-                            letterSpacing: '-0.03em',
-                          }}
-                        >
-                          {Math.round(profitPct)}%
-                        </Typography>
-                      </Stack>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        No quarter goal
-                      </Typography>
-                    ),
-                    profitOk === null
-                      ? undefined
-                      : profitOk
-                        ? `At or above ${GUARDRAIL_QUARTER_PCT_THRESHOLD}% of quarter target`
-                        : `Below ${GUARDRAIL_QUARTER_PCT_THRESHOLD}% of quarter target`,
-                    profitOk,
-                    profitPct != null ? (
-                      <GuardrailThresholdLinearBar
-                        value={profitPct}
-                        threshold={GUARDRAIL_QUARTER_PCT_THRESHOLD}
-                        inverted={false}
-                      />
-                    ) : undefined
-                  )}
-                  {guardrailTile(
-                    'Cash-In',
-                    cashInPct != null ? (
-                      <Stack spacing={0.5} sx={{ width: '100%', alignItems: 'flex-start' }}>
-                        <Typography
-                          sx={{
-                            fontSize: { xs: '2.6rem', sm: '3rem' },
-                            fontWeight: 800,
-                            lineHeight: 1.1,
-                            letterSpacing: '-0.03em',
-                          }}
-                        >
-                          {Math.round(cashInPct)}%
-                        </Typography>
-                      </Stack>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        No quarter goal
-                      </Typography>
-                    ),
-                    cashInOk === null
-                      ? undefined
-                      : cashInOk
-                        ? `At or above ${GUARDRAIL_QUARTER_PCT_THRESHOLD}% of quarter target`
-                        : `Below ${GUARDRAIL_QUARTER_PCT_THRESHOLD}% of quarter target`,
-                    cashInOk,
-                    cashInPct != null ? (
-                      <GuardrailThresholdLinearBar
-                        value={cashInPct}
-                        threshold={GUARDRAIL_QUARTER_PCT_THRESHOLD}
-                        inverted={false}
-                      />
-                    ) : undefined
-                  )}
-                  {guardrailTile(
-                    '60+ overdue',
-                    sectionGuardrailsLoading ? (
-                      <CircularProgress size={28} />
-                    ) : sectionGuardrailsData ? (
-                      isHistoricalQuarterView ? (
-                        <Box sx={{ textAlign: 'center', width: '100%', py: 0.5 }}>
-                          <Typography
-                            sx={{
-                              fontSize:
-                                sectionGuardrailsData.overdue_60_plus_ok === false
-                                  ? { xs: '2.7rem', sm: '3rem' }
-                                  : { xs: '2.45rem', sm: '2.8rem' },
-                              fontWeight: 800,
-                              lineHeight: 1,
-                              letterSpacing: '-0.02em',
-                              color:
-                                sectionGuardrailsData.overdue_60_plus_ok === true
-                                  ? 'success.main'
-                                  : sectionGuardrailsData.overdue_60_plus_ok === false
-                                    ? 'error.main'
-                                    : 'text.primary',
-                            }}
-                          >
-                            {sectionGuardrailsData.overdue_60_plus_ok === true ? 'True' : 'False'}
-                          </Typography>
-                        </Box>
-                      ) : typeof sectionGuardrailsData.percentage_of_total_invoice === 'number' ? (
-                        <Stack spacing={0.5} sx={{ width: '100%', alignItems: 'flex-start' }}>
-                          <Typography
-                            sx={{
-                              fontSize: { xs: '2.6rem', sm: '3rem' },
-                              fontWeight: 800,
-                              lineHeight: 1.1,
-                              letterSpacing: '-0.03em',
-                            }}
-                          >
-                            {sectionGuardrailsData.percentage_of_total_invoice.toFixed(1)}%
-                          </Typography>
-                        </Stack>
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">
-                          —
-                        </Typography>
-                      )
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        —
-                      </Typography>
-                    ),
-                    isHistoricalQuarterView && sectionGuardrailsData
-                      ? sectionGuardrailsData.overdue_60_plus_ok === true
-                        ? '60+ guardrail: True'
-                        : '60+ guardrail: False'
-                      : sectionGuardrailsData &&
-                        typeof sectionGuardrailsData.percentage_of_total_invoice === 'number'
-                        ? sectionGuardrailsData.percentage_of_total_invoice <= GUARDRAIL_60_INVOICE_PCT_THRESHOLD
-                          ? `60+ guardrail OK — at or below ${GUARDRAIL_60_INVOICE_PCT_THRESHOLD}% of invoice`
-                          : `Above ${GUARDRAIL_60_INVOICE_PCT_THRESHOLD}% — lower is better (line marks threshold)`
-                      : sectionGuardrailsLoading
-                        ? 'Loading…'
-                        : '—',
-                    isHistoricalQuarterView && sectionGuardrailsData
-                      ? sectionGuardrailsData.overdue_60_plus_ok === true
-                      : sectionGuardrailsData &&
-                        typeof sectionGuardrailsData.percentage_of_total_invoice === 'number'
-                        ? sectionGuardrailsData.percentage_of_total_invoice <= GUARDRAIL_60_INVOICE_PCT_THRESHOLD
-                      : null,
-                    !isHistoricalQuarterView &&
-                    sectionGuardrailsData &&
-                    typeof sectionGuardrailsData.percentage_of_total_invoice === 'number' ? (
-                      <GuardrailThresholdLinearBar
-                        value={sectionGuardrailsData.percentage_of_total_invoice}
-                        threshold={GUARDRAIL_60_INVOICE_PCT_THRESHOLD}
-                        inverted
-                      />
-                    ) : undefined
-                  )}
-                  {guardrailTile(
-                    'EBITDA',
-                    sectionGuardrailsLoading ? (
-                      <CircularProgress size={28} />
-                    ) : sectionGuardrailsData ? (
-                      <Box sx={{ textAlign: 'center', width: '100%', py: 0.5 }}>
-                        <Typography
-                          sx={{
-                            fontSize:
-                              sectionGuardrailsData.ebitda === false
-                                ? { xs: '2.7rem', sm: '3rem' }
-                                : { xs: '2.45rem', sm: '2.8rem' },
-                            fontWeight: 800,
-                            lineHeight: 1,
-                            letterSpacing: '-0.02em',
-                            color:
-                              sectionGuardrailsData.ebitda === false
+                ),
+                profitOk === null
+                  ? undefined
+                  : profitOk
+                    ? `At or above ${GUARDRAIL_QUARTER_PCT_THRESHOLD}% of quarter target`
+                    : `Below ${GUARDRAIL_QUARTER_PCT_THRESHOLD}% of quarter target`,
+                profitOk,
+                profitPct != null ? (
+                  <GuardrailThresholdLinearBar
+                    value={profitPct}
+                    threshold={GUARDRAIL_QUARTER_PCT_THRESHOLD}
+                    inverted={false}
+                  />
+                ) : undefined,
+              )}
+              {guardrailTile(
+                'Cash-In',
+                cashInPct != null ? (
+                  <Stack
+                    spacing={0.5}
+                    sx={{ width: '100%', alignItems: 'flex-start' }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: { xs: '2.6rem', sm: '3rem' },
+                        fontWeight: 800,
+                        lineHeight: 1.1,
+                        letterSpacing: '-0.03em',
+                      }}
+                    >
+                      {Math.round(cashInPct)}%
+                    </Typography>
+                  </Stack>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    No quarter goal
+                  </Typography>
+                ),
+                cashInOk === null
+                  ? undefined
+                  : cashInOk
+                    ? `At or above ${GUARDRAIL_QUARTER_PCT_THRESHOLD}% of quarter target`
+                    : `Below ${GUARDRAIL_QUARTER_PCT_THRESHOLD}% of quarter target`,
+                cashInOk,
+                cashInPct != null ? (
+                  <GuardrailThresholdLinearBar
+                    value={cashInPct}
+                    threshold={GUARDRAIL_QUARTER_PCT_THRESHOLD}
+                    inverted={false}
+                  />
+                ) : undefined,
+              )}
+              {guardrailTile(
+                '60+ overdue',
+                sectionGuardrailsLoading ? (
+                  <CircularProgress size={28} />
+                ) : sectionGuardrailsData ? (
+                  isHistoricalQuarterView ? (
+                    <Box sx={{ textAlign: 'center', width: '100%', py: 0.5 }}>
+                      <Typography
+                        sx={{
+                          fontSize:
+                            sectionGuardrailsData.overdue_60_plus_ok === false
+                              ? { xs: '2.7rem', sm: '3rem' }
+                              : { xs: '2.45rem', sm: '2.8rem' },
+                          fontWeight: 800,
+                          lineHeight: 1,
+                          letterSpacing: '-0.02em',
+                          color:
+                            sectionGuardrailsData.overdue_60_plus_ok === true
+                              ? 'success.main'
+                              : sectionGuardrailsData.overdue_60_plus_ok ===
+                                  false
                                 ? 'error.main'
-                                : sectionGuardrailsData.ebitda === true
-                                  ? 'success.main'
-                                  : 'text.primary',
-                          }}
-                        >
-                          {sectionGuardrailsData.ebitda === false ? 'False' : 'True'}
-                        </Typography>
-                      </Box>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        —
+                                : 'text.primary',
+                        }}
+                      >
+                        {sectionGuardrailsData.overdue_60_plus_ok === true
+                          ? 'True'
+                          : 'False'}
                       </Typography>
-                    ),
-                    sectionGuardrailsLoading
+                    </Box>
+                  ) : typeof sectionGuardrailsData.percentage_of_total_invoice ===
+                    'number' ? (
+                    <Stack
+                      spacing={0.5}
+                      sx={{ width: '100%', alignItems: 'flex-start' }}
+                    >
+                      <Typography
+                        sx={{
+                          fontSize: { xs: '2.6rem', sm: '3rem' },
+                          fontWeight: 800,
+                          lineHeight: 1.1,
+                          letterSpacing: '-0.03em',
+                        }}
+                      >
+                        {sectionGuardrailsData.percentage_of_total_invoice.toFixed(
+                          1,
+                        )}
+                        %
+                      </Typography>
+                    </Stack>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      —
+                    </Typography>
+                  )
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    —
+                  </Typography>
+                ),
+                isHistoricalQuarterView && sectionGuardrailsData
+                  ? sectionGuardrailsData.overdue_60_plus_ok === true
+                    ? '60+ guardrail: True'
+                    : '60+ guardrail: False'
+                  : sectionGuardrailsData &&
+                      typeof sectionGuardrailsData.percentage_of_total_invoice ===
+                        'number'
+                    ? sectionGuardrailsData.percentage_of_total_invoice <=
+                      GUARDRAIL_60_INVOICE_PCT_THRESHOLD
+                      ? `60+ guardrail OK — at or below ${GUARDRAIL_60_INVOICE_PCT_THRESHOLD}% of invoice`
+                      : `Above ${GUARDRAIL_60_INVOICE_PCT_THRESHOLD}% — lower is better (line marks threshold)`
+                    : sectionGuardrailsLoading
                       ? 'Loading…'
-                      : sectionGuardrailsData
-                        ? sectionGuardrailsData.ebitda === false
-                          ? 'False is below the EBITDA guardrail'
-                          : sectionGuardrailsData.ebitda === true
-                            ? 'True meets the EBITDA guardrail'
-                            : undefined
-                        : undefined,
-                    sectionGuardrailsData == null
-                      ? null
+                      : '—',
+                isHistoricalQuarterView && sectionGuardrailsData
+                  ? sectionGuardrailsData.overdue_60_plus_ok === true
+                  : sectionGuardrailsData &&
+                      typeof sectionGuardrailsData.percentage_of_total_invoice ===
+                        'number'
+                    ? sectionGuardrailsData.percentage_of_total_invoice <=
+                      GUARDRAIL_60_INVOICE_PCT_THRESHOLD
+                    : null,
+                !isHistoricalQuarterView &&
+                  sectionGuardrailsData &&
+                  typeof sectionGuardrailsData.percentage_of_total_invoice ===
+                    'number' ? (
+                  <GuardrailThresholdLinearBar
+                    value={sectionGuardrailsData.percentage_of_total_invoice}
+                    threshold={GUARDRAIL_60_INVOICE_PCT_THRESHOLD}
+                    inverted
+                  />
+                ) : undefined,
+              )}
+              {guardrailTile(
+                'EBITDA',
+                sectionGuardrailsLoading ? (
+                  <CircularProgress size={28} />
+                ) : sectionGuardrailsData ? (
+                  <Box sx={{ textAlign: 'center', width: '100%', py: 0.5 }}>
+                    <Typography
+                      sx={{
+                        fontSize:
+                          sectionGuardrailsData.ebitda === false
+                            ? { xs: '2.7rem', sm: '3rem' }
+                            : { xs: '2.45rem', sm: '2.8rem' },
+                        fontWeight: 800,
+                        lineHeight: 1,
+                        letterSpacing: '-0.02em',
+                        color:
+                          sectionGuardrailsData.ebitda === false
+                            ? 'error.main'
+                            : sectionGuardrailsData.ebitda === true
+                              ? 'success.main'
+                              : 'text.primary',
+                      }}
+                    >
+                      {sectionGuardrailsData.ebitda === false
+                        ? 'False'
+                        : 'True'}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    —
+                  </Typography>
+                ),
+                sectionGuardrailsLoading
+                  ? 'Loading…'
+                  : sectionGuardrailsData
+                    ? sectionGuardrailsData.ebitda === false
+                      ? 'False is below the EBITDA guardrail'
                       : sectionGuardrailsData.ebitda === true
-                        ? true
-                        : sectionGuardrailsData.ebitda === false
-                          ? false
-                          : null
-                  )}
-                  {guardrailTile(
-                    'Fraud',
-                    sectionGuardrailsLoading ? (
-                      <CircularProgress size={28} />
-                    ) : sectionGuardrailsData ? (
-                      <Box sx={{ textAlign: 'center', width: '100%', py: 0.5 }}>
-                        <Typography
-                          sx={{
-                            fontSize:
-                              sectionGuardrailsData.fraud === false
-                                ? { xs: '2.7rem', sm: '3rem' }
-                                : { xs: '2.45rem', sm: '2.8rem' },
-                            fontWeight: 800,
-                            lineHeight: 1,
-                            letterSpacing: '-0.02em',
-                            color:
-                              sectionGuardrailsData.fraud === false
-                                ? 'success.main'
-                                : sectionGuardrailsData.fraud === true
-                                  ? 'error.main'
-                                  : 'text.primary',
-                          }}
-                        >
-                          {sectionGuardrailsData.fraud === false ? 'False' : 'True'}
-                        </Typography>
-                      </Box>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        —
-                      </Typography>
-                    ),
-                    sectionGuardrailsLoading
-                      ? 'Loading…'
-                      : sectionGuardrailsData
-                        ? sectionGuardrailsData.fraud === false
-                          ? 'No fraud flags'
-                          : sectionGuardrailsData.fraud === true
-                            ? 'Fraud flag raised'
-                            : undefined
-                        : undefined,
-                    sectionGuardrailsData == null
-                      ? null
-                      : sectionGuardrailsData.fraud === false
-                        ? true
-                        : sectionGuardrailsData.fraud === true
-                          ? false
-                          : null
-                  )}
-                </Box>
-              </Box>
+                        ? 'True meets the EBITDA guardrail'
+                        : undefined
+                    : undefined,
+                sectionGuardrailsData == null
+                  ? null
+                  : sectionGuardrailsData.ebitda === true
+                    ? true
+                    : sectionGuardrailsData.ebitda === false
+                      ? false
+                      : null,
+              )}
+              {guardrailTile(
+                'Fraud',
+                sectionGuardrailsLoading ? (
+                  <CircularProgress size={28} />
+                ) : sectionGuardrailsData ? (
+                  <Box sx={{ textAlign: 'center', width: '100%', py: 0.5 }}>
+                    <Typography
+                      sx={{
+                        fontSize:
+                          sectionGuardrailsData.fraud === false
+                            ? { xs: '2.7rem', sm: '3rem' }
+                            : { xs: '2.45rem', sm: '2.8rem' },
+                        fontWeight: 800,
+                        lineHeight: 1,
+                        letterSpacing: '-0.02em',
+                        color:
+                          sectionGuardrailsData.fraud === false
+                            ? 'success.main'
+                            : sectionGuardrailsData.fraud === true
+                              ? 'error.main'
+                              : 'text.primary',
+                      }}
+                    >
+                      {sectionGuardrailsData.fraud === false ? 'False' : 'True'}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    —
+                  </Typography>
+                ),
+                sectionGuardrailsLoading
+                  ? 'Loading…'
+                  : sectionGuardrailsData
+                    ? sectionGuardrailsData.fraud === false
+                      ? 'No fraud flags'
+                      : sectionGuardrailsData.fraud === true
+                        ? 'Fraud flag raised'
+                        : undefined
+                    : undefined,
+                sectionGuardrailsData == null
+                  ? null
+                  : sectionGuardrailsData.fraud === false
+                    ? true
+                    : sectionGuardrailsData.fraud === true
+                      ? false
+                      : null,
+              )}
+            </Box>
+          </Box>
         )}
         {!isHistoricalQuarterView && (
           <PeriodCard
@@ -1975,9 +2530,23 @@ export default function Dashboard() {
     <ProtectedRoute requiredRoles={getPageRoles('AUTHENTICATED_ONLY')}>
       <PageContainer title="Home" description="Current goal progress">
         <Box mt={3}>
-          <Box mb={3} sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2 }}>
+          <Box
+            mb={3}
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              justifyContent: 'space-between',
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              gap: 2,
+            }}
+          >
             <Box>
-              <Typography variant="h4" fontWeight="bold" color="primary" gutterBottom>
+              <Typography
+                variant="h4"
+                fontWeight="bold"
+                color="primary"
+                gutterBottom
+              >
                 Home
               </Typography>
               <Typography variant="body1" color="text.secondary">
@@ -1994,20 +2563,31 @@ export default function Dashboard() {
                       : 'Current goal progress.'}
               </Typography>
             </Box>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 2 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                gap: 2,
+              }}
+            >
               {API_BASE && (
                 <FormControl
                   size="small"
                   sx={{ minWidth: 200 }}
                   disabled={bonusQuarterFilterDisabled}
                 >
-                  <InputLabel id="bonus-quarter-label">Bonus quarter</InputLabel>
+                  <InputLabel id="bonus-quarter-label">
+                    Bonus quarter
+                  </InputLabel>
                   <Select
                     labelId="bonus-quarter-label"
                     label="Bonus quarter"
                     disabled={bonusQuarterFilterDisabled}
                     value={
-                      bonusQuarterSelection === 'current' ? 'current' : String(bonusQuarterSelection)
+                      bonusQuarterSelection === 'current'
+                        ? 'current'
+                        : String(bonusQuarterSelection)
                     }
                     onChange={(e: SelectChangeEvent<string>) => {
                       const v = e.target.value;
@@ -2040,7 +2620,9 @@ export default function Dashboard() {
           </Box>
 
           {error && (
-            <Typography color="error" sx={{ mb: 2 }}>{error}</Typography>
+            <Typography color="error" sx={{ mb: 2 }}>
+              {error}
+            </Typography>
           )}
 
           {loading ? (
@@ -2050,16 +2632,18 @@ export default function Dashboard() {
           ) : goals.length === 0 ? (
             <Card>
               <CardContent>
-                <Typography color="text.secondary">No current goal progress to show.</Typography>
+                <Typography color="text.secondary">
+                  No current goal progress to show.
+                </Typography>
               </CardContent>
             </Card>
           ) : (
             <Box display="flex" flexDirection="column">
               {/* National: only for admin */}
               {isAdmin && nationalGoals.length > 0 && (
-                <ScopeSection 
-                  scopeTitle={nationalScopeTitle} 
-                  titleColor="primary" 
+                <ScopeSection
+                  scopeTitle={nationalScopeTitle}
+                  titleColor="primary"
                   goals={nationalGoals}
                   isNational={true}
                   companyMultiplier={companyMultiplier}
@@ -2083,9 +2667,21 @@ export default function Dashboard() {
                 const agentBonus = bonusesByAgent[agentName];
                 if (isAdmin) {
                   return (
-                    <Accordion key={agentName} defaultExpanded={false} variant="outlined" sx={{ mb: 3, '&:before': { display: 'none' } }}>
-                      <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ '& .MuiAccordionSummary-content': { my: 1.5 } }}>
-                        <Typography variant="h6" fontWeight="bold" color="secondary">
+                    <Accordion
+                      key={agentName}
+                      defaultExpanded={false}
+                      variant="outlined"
+                      sx={{ mb: 3, '&:before': { display: 'none' } }}
+                    >
+                      <AccordionSummary
+                        expandIcon={<ExpandMoreIcon />}
+                        sx={{ '& .MuiAccordionSummary-content': { my: 1.5 } }}
+                      >
+                        <Typography
+                          variant="h6"
+                          fontWeight="bold"
+                          color="secondary"
+                        >
                           {agentName}
                         </Typography>
                       </AccordionSummary>

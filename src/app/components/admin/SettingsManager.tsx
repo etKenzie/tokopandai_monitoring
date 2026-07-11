@@ -37,7 +37,7 @@ import {
   Tabs,
   TextField,
   Tooltip,
-  Typography
+  Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { goalCashIn } from '../../(DashboardLayout)/distribusi/goalCashIn';
@@ -152,7 +152,9 @@ const MONTH_OPTIONS = [
   { value: '', label: 'All months' },
   ...Array.from({ length: 12 }, (_, i) => ({
     value: String(i + 1),
-    label: new Intl.DateTimeFormat('en', { month: 'long' }).format(new Date(2000, i)),
+    label: new Intl.DateTimeFormat('en', { month: 'long' }).format(
+      new Date(2000, i),
+    ),
   })),
 ];
 
@@ -180,13 +182,18 @@ const SettingsManager = () => {
   const [targetDate, setTargetDate] = useState('');
   const [goalProfitData, setGoalProfitData] = useState<AgentGoalProfits>({});
   const [goalCashInData, setGoalCashInData] = useState<AgentGoalCashIns>({});
-  const [editingEntry, setEditingEntry] = useState<GoalProfitEntry | null>(null);
-  const [editingCashInEntry, setEditingCashInEntry] = useState<GoalCashInEntry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<GoalProfitEntry | null>(
+    null,
+  );
+  const [editingCashInEntry, setEditingCashInEntry] =
+    useState<GoalCashInEntry | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [cashInDialogOpen, setCashInDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
-  const [expandedCashInAgents, setExpandedCashInAgents] = useState<Set<string>>(new Set());
+  const [expandedCashInAgents, setExpandedCashInAgents] = useState<Set<string>>(
+    new Set(),
+  );
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingCashIn, setIsEditingCashIn] = useState(false);
 
@@ -197,14 +204,24 @@ const SettingsManager = () => {
   const [goalsError, setGoalsError] = useState<string | null>(null);
   const [goalsScope, setGoalsScope] = useState<string>('');
   const [goalsAgentId, setGoalsAgentId] = useState<string>('');
-  const [goalsGoalType, setGoalsGoalType] = useState<string>(ALLOWED_GOAL_TYPES[0]);
+  const [goalsGoalType, setGoalsGoalType] = useState<string>(
+    ALLOWED_GOAL_TYPES[0],
+  );
   const [goalsMonth, setGoalsMonth] = useState<string>(''); // 1-12 or ''
-  const [goalsYear, setGoalsYear] = useState<string>(() => String(new Date().getFullYear()));
+  const [goalsYear, setGoalsYear] = useState<string>(() =>
+    String(new Date().getFullYear()),
+  );
   const [activeTab, setActiveTab] = useState(0); // 0 = Goals, 1 = Settings, 2 = Periods, 3 = Goal progress, 4 = Bonus, 5 = Guardrails
-  const [progressMonth, setProgressMonth] = useState<string>(() => String(new Date().getMonth() + 1));
-  const [progressYear, setProgressYear] = useState<string>(() => String(new Date().getFullYear()));
+  const [progressMonth, setProgressMonth] = useState<string>(() =>
+    String(new Date().getMonth() + 1),
+  );
+  const [progressYear, setProgressYear] = useState<string>(() =>
+    String(new Date().getFullYear()),
+  );
   const [progressGoalType, setProgressGoalType] = useState<string>('profit');
-  const [progressPeriods, setProgressPeriods] = useState<GoalPeriodFromApi[]>([]);
+  const [progressPeriods, setProgressPeriods] = useState<GoalPeriodFromApi[]>(
+    [],
+  );
   const [progressGoals, setProgressGoals] = useState<GoalProgressItem[]>([]);
   const [progressLoading, setProgressLoading] = useState(false);
   const [progressEditOpen, setProgressEditOpen] = useState(false);
@@ -213,8 +230,12 @@ const SettingsManager = () => {
   const [progressEditNotes, setProgressEditNotes] = useState('');
   const [progressEditSaving, setProgressEditSaving] = useState(false);
   const [periodsFromApi, setPeriodsFromApi] = useState<GoalPeriodFromApi[]>([]);
-  const [periodsPageYear, setPeriodsPageYear] = useState<string>(() => String(new Date().getFullYear()));
-  const [periodsPageList, setPeriodsPageList] = useState<GoalPeriodFromApi[]>([]);
+  const [periodsPageYear, setPeriodsPageYear] = useState<string>(() =>
+    String(new Date().getFullYear()),
+  );
+  const [periodsPageList, setPeriodsPageList] = useState<GoalPeriodFromApi[]>(
+    [],
+  );
   const [periodsPageLoading, setPeriodsPageLoading] = useState(false);
   const [periodEditOpen, setPeriodEditOpen] = useState(false);
   const [periodEditId, setPeriodEditId] = useState<number | null>(null);
@@ -231,7 +252,9 @@ const SettingsManager = () => {
     start_date: '',
     end_date: '',
   });
-  const [periodDeleteConfirmId, setPeriodDeleteConfirmId] = useState<number | null>(null);
+  const [periodDeleteConfirmId, setPeriodDeleteConfirmId] = useState<
+    number | null
+  >(null);
   const [periodDeleteSaving, setPeriodDeleteSaving] = useState(false);
   const [createGoalOpen, setCreateGoalOpen] = useState(false);
   const [createGoalSaving, setCreateGoalSaving] = useState(false);
@@ -257,18 +280,24 @@ const SettingsManager = () => {
     description: '',
     weight: 0.5,
   });
-  const [periodSelectAnchor, setPeriodSelectAnchor] = useState<null | HTMLElement>(null);
+  const [periodSelectAnchor, setPeriodSelectAnchor] =
+    useState<null | HTMLElement>(null);
   const [editGoalOpen, setEditGoalOpen] = useState(false);
   const [editGoalId, setEditGoalId] = useState<number | null>(null);
   const [editGoalTargetValue, setEditGoalTargetValue] = useState(0);
   const [editGoalDescription, setEditGoalDescription] = useState('');
   const [editGoalWeight, setEditGoalWeight] = useState<number | null>(null);
-  const [editGoalPeriodType, setEditGoalPeriodType] = useState<'month' | 'quarter' | 'year'>('month');
+  const [editGoalPeriodType, setEditGoalPeriodType] = useState<
+    'month' | 'quarter' | 'year'
+  >('month');
   const [editGoalSaving, setEditGoalSaving] = useState(false);
   const [editGoalError, setEditGoalError] = useState<string | null>(null);
-  const [editGoalDeleteConfirmOpen, setEditGoalDeleteConfirmOpen] = useState(false);
+  const [editGoalDeleteConfirmOpen, setEditGoalDeleteConfirmOpen] =
+    useState(false);
   const [editGoalDeleting, setEditGoalDeleting] = useState(false);
-  const [bonusYear, setBonusYear] = useState<string>(() => String(new Date().getFullYear()));
+  const [bonusYear, setBonusYear] = useState<string>(() =>
+    String(new Date().getFullYear()),
+  );
   const [bonuses, setBonuses] = useState<BonusFromApi[]>([]);
   const [bonusLoading, setBonusLoading] = useState(false);
   const [bonusPeriods, setBonusPeriods] = useState<GoalPeriodFromApi[]>([]);
@@ -282,34 +311,60 @@ const SettingsManager = () => {
   const [bonusCreateOpen, setBonusCreateOpen] = useState(false);
   const [bonusCreateSaving, setBonusCreateSaving] = useState(false);
   const [bonusCreateError, setBonusCreateError] = useState<string | null>(null);
-  const [bonusCreateForm, setBonusCreateForm] = useState({ agent_id: 0, period_id: 0, period_label: '', bonus_amount: 0 });
-  const [periodPickerFor, setPeriodPickerFor] = useState<'goal' | 'bonus' | null>(null);
-  const [guardrailsPeriodSelection, setGuardrailsPeriodSelection] = useState<'current' | number>('current');
-  const [guardrailsQuarterPeriods, setGuardrailsQuarterPeriods] = useState<GoalPeriodFromApi[]>([]);
-  const [guardrailsData, setGuardrailsData] = useState<GuardrailsFromApi | null>(null);
+  const [bonusCreateForm, setBonusCreateForm] = useState({
+    agent_id: 0,
+    period_id: 0,
+    period_label: '',
+    bonus_amount: 0,
+  });
+  const [periodPickerFor, setPeriodPickerFor] = useState<
+    'goal' | 'bonus' | null
+  >(null);
+  const [guardrailsPeriodSelection, setGuardrailsPeriodSelection] = useState<
+    'current' | number
+  >('current');
+  const [guardrailsQuarterPeriods, setGuardrailsQuarterPeriods] = useState<
+    GoalPeriodFromApi[]
+  >([]);
+  const [guardrailsData, setGuardrailsData] =
+    useState<GuardrailsFromApi | null>(null);
   const [guardrailsLoading, setGuardrailsLoading] = useState(false);
   const [guardrailsSaving, setGuardrailsSaving] = useState(false);
   const [guardrailsError, setGuardrailsError] = useState<string | null>(null);
-  const [guardrailsSaveMessage, setGuardrailsSaveMessage] = useState<string | null>(null);
+  const [guardrailsSaveMessage, setGuardrailsSaveMessage] = useState<
+    string | null
+  >(null);
   const [editEbitda, setEditEbitda] = useState(false);
   const [editFraud, setEditFraud] = useState(false);
   const [editOverdue60PlusOk, setEditOverdue60PlusOk] = useState(false);
 
   // Available agents from settings data
-  const availableAgents = settings?.goal_profit ? Object.keys(settings.goal_profit).sort() : [];
+  const availableAgents = settings?.goal_profit
+    ? Object.keys(settings.goal_profit).sort()
+    : [];
 
   // Available months/years
   const availableMonths = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   const availableYears = ['2024', '2025', '2026'];
 
   const getMonthYearOptions = () => {
     const options: string[] = [];
-    availableYears.forEach(year => {
-      availableMonths.forEach(month => {
+    availableYears.forEach((year) => {
+      availableMonths.forEach((month) => {
         options.push(`${month} ${year}`);
       });
     });
@@ -320,7 +375,9 @@ const SettingsManager = () => {
   const fetchGoalsFilters = useCallback(async (year: string) => {
     if (!API_BASE || !year) return;
     try {
-      const res = await fetch(`${API_BASE}/api/goals/filters?year=${encodeURIComponent(year)}`);
+      const res = await fetch(
+        `${API_BASE}/api-dashboard/goals/filters?year=${encodeURIComponent(year)}`,
+      );
       const json = await res.json();
       if (json?.data) {
         const agents = json.data.agents ?? [];
@@ -348,12 +405,13 @@ const SettingsManager = () => {
       if (goalsScope) params.set('scope', goalsScope);
       if (goalsAgentId) params.set('agent_id', goalsAgentId);
       if (goalsMonth) params.set('month', String(goalsMonth)); // integer 1-12
-      const url = `${API_BASE}/api/goals?${params.toString()}`;
+      const url = `${API_BASE}/api-dashboard/goals?${params.toString()}`;
       const res = await fetch(url);
       const json = await res.json();
       if (json?.data?.goals) setGoalsFromApi(json.data.goals);
       else setGoalsFromApi([]);
-      if (json?.code !== 200) setGoalsError(json?.message || 'Failed to load goals');
+      if (json?.code !== 200)
+        setGoalsError(json?.message || 'Failed to load goals');
     } catch (e) {
       setGoalsError('Failed to load goals');
       setGoalsFromApi([]);
@@ -365,7 +423,7 @@ const SettingsManager = () => {
   const fetchGoalsPeriods = useCallback(async () => {
     if (!API_BASE) return;
     try {
-      const res = await fetch(`${API_BASE}/api/goals/periods`);
+      const res = await fetch(`${API_BASE}/api-dashboard/goals/periods`);
       const json = await res.json();
       if (Array.isArray(json?.data)) setPeriodsFromApi(json.data);
       else setPeriodsFromApi([]);
@@ -390,7 +448,9 @@ const SettingsManager = () => {
     if (!API_BASE || !year) return;
     setPeriodsPageLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/goals/periods?year=${encodeURIComponent(year)}`);
+      const res = await fetch(
+        `${API_BASE}/api-dashboard/goals/periods?year=${encodeURIComponent(year)}`,
+      );
       const json = await res.json();
       if (Array.isArray(json?.data)) setPeriodsPageList(json.data);
       else setPeriodsPageList([]);
@@ -413,11 +473,17 @@ const SettingsManager = () => {
     if (!API_BASE || periodEditId == null) return;
     setPeriodEditSaving(true);
     try {
-      const res = await fetch(`${API_BASE}/api/goals/periods/${periodEditId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ start_date: periodEditStartDate, end_date: periodEditEndDate }),
-      });
+      const res = await fetch(
+        `${API_BASE}/api-dashboard/goals/periods/${periodEditId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            start_date: periodEditStartDate,
+            end_date: periodEditEndDate,
+          }),
+        },
+      );
       const json = await res.json();
       if (json?.code === 200) {
         setPeriodEditOpen(false);
@@ -436,12 +502,18 @@ const SettingsManager = () => {
       const body = {
         period_type: periodCreateForm.period_type,
         year: periodCreateForm.year,
-        quarter: periodCreateForm.period_type === 'year' ? null : (periodCreateForm.quarter || null),
-        month: periodCreateForm.period_type === 'month' ? (periodCreateForm.month ?? null) : null,
+        quarter:
+          periodCreateForm.period_type === 'year'
+            ? null
+            : periodCreateForm.quarter || null,
+        month:
+          periodCreateForm.period_type === 'month'
+            ? (periodCreateForm.month ?? null)
+            : null,
         start_date: periodCreateForm.start_date,
         end_date: periodCreateForm.end_date,
       };
-      const res = await fetch(`${API_BASE}/api/goals/periods`, {
+      const res = await fetch(`${API_BASE}/api-dashboard/goals/periods`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -449,7 +521,14 @@ const SettingsManager = () => {
       const json = await res.json();
       if (json?.code === 200) {
         setPeriodCreateOpen(false);
-        setPeriodCreateForm({ period_type: 'month', year: new Date().getFullYear(), quarter: 1, month: 1, start_date: '', end_date: '' });
+        setPeriodCreateForm({
+          period_type: 'month',
+          year: new Date().getFullYear(),
+          quarter: 1,
+          month: 1,
+          start_date: '',
+          end_date: '',
+        });
         fetchPeriodsPage(periodsPageYear);
         fetchGoalsPeriods();
       }
@@ -462,7 +541,10 @@ const SettingsManager = () => {
     if (!API_BASE || periodDeleteConfirmId == null) return;
     setPeriodDeleteSaving(true);
     try {
-      const res = await fetch(`${API_BASE}/api/goals/periods/${periodDeleteConfirmId}`, { method: 'DELETE' });
+      const res = await fetch(
+        `${API_BASE}/api-dashboard/goals/periods/${periodDeleteConfirmId}`,
+        { method: 'DELETE' },
+      );
       const json = await res.json();
       if (json?.code === 200) {
         setPeriodDeleteConfirmId(null);
@@ -477,14 +559,25 @@ const SettingsManager = () => {
   const formatDateDisplay = (iso: string) => {
     if (!iso) return '—';
     const d = new Date(iso);
-    return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(d);
+    return new Intl.DateTimeFormat('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }).format(d);
   };
 
   const formatPeriodPageTitle = (p: GoalPeriodFromApi) => {
     if (p.period_type === 'month' && p.month != null) {
-      return new Intl.DateTimeFormat('en', { month: 'long' }).format(new Date(2000, p.month - 1)) + ' ' + p.year;
+      return (
+        new Intl.DateTimeFormat('en', { month: 'long' }).format(
+          new Date(2000, p.month - 1),
+        ) +
+        ' ' +
+        p.year
+      );
     }
-    if (p.period_type === 'quarter' && p.quarter != null) return `Q${p.quarter} ${p.year}`;
+    if (p.period_type === 'quarter' && p.quarter != null)
+      return `Q${p.quarter} ${p.year}`;
     if (p.period_type === 'year') return `Year ${p.year}`;
     return `Period ${p.id}`;
   };
@@ -493,27 +586,32 @@ const SettingsManager = () => {
     if (activeTab === 2 && periodsPageYear) fetchPeriodsPage(periodsPageYear);
   }, [activeTab, periodsPageYear, fetchPeriodsPage]);
 
-  const fetchGoalProgress = useCallback(async (month: string, year: string, goalType: string) => {
-    if (!API_BASE || !month || !year || !goalType) return;
-    setProgressLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/api/goals/progress?month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}&goal_type=${encodeURIComponent(goalType)}`);
-      const json = await res.json();
-      if (json?.data) {
-        setProgressPeriods(json.data.periods ?? []);
-        setProgressGoals(json.data.goals ?? []);
-      } else {
+  const fetchGoalProgress = useCallback(
+    async (month: string, year: string, goalType: string) => {
+      if (!API_BASE || !month || !year || !goalType) return;
+      setProgressLoading(true);
+      try {
+        const res = await fetch(
+          `${API_BASE}/api-dashboard/goals/progress?month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}&goal_type=${encodeURIComponent(goalType)}`,
+        );
+        const json = await res.json();
+        if (json?.data) {
+          setProgressPeriods(json.data.periods ?? []);
+          setProgressGoals(json.data.goals ?? []);
+        } else {
+          setProgressPeriods([]);
+          setProgressGoals([]);
+        }
+      } catch (e) {
+        console.error('Failed to fetch goal progress:', e);
         setProgressPeriods([]);
         setProgressGoals([]);
+      } finally {
+        setProgressLoading(false);
       }
-    } catch (e) {
-      console.error('Failed to fetch goal progress:', e);
-      setProgressPeriods([]);
-      setProgressGoals([]);
-    } finally {
-      setProgressLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (activeTab === 3 && progressYear) fetchGoalsFilters(progressYear);
@@ -529,14 +627,23 @@ const SettingsManager = () => {
   }, [activeTab]);
 
   useEffect(() => {
-    if (activeTab === 3 && progressMonth && progressYear && progressGoalType) fetchGoalProgress(progressMonth, progressYear, progressGoalType);
-  }, [activeTab, progressMonth, progressYear, progressGoalType, fetchGoalProgress]);
+    if (activeTab === 3 && progressMonth && progressYear && progressGoalType)
+      fetchGoalProgress(progressMonth, progressYear, progressGoalType);
+  }, [
+    activeTab,
+    progressMonth,
+    progressYear,
+    progressGoalType,
+    fetchGoalProgress,
+  ]);
 
   const fetchBonuses = useCallback(async (year: string) => {
     if (!API_BASE || !year) return;
     setBonusLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/bonus?year=${encodeURIComponent(year)}`);
+      const res = await fetch(
+        `${API_BASE}/api-dashboard/bonus?year=${encodeURIComponent(year)}`,
+      );
       const json = await res.json();
       if (json?.data?.bonuses) {
         setBonuses(json.data.bonuses);
@@ -558,7 +665,9 @@ const SettingsManager = () => {
   const fetchBonusPeriods = useCallback(async (year: string) => {
     if (!API_BASE || !year) return;
     try {
-      const res = await fetch(`${API_BASE}/api/goals/periods?year=${encodeURIComponent(year)}`);
+      const res = await fetch(
+        `${API_BASE}/api-dashboard/goals/periods?year=${encodeURIComponent(year)}`,
+      );
       const json = await res.json();
       setBonusPeriods(json?.data?.periods ?? []);
     } catch (e) {
@@ -577,16 +686,22 @@ const SettingsManager = () => {
   const fetchGuardrailsQuarterPeriods = useCallback(async () => {
     if (!API_BASE) return;
     try {
-      const res = await fetch(`${API_BASE}/api/goals/periods`);
+      const res = await fetch(`${API_BASE}/api-dashboard/goals/periods`);
       const json = await res.json();
-      const all: GoalPeriodFromApi[] = Array.isArray(json?.data) ? json.data : [];
+      const all: GoalPeriodFromApi[] = Array.isArray(json?.data)
+        ? json.data
+        : [];
       const quarters = all
         .filter((p) => p.period_type === 'quarter')
-        .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
+        .sort(
+          (a, b) =>
+            new Date(b.start_date).getTime() - new Date(a.start_date).getTime(),
+        );
       setGuardrailsQuarterPeriods(quarters);
       setGuardrailsPeriodSelection((prev) => {
         if (prev === 'current') return 'current';
-        if (typeof prev === 'number' && quarters.some((q) => q.id === prev)) return prev;
+        if (typeof prev === 'number' && quarters.some((q) => q.id === prev))
+          return prev;
         return 'current';
       });
     } catch (e) {
@@ -607,7 +722,9 @@ const SettingsManager = () => {
       } else {
         params.set('period_id', String(guardrailsPeriodSelection));
       }
-      const res = await fetch(`${API_BASE}/api/goals/guardrails?${params.toString()}`);
+      const res = await fetch(
+        `${API_BASE}/api-dashboard/goals/guardrails?${params.toString()}`,
+      );
       const json = await res.json();
       if (json?.code === 200 && json?.data && typeof json.data === 'object') {
         const data = json.data as GuardrailsFromApi;
@@ -649,18 +766,23 @@ const SettingsManager = () => {
     setGuardrailsError(null);
     setGuardrailsSaveMessage(null);
     try {
-      const res = await fetch(`${API_BASE}/api/goals/guardrails/${periodId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ebitda: editEbitda,
-          fraud: editFraud,
-          overdue_60_plus_ok: editOverdue60PlusOk,
-        }),
-      });
+      const res = await fetch(
+        `${API_BASE}/api-dashboard/goals/guardrails/${periodId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ebitda: editEbitda,
+            fraud: editFraud,
+            overdue_60_plus_ok: editOverdue60PlusOk,
+          }),
+        },
+      );
       const json = await res.json();
       if (json?.code === 200) {
-        setGuardrailsSaveMessage(json?.message || 'Guardrails updated successfully.');
+        setGuardrailsSaveMessage(
+          json?.message || 'Guardrails updated successfully.',
+        );
         fetchGuardrails();
       } else {
         setGuardrailsError(json?.message || 'Failed to update guardrails.');
@@ -684,11 +806,14 @@ const SettingsManager = () => {
     setBonusEditSaving(true);
     setBonusEditError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/bonus/${bonusEditId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bonus_amount: Number(bonusEditAmount) || 0 }),
-      });
+      const res = await fetch(
+        `${API_BASE}/api-dashboard/bonus/${bonusEditId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bonus_amount: Number(bonusEditAmount) || 0 }),
+        },
+      );
       const json = await res.json();
       if (json?.code === 200) {
         setBonusEditOpen(false);
@@ -708,7 +833,10 @@ const SettingsManager = () => {
     setBonusDeleting(true);
     setBonusEditError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/bonus/${bonusEditId}`, { method: 'DELETE' });
+      const res = await fetch(
+        `${API_BASE}/api-dashboard/bonus/${bonusEditId}`,
+        { method: 'DELETE' },
+      );
       const json = await res.json();
       if (json?.code === 200) {
         setBonusDeleteConfirmOpen(false);
@@ -725,11 +853,12 @@ const SettingsManager = () => {
   };
 
   const handleBonusCreateSubmit = async () => {
-    if (!API_BASE || !bonusCreateForm.agent_id || !bonusCreateForm.period_id) return;
+    if (!API_BASE || !bonusCreateForm.agent_id || !bonusCreateForm.period_id)
+      return;
     setBonusCreateSaving(true);
     setBonusCreateError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/bonus`, {
+      const res = await fetch(`${API_BASE}/api-dashboard/bonus`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -754,7 +883,9 @@ const SettingsManager = () => {
 
   const progressPeriodById = useMemo(() => {
     const map: Record<number, GoalPeriodFromApi> = {};
-    progressPeriods.forEach((p) => { map[p.id] = p; });
+    progressPeriods.forEach((p) => {
+      map[p.id] = p;
+    });
     return map;
   }, [progressPeriods]);
 
@@ -772,11 +903,13 @@ const SettingsManager = () => {
     const byAgent = (list: GoalProgressItem[]) => {
       const national = list.filter((x) => x.scope === 'national');
       const agent: Record<string, GoalProgressItem[]> = {};
-      list.filter((x) => x.scope === 'agent').forEach((x) => {
-        const key = x.agent_name || x.agent_key || 'Unknown';
-        if (!agent[key]) agent[key] = [];
-        agent[key].push(x);
-      });
+      list
+        .filter((x) => x.scope === 'agent')
+        .forEach((x) => {
+          const key = x.agent_name || x.agent_key || 'Unknown';
+          if (!agent[key]) agent[key] = [];
+          agent[key].push(x);
+        });
       return { national, agent };
     };
     return {
@@ -798,14 +931,17 @@ const SettingsManager = () => {
     if (!API_BASE || progressEditId == null) return;
     setProgressEditSaving(true);
     try {
-      const res = await fetch(`${API_BASE}/api/goals/progress/${progressEditId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          actual_value: Number(progressEditActualValue) || 0,
-          notes: progressEditNotes || '',
-        }),
-      });
+      const res = await fetch(
+        `${API_BASE}/api-dashboard/goals/progress/${progressEditId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            actual_value: Number(progressEditActualValue) || 0,
+            notes: progressEditNotes || '',
+          }),
+        },
+      );
       const json = await res.json();
       if (json?.code === 200) {
         setProgressEditOpen(false);
@@ -832,29 +968,33 @@ const SettingsManager = () => {
 
   // Group goals: national and by agent; within each, split by period_type (year, quarter, month)
   const { nationalByType, agentByType } = useMemo(() => {
-    const national = goalsFromApi.filter(g => g.scope === 'national');
-    const agent = goalsFromApi.filter(g => g.scope === 'agent');
+    const national = goalsFromApi.filter((g) => g.scope === 'national');
+    const agent = goalsFromApi.filter((g) => g.scope === 'agent');
     const byType = (list: GoalFromApi[]) => {
       const year: GoalFromApi[] = [];
       const quarter: GoalFromApi[] = [];
       const month: GoalFromApi[] = [];
-      list.forEach(g => {
+      list.forEach((g) => {
         const t = g.period_type || 'month';
         if (t === 'year') year.push(g);
         else if (t === 'quarter') quarter.push(g);
         else month.push(g);
       });
       const sortByDateOrId = (x: GoalFromApi, y: GoalFromApi) =>
-        (x.period_start_date && y.period_start_date)
-          ? new Date(x.period_start_date).getTime() - new Date(y.period_start_date).getTime()
-          : (x.period_id - y.period_id);
+        x.period_start_date && y.period_start_date
+          ? new Date(x.period_start_date).getTime() -
+            new Date(y.period_start_date).getTime()
+          : x.period_id - y.period_id;
       quarter.sort(sortByDateOrId);
       month.sort(sortByDateOrId);
       return { year, quarter, month };
     };
     const nationalByType = byType(national);
-    const byAgent: Record<string, { year: GoalFromApi[]; quarter: GoalFromApi[]; month: GoalFromApi[] }> = {};
-    agent.forEach(g => {
+    const byAgent: Record<
+      string,
+      { year: GoalFromApi[]; quarter: GoalFromApi[]; month: GoalFromApi[] }
+    > = {};
+    agent.forEach((g) => {
       const key = g.agent_name || g.agent_key || 'Unknown';
       if (!byAgent[key]) byAgent[key] = { year: [], quarter: [], month: [] };
       const t = g.period_type || 'month';
@@ -863,10 +1003,11 @@ const SettingsManager = () => {
       else byAgent[key].month.push(g);
     });
     const sortByDateOrId = (a: GoalFromApi, b: GoalFromApi) =>
-      (a.period_start_date && b.period_start_date)
-        ? new Date(a.period_start_date).getTime() - new Date(b.period_start_date).getTime()
-        : (a.period_id - b.period_id);
-    Object.keys(byAgent).forEach(k => {
+      a.period_start_date && b.period_start_date
+        ? new Date(a.period_start_date).getTime() -
+          new Date(b.period_start_date).getTime()
+        : a.period_id - b.period_id;
+    Object.keys(byAgent).forEach((k) => {
       byAgent[k].quarter.sort(sortByDateOrId);
       byAgent[k].month.sort(sortByDateOrId);
     });
@@ -875,14 +1016,24 @@ const SettingsManager = () => {
 
   // Group periods by year, then by type (month, quarter, year) for create-goal period picker
   const periodsByYear = useMemo(() => {
-    const byYear: Record<number, { month: GoalPeriodFromApi[]; quarter: GoalPeriodFromApi[]; year: GoalPeriodFromApi[] }> = {};
+    const byYear: Record<
+      number,
+      {
+        month: GoalPeriodFromApi[];
+        quarter: GoalPeriodFromApi[];
+        year: GoalPeriodFromApi[];
+      }
+    > = {};
     periodsFromApi.forEach((p) => {
-      if (!byYear[p.year]) byYear[p.year] = { month: [], quarter: [], year: [] };
+      if (!byYear[p.year])
+        byYear[p.year] = { month: [], quarter: [], year: [] };
       if (p.period_type === 'month') byYear[p.year].month.push(p);
       else if (p.period_type === 'quarter') byYear[p.year].quarter.push(p);
       else if (p.period_type === 'year') byYear[p.year].year.push(p);
     });
-    const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
+    const years = Object.keys(byYear)
+      .map(Number)
+      .sort((a, b) => b - a);
     years.forEach((y) => {
       byYear[y].month.sort((a, b) => (a.month ?? 0) - (b.month ?? 0));
       byYear[y].quarter.sort((a, b) => (a.quarter ?? 0) - (b.quarter ?? 0));
@@ -892,15 +1043,26 @@ const SettingsManager = () => {
 
   const formatPeriodLabel = (p: GoalPeriodFromApi) => {
     if (p.period_type === 'month' && p.month) {
-      return new Intl.DateTimeFormat('en', { month: 'long' }).format(new Date(2000, p.month - 1)) + ' ' + p.year;
+      return (
+        new Intl.DateTimeFormat('en', { month: 'long' }).format(
+          new Date(2000, p.month - 1),
+        ) +
+        ' ' +
+        p.year
+      );
     }
-    if (p.period_type === 'quarter' && p.quarter) return `Q${p.quarter} ${p.year}`;
+    if (p.period_type === 'quarter' && p.quarter)
+      return `Q${p.quarter} ${p.year}`;
     if (p.period_type === 'year') return String(p.year);
     return `Period ${p.id}`;
   };
 
   const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(value);
 
   const isPlainNumberGoalType = (gt?: string | null) => {
     const t = (gt ?? '').trim().toLowerCase();
@@ -909,11 +1071,14 @@ const SettingsManager = () => {
 
   const formatGoalValue = (value: number, goalType?: string | null) =>
     isPlainNumberGoalType(goalType)
-      ? new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(value)
+      ? new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(
+          value,
+        )
       : formatCurrency(value);
 
   const getPeriodLabel = (g: GoalFromApi) =>
-    g.period ?? (g.period_start_date && g.period_end_date
+    g.period ??
+    (g.period_start_date && g.period_end_date
       ? `${new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(g.period_start_date))} – ${new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(g.period_end_date))}`
       : '—');
 
@@ -927,12 +1092,16 @@ const SettingsManager = () => {
       const q = Math.ceil((now.getMonth() + 1) / 3);
       return period === `Q${q} ${currentYear}`;
     }
-    const currentMonthLabel = new Intl.DateTimeFormat('en', { month: 'long' }).format(now) + ' ' + currentYear;
+    const currentMonthLabel =
+      new Intl.DateTimeFormat('en', { month: 'long' }).format(now) +
+      ' ' +
+      currentYear;
     return period === currentMonthLabel;
   };
 
   const handleCreateGoalSubmit = async () => {
-    if (!API_BASE || !createGoalForm.period_id || !createGoalForm.goal_type) return;
+    if (!API_BASE || !createGoalForm.period_id || !createGoalForm.goal_type)
+      return;
     setCreateGoalSaving(true);
     setCreateGoalError(null);
     try {
@@ -949,7 +1118,7 @@ const SettingsManager = () => {
           body.weight = Number(createGoalForm.weight) ?? 0.5;
         }
       }
-      const res = await fetch(`${API_BASE}/api/goals`, {
+      const res = await fetch(`${API_BASE}/api-dashboard/goals`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -983,7 +1152,7 @@ const SettingsManager = () => {
     setEditGoalSaving(true);
     setEditGoalError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/goals/${editGoalId}`, {
+      const res = await fetch(`${API_BASE}/api-dashboard/goals/${editGoalId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1012,7 +1181,9 @@ const SettingsManager = () => {
     setEditGoalDeleting(true);
     setEditGoalError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/goals/${editGoalId}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE}/api-dashboard/goals/${editGoalId}`, {
+        method: 'DELETE',
+      });
       const json = await res.json();
       if (json?.code === 200) {
         setEditGoalDeleteConfirmOpen(false);
@@ -1085,7 +1256,7 @@ const SettingsManager = () => {
 
   const handleTargetDateChange = async () => {
     if (!targetDate) return;
-    
+
     try {
       setSaving(true);
       await updateSetting('target_date', targetDate);
@@ -1100,17 +1271,21 @@ const SettingsManager = () => {
     setEditingEntry({
       agent: '',
       monthYear: '',
-      value: 0
+      value: 0,
     });
     setIsEditing(false);
     setDialogOpen(true);
   };
 
-  const handleEditGoalProfit = (agent: string, monthYear: string, value: number) => {
+  const handleEditGoalProfit = (
+    agent: string,
+    monthYear: string,
+    value: number,
+  ) => {
     setEditingEntry({
       agent,
       monthYear,
-      value
+      value,
     });
     setIsEditing(true);
     setDialogOpen(true);
@@ -1121,13 +1296,14 @@ const SettingsManager = () => {
 
     try {
       setSaving(true);
-      
+
       // Update local state
       const updatedData = { ...goalProfitData };
       if (!updatedData[editingEntry.agent]) {
         updatedData[editingEntry.agent] = {};
       }
-      updatedData[editingEntry.agent][editingEntry.monthYear] = editingEntry.value;
+      updatedData[editingEntry.agent][editingEntry.monthYear] =
+        editingEntry.value;
       setGoalProfitData(updatedData);
 
       await updateSetting('goal_profit', updatedData);
@@ -1143,7 +1319,7 @@ const SettingsManager = () => {
   const handleDeleteGoalProfit = async (agent: string, monthYear: string) => {
     try {
       setSaving(true);
-      
+
       const updatedData = { ...goalProfitData };
       if (updatedData[agent]) {
         delete updatedData[agent][monthYear];
@@ -1165,7 +1341,7 @@ const SettingsManager = () => {
   const handleDeleteAgent = async (agent: string) => {
     try {
       setSaving(true);
-      
+
       const updatedData = { ...goalProfitData };
       delete updatedData[agent];
       setGoalProfitData(updatedData);
@@ -1183,34 +1359,44 @@ const SettingsManager = () => {
     setEditingCashInEntry({
       agent: '',
       monthYear: '',
-      value: 0
+      value: 0,
     });
     setIsEditingCashIn(false);
     setCashInDialogOpen(true);
   };
 
-  const handleEditGoalCashIn = (agent: string, monthYear: string, value: number) => {
+  const handleEditGoalCashIn = (
+    agent: string,
+    monthYear: string,
+    value: number,
+  ) => {
     setEditingCashInEntry({
       agent,
       monthYear,
-      value
+      value,
     });
     setIsEditingCashIn(true);
     setCashInDialogOpen(true);
   };
 
   const handleSaveGoalCashIn = async () => {
-    if (!editingCashInEntry || !editingCashInEntry.agent || !editingCashInEntry.monthYear) return;
+    if (
+      !editingCashInEntry ||
+      !editingCashInEntry.agent ||
+      !editingCashInEntry.monthYear
+    )
+      return;
 
     try {
       setSaving(true);
-      
+
       // Update local state
       const updatedData = { ...goalCashInData };
       if (!updatedData[editingCashInEntry.agent]) {
         updatedData[editingCashInEntry.agent] = {};
       }
-      updatedData[editingCashInEntry.agent][editingCashInEntry.monthYear] = editingCashInEntry.value;
+      updatedData[editingCashInEntry.agent][editingCashInEntry.monthYear] =
+        editingCashInEntry.value;
       setGoalCashInData(updatedData);
 
       await updateSetting('goal_cash_in', updatedData);
@@ -1226,7 +1412,7 @@ const SettingsManager = () => {
   const handleDeleteGoalCashIn = async (agent: string, monthYear: string) => {
     try {
       setSaving(true);
-      
+
       const updatedData = { ...goalCashInData };
       if (updatedData[agent]) {
         delete updatedData[agent][monthYear];
@@ -1248,7 +1434,7 @@ const SettingsManager = () => {
   const handleDeleteCashInAgent = async (agent: string) => {
     try {
       setSaving(true);
-      
+
       const updatedData = { ...goalCashInData };
       delete updatedData[agent];
       setGoalCashInData(updatedData);
@@ -1264,13 +1450,13 @@ const SettingsManager = () => {
   const handleImportStaticCashInData = async () => {
     try {
       setSaving(true);
-      
+
       // Convert the static goalCashIn data to the format expected by settings
       const staticData: AgentGoalCashIns = {};
       Object.entries(goalCashIn).forEach(([agent, months]) => {
         staticData[agent] = Object.assign({}, months);
       });
-      
+
       setGoalCashInData(staticData);
       await updateSetting('goal_cash_in', staticData);
     } catch (err) {
@@ -1283,10 +1469,11 @@ const SettingsManager = () => {
   const handleImportStaticData = async () => {
     try {
       setSaving(true);
-      
+
       // Note: Static data import removed - only using settings from Supabase
-      console.log('Static data import is no longer available - using settings from Supabase only');
-      
+      console.log(
+        'Static data import is no longer available - using settings from Supabase only',
+      );
     } catch (err) {
       console.error('Failed to import static data:', err);
     } finally {
@@ -1315,14 +1502,18 @@ const SettingsManager = () => {
       <Typography variant="h4" gutterBottom>
         Application Settings
       </Typography>
-      
+
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
 
-      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+      <Tabs
+        value={activeTab}
+        onChange={(_, v) => setActiveTab(v)}
+        sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}
+      >
         <Tab label="Goals" />
         <Tab label="Settings (Target date)" />
         <Tab label="Periods" />
@@ -1361,7 +1552,15 @@ const SettingsManager = () => {
             }
           />
           <CardContent>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3, alignItems: 'center' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 2,
+                mb: 3,
+                alignItems: 'center',
+              }}
+            >
               <TextField
                 size="small"
                 label="Year"
@@ -1374,18 +1573,31 @@ const SettingsManager = () => {
                 size="small"
                 sx={{ minWidth: 200 }}
                 options={[...ALLOWED_GOAL_TYPES]}
-                value={ALLOWED_GOAL_TYPES.find((t) => goalTypesMatch(t, goalsGoalType)) ?? undefined}
+                value={
+                  ALLOWED_GOAL_TYPES.find((t) =>
+                    goalTypesMatch(t, goalsGoalType),
+                  ) ?? undefined
+                }
                 onChange={(_, v) => setGoalsGoalType(v ?? '')}
                 disableClearable
                 getOptionLabel={(o) => goalTypeDisplayLabel(o)}
                 isOptionEqualToValue={(a, b) => goalTypesMatch(a, b)}
                 renderInput={(params) => (
-                  <TextField {...params} label="Goal type" required placeholder="Search (e.g. 60+)" />
+                  <TextField
+                    {...params}
+                    label="Goal type"
+                    required
+                    placeholder="Search (e.g. 60+)"
+                  />
                 )}
               />
               <FormControl size="small" sx={{ minWidth: 120 }}>
                 <InputLabel>Scope</InputLabel>
-                <Select value={goalsScope} label="Scope" onChange={(e) => setGoalsScope(e.target.value)}>
+                <Select
+                  value={goalsScope}
+                  label="Scope"
+                  onChange={(e) => setGoalsScope(e.target.value)}
+                >
                   <MenuItem value="">All</MenuItem>
                   <MenuItem value="national">National</MenuItem>
                   <MenuItem value="agent">Agent</MenuItem>
@@ -1393,10 +1605,16 @@ const SettingsManager = () => {
               </FormControl>
               <FormControl size="small" sx={{ minWidth: 160 }}>
                 <InputLabel>Agent</InputLabel>
-                <Select value={goalsAgentId} label="Agent" onChange={(e) => setGoalsAgentId(e.target.value)}>
+                <Select
+                  value={goalsAgentId}
+                  label="Agent"
+                  onChange={(e) => setGoalsAgentId(e.target.value)}
+                >
                   <MenuItem value="">All agents</MenuItem>
                   {agentsFromApi.map((a) => (
-                    <MenuItem key={a.id} value={String(a.id)}>{a.name}</MenuItem>
+                    <MenuItem key={a.id} value={String(a.id)}>
+                      {a.name}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
@@ -1417,7 +1635,11 @@ const SettingsManager = () => {
             </Box>
 
             {goalsError && (
-              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setGoalsError(null)}>
+              <Alert
+                severity="error"
+                sx={{ mb: 2 }}
+                onClose={() => setGoalsError(null)}
+              >
                 {goalsError}
               </Alert>
             )}
@@ -1429,9 +1651,16 @@ const SettingsManager = () => {
             ) : (
               <Box display="flex" flexDirection="column" gap={3}>
                 {/* National — full width */}
-                {(nationalByType.year.length > 0 || nationalByType.quarter.length > 0 || nationalByType.month.length > 0) && (
+                {(nationalByType.year.length > 0 ||
+                  nationalByType.quarter.length > 0 ||
+                  nationalByType.month.length > 0) && (
                   <Box sx={{ width: '100%' }}>
-                    <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight="bold"
+                      color="primary"
+                      gutterBottom
+                    >
                       National
                     </Typography>
                     {/* Year: full-width block */}
@@ -1447,20 +1676,33 @@ const SettingsManager = () => {
                               px: 2,
                               borderRadius: 1,
                               border: '2px solid',
-                              borderColor: isCurrentGoal(g) ? 'primary.main' : 'divider',
-                              bgcolor: isCurrentGoal(g) ? 'primary.light' : 'action.hover',
+                              borderColor: isCurrentGoal(g)
+                                ? 'primary.main'
+                                : 'divider',
+                              bgcolor: isCurrentGoal(g)
+                                ? 'primary.light'
+                                : 'action.hover',
                               cursor: 'pointer',
                               '&:hover': { bgcolor: 'action.selected' },
                             }}
                           >
-                            <Typography variant="caption" color="text.secondary">
-                              YEAR {g.period || getPeriodLabel(g)} · {goalTypeDisplayLabel(g.goal_type)}
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              YEAR {g.period || getPeriodLabel(g)} ·{' '}
+                              {goalTypeDisplayLabel(g.goal_type)}
                             </Typography>
                             <Typography variant="h6" fontWeight="bold">
                               {formatGoalValue(g.target_value, g.goal_type)}
                             </Typography>
                             {g.weight != null && (
-                              <Typography variant="caption" color="text.secondary">Weight: {g.weight}</Typography>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                Weight: {g.weight}
+                              </Typography>
                             )}
                           </Box>
                         ))}
@@ -1468,7 +1710,14 @@ const SettingsManager = () => {
                     )}
                     {/* Quarter: 3 smaller blocks */}
                     {nationalByType.quarter.length > 0 && (
-                      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, mb: 2 }}>
+                      <Box
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(3, 1fr)',
+                          gap: 2,
+                          mb: 2,
+                        }}
+                      >
                         {nationalByType.quarter.slice(0, 3).map((g, idx) => (
                           <Box
                             key={g.id}
@@ -1478,20 +1727,34 @@ const SettingsManager = () => {
                               px: 2,
                               borderRadius: 1,
                               border: '2px solid',
-                              borderColor: isCurrentGoal(g) ? 'primary.main' : 'divider',
-                              bgcolor: isCurrentGoal(g) ? 'primary.light' : 'background.default',
+                              borderColor: isCurrentGoal(g)
+                                ? 'primary.main'
+                                : 'divider',
+                              bgcolor: isCurrentGoal(g)
+                                ? 'primary.light'
+                                : 'background.default',
                               cursor: 'pointer',
                               '&:hover': { bgcolor: 'action.selected' },
                             }}
                           >
-                            <Typography variant="caption" color="text.secondary">
-                              {getPeriodLabel(g)} · {goalTypeDisplayLabel(g.goal_type)}
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              {getPeriodLabel(g)} ·{' '}
+                              {goalTypeDisplayLabel(g.goal_type)}
                             </Typography>
                             <Typography variant="body1" fontWeight="bold">
                               {formatGoalValue(g.target_value, g.goal_type)}
                             </Typography>
                             {g.weight != null && (
-                              <Typography variant="caption" color="text.secondary" display="block">Weight: {g.weight}</Typography>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                display="block"
+                              >
+                                Weight: {g.weight}
+                              </Typography>
                             )}
                           </Box>
                         ))}
@@ -1499,7 +1762,13 @@ const SettingsManager = () => {
                     )}
                     {/* Month: table — Period first, highlight current */}
                     {nationalByType.month.length > 0 && (
-                      <TableContainer sx={{ border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                      <TableContainer
+                        sx={{
+                          border: 1,
+                          borderColor: 'divider',
+                          borderRadius: 1,
+                        }}
+                      >
                         <Table size="small">
                           <TableHead>
                             <TableRow sx={{ bgcolor: 'action.hover' }}>
@@ -1517,15 +1786,29 @@ const SettingsManager = () => {
                                 sx={{
                                   cursor: 'pointer',
                                   ...(isCurrentGoal(g)
-                                    ? { bgcolor: 'primary.light', borderLeft: '4px solid', borderColor: 'primary.main' }
+                                    ? {
+                                        bgcolor: 'primary.light',
+                                        borderLeft: '4px solid',
+                                        borderColor: 'primary.main',
+                                      }
                                     : {}),
                                 }}
                               >
-                                <TableCell sx={{ fontWeight: isCurrentGoal(g) ? 'bold' : 'normal' }}>
+                                <TableCell
+                                  sx={{
+                                    fontWeight: isCurrentGoal(g)
+                                      ? 'bold'
+                                      : 'normal',
+                                  }}
+                                >
                                   {getPeriodLabel(g)}
                                 </TableCell>
-                                <TableCell>{goalTypeDisplayLabel(g.goal_type)}</TableCell>
-                                <TableCell align="right">{formatGoalValue(g.target_value, g.goal_type)}</TableCell>
+                                <TableCell>
+                                  {goalTypeDisplayLabel(g.goal_type)}
+                                </TableCell>
+                                <TableCell align="right">
+                                  {formatGoalValue(g.target_value, g.goal_type)}
+                                </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -1537,7 +1820,13 @@ const SettingsManager = () => {
 
                 {/* Agents — 2 columns */}
                 {Object.keys(agentByType).length > 0 && (
-                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                      gap: 3,
+                    }}
+                  >
                     {Object.entries(agentByType).map(([agentName, types]) => (
                       <Box
                         key={agentName}
@@ -1549,7 +1838,12 @@ const SettingsManager = () => {
                           bgcolor: 'background.paper',
                         }}
                       >
-                        <Typography variant="subtitle2" fontWeight="bold" color="secondary" gutterBottom>
+                        <Typography
+                          variant="subtitle2"
+                          fontWeight="bold"
+                          color="secondary"
+                          gutterBottom
+                        >
                           {agentName}
                         </Typography>
                         {/* Year: full width of card */}
@@ -1565,20 +1859,33 @@ const SettingsManager = () => {
                                   px: 2,
                                   borderRadius: 1,
                                   border: '2px solid',
-                                  borderColor: isCurrentGoal(g) ? 'primary.main' : 'divider',
-                                  bgcolor: isCurrentGoal(g) ? 'primary.light' : 'action.hover',
+                                  borderColor: isCurrentGoal(g)
+                                    ? 'primary.main'
+                                    : 'divider',
+                                  bgcolor: isCurrentGoal(g)
+                                    ? 'primary.light'
+                                    : 'action.hover',
                                   cursor: 'pointer',
                                   '&:hover': { bgcolor: 'action.selected' },
                                 }}
                               >
-                                <Typography variant="caption" color="text.secondary">
-                                  YEAR {g.period || getPeriodLabel(g)} · {goalTypeDisplayLabel(g.goal_type)}
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  YEAR {g.period || getPeriodLabel(g)} ·{' '}
+                                  {goalTypeDisplayLabel(g.goal_type)}
                                 </Typography>
                                 <Typography variant="body1" fontWeight="bold">
                                   {formatGoalValue(g.target_value, g.goal_type)}
                                 </Typography>
                                 {g.weight != null && (
-                                  <Typography variant="caption" color="text.secondary">Weight: {g.weight}</Typography>
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                  >
+                                    Weight: {g.weight}
+                                  </Typography>
                                 )}
                               </Box>
                             ))}
@@ -1586,7 +1893,14 @@ const SettingsManager = () => {
                         )}
                         {/* Quarter: 3 blocks */}
                         {types.quarter.length > 0 && (
-                          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, mb: 2 }}>
+                          <Box
+                            sx={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(3, 1fr)',
+                              gap: 1,
+                              mb: 2,
+                            }}
+                          >
                             {types.quarter.slice(0, 3).map((g, idx) => (
                               <Box
                                 key={g.id}
@@ -1596,18 +1910,33 @@ const SettingsManager = () => {
                                   px: 1.5,
                                   borderRadius: 1,
                                   border: '2px solid',
-                                  borderColor: isCurrentGoal(g) ? 'primary.main' : 'divider',
-                                  bgcolor: isCurrentGoal(g) ? 'primary.light' : 'background.default',
+                                  borderColor: isCurrentGoal(g)
+                                    ? 'primary.main'
+                                    : 'divider',
+                                  bgcolor: isCurrentGoal(g)
+                                    ? 'primary.light'
+                                    : 'background.default',
                                   cursor: 'pointer',
                                   '&:hover': { bgcolor: 'action.selected' },
                                 }}
                               >
-                                <Typography variant="caption" color="text.secondary">{getPeriodLabel(g)}</Typography>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  {getPeriodLabel(g)}
+                                </Typography>
                                 <Typography variant="body2" fontWeight="bold">
                                   {formatGoalValue(g.target_value, g.goal_type)}
                                 </Typography>
                                 {g.weight != null && (
-                                  <Typography variant="caption" color="text.secondary" display="block">Weight: {g.weight}</Typography>
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    display="block"
+                                  >
+                                    Weight: {g.weight}
+                                  </Typography>
                                 )}
                               </Box>
                             ))}
@@ -1633,15 +1962,32 @@ const SettingsManager = () => {
                                     sx={{
                                       cursor: 'pointer',
                                       ...(isCurrentGoal(g)
-                                        ? { bgcolor: 'primary.light', borderLeft: '4px solid', borderColor: 'primary.main' }
+                                        ? {
+                                            bgcolor: 'primary.light',
+                                            borderLeft: '4px solid',
+                                            borderColor: 'primary.main',
+                                          }
                                         : {}),
                                     }}
                                   >
-                                    <TableCell sx={{ fontWeight: isCurrentGoal(g) ? 'bold' : 'normal' }}>
+                                    <TableCell
+                                      sx={{
+                                        fontWeight: isCurrentGoal(g)
+                                          ? 'bold'
+                                          : 'normal',
+                                      }}
+                                    >
                                       {getPeriodLabel(g)}
                                     </TableCell>
-                                    <TableCell>{goalTypeDisplayLabel(g.goal_type)}</TableCell>
-                                    <TableCell align="right">{formatGoalValue(g.target_value, g.goal_type)}</TableCell>
+                                    <TableCell>
+                                      {goalTypeDisplayLabel(g.goal_type)}
+                                    </TableCell>
+                                    <TableCell align="right">
+                                      {formatGoalValue(
+                                        g.target_value,
+                                        g.goal_type,
+                                      )}
+                                    </TableCell>
                                   </TableRow>
                                 ))}
                               </TableBody>
@@ -1658,7 +2004,8 @@ const SettingsManager = () => {
                   nationalByType.month.length === 0 &&
                   Object.keys(agentByType).length === 0 && (
                     <Typography variant="body2" color="text.secondary">
-                      No goals found. Adjust filters or ensure the goals API returns data for the selected year.
+                      No goals found. Adjust filters or ensure the goals API
+                      returns data for the selected year.
                     </Typography>
                   )}
               </Box>
@@ -1668,12 +2015,22 @@ const SettingsManager = () => {
       )}
 
       {/* Create new goal dialog */}
-      <Dialog open={createGoalOpen} onClose={() => setCreateGoalOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={createGoalOpen}
+        onClose={() => setCreateGoalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Create new goal</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} pt={1}>
             <Box>
-              <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+                gutterBottom
+              >
                 Period
               </Typography>
               <Button
@@ -1698,7 +2055,8 @@ const SettingsManager = () => {
                   setCreateGoalForm((prev) => ({
                     ...prev,
                     scope,
-                    weight: scope === 'national' ? undefined : (prev.weight ?? 0.5),
+                    weight:
+                      scope === 'national' ? undefined : (prev.weight ?? 0.5),
                   }));
                 }}
               >
@@ -1712,10 +2070,17 @@ const SettingsManager = () => {
                 <Select
                   value={createGoalForm.agent_name}
                   label="Agent"
-                  onChange={(e) => setCreateGoalForm((prev) => ({ ...prev, agent_name: e.target.value }))}
+                  onChange={(e) =>
+                    setCreateGoalForm((prev) => ({
+                      ...prev,
+                      agent_name: e.target.value,
+                    }))
+                  }
                 >
                   {agentsFromApi.map((a) => (
-                    <MenuItem key={a.id} value={a.name}>{a.name}</MenuItem>
+                    <MenuItem key={a.id} value={a.name}>
+                      {a.name}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
@@ -1724,20 +2089,35 @@ const SettingsManager = () => {
               size="small"
               fullWidth
               options={[...ALLOWED_GOAL_TYPES]}
-              value={ALLOWED_GOAL_TYPES.find((t) => goalTypesMatch(t, createGoalForm.goal_type)) ?? undefined}
-              onChange={(_, v) => setCreateGoalForm((prev) => ({ ...prev, goal_type: v ?? '' }))}
+              value={
+                ALLOWED_GOAL_TYPES.find((t) =>
+                  goalTypesMatch(t, createGoalForm.goal_type),
+                ) ?? undefined
+              }
+              onChange={(_, v) =>
+                setCreateGoalForm((prev) => ({ ...prev, goal_type: v ?? '' }))
+              }
               disableClearable
               getOptionLabel={(o) => goalTypeDisplayLabel(o)}
               isOptionEqualToValue={(a, b) => goalTypesMatch(a, b)}
               renderInput={(params) => (
-                <TextField {...params} label="Goal type" placeholder="Search (e.g. 60+)" />
+                <TextField
+                  {...params}
+                  label="Goal type"
+                  placeholder="Search (e.g. 60+)"
+                />
               )}
             />
             <TextField
               label="Target value"
               type="number"
               value={createGoalForm.target_value || ''}
-              onChange={(e) => setCreateGoalForm((prev) => ({ ...prev, target_value: Number(e.target.value) || 0 }))}
+              onChange={(e) =>
+                setCreateGoalForm((prev) => ({
+                  ...prev,
+                  target_value: Number(e.target.value) || 0,
+                }))
+              }
               fullWidth
               size="small"
               inputProps={{ min: 0, step: 'any' }}
@@ -1745,23 +2125,33 @@ const SettingsManager = () => {
             <TextField
               label="Description"
               value={createGoalForm.description}
-              onChange={(e) => setCreateGoalForm((prev) => ({ ...prev, description: e.target.value }))}
+              onChange={(e) =>
+                setCreateGoalForm((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
               fullWidth
               size="small"
             />
             {createGoalForm.scope === 'agent' &&
               createGoalForm.period_type &&
               createGoalForm.period_type !== 'month' && (
-              <TextField
-                label="Weight"
-                type="number"
-                value={createGoalForm.weight ?? 0.5}
-                onChange={(e) => setCreateGoalForm((prev) => ({ ...prev, weight: Number(e.target.value) || 0.5 }))}
-                fullWidth
-                size="small"
-                inputProps={{ min: 0, max: 1, step: 0.1 }}
-              />
-            )}
+                <TextField
+                  label="Weight"
+                  type="number"
+                  value={createGoalForm.weight ?? 0.5}
+                  onChange={(e) =>
+                    setCreateGoalForm((prev) => ({
+                      ...prev,
+                      weight: Number(e.target.value) || 0.5,
+                    }))
+                  }
+                  fullWidth
+                  size="small"
+                  inputProps={{ min: 0, max: 1, step: 0.1 }}
+                />
+              )}
             {createGoalError && (
               <Alert severity="error" onClose={() => setCreateGoalError(null)}>
                 {createGoalError}
@@ -1770,14 +2160,23 @@ const SettingsManager = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCreateGoalOpen(false)} startIcon={<Cancel />}>
+          <Button
+            onClick={() => setCreateGoalOpen(false)}
+            startIcon={<Cancel />}
+          >
             Cancel
           </Button>
           <Button
             variant="contained"
             onClick={handleCreateGoalSubmit}
-            disabled={createGoalSaving || !createGoalForm.period_id || !createGoalForm.goal_type}
-            startIcon={createGoalSaving ? <CircularProgress size={16} /> : <Save />}
+            disabled={
+              createGoalSaving ||
+              !createGoalForm.period_id ||
+              !createGoalForm.goal_type
+            }
+            startIcon={
+              createGoalSaving ? <CircularProgress size={16} /> : <Save />
+            }
           >
             Create
           </Button>
@@ -1785,7 +2184,12 @@ const SettingsManager = () => {
       </Dialog>
 
       {/* Edit goal dialog */}
-      <Dialog open={editGoalOpen} onClose={() => setEditGoalOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog
+        open={editGoalOpen}
+        onClose={() => setEditGoalOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
         <DialogTitle>Edit goal</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} pt={1}>
@@ -1793,7 +2197,9 @@ const SettingsManager = () => {
               label="Target value"
               type="number"
               value={editGoalTargetValue || ''}
-              onChange={(e) => setEditGoalTargetValue(Number(e.target.value) || 0)}
+              onChange={(e) =>
+                setEditGoalTargetValue(Number(e.target.value) || 0)
+              }
               fullWidth
               size="small"
               inputProps={{ min: 0, step: 'any' }}
@@ -1807,16 +2213,20 @@ const SettingsManager = () => {
               multiline
             />
             {editGoalPeriodType !== 'month' && (
-            <TextField
-              label="Weight"
-              type="number"
-              value={editGoalWeight ?? ''}
-              onChange={(e) => setEditGoalWeight(e.target.value === '' ? null : Number(e.target.value))}
-              fullWidth
-              size="small"
-              placeholder="Optional (e.g. 0.5)"
-              inputProps={{ min: 0, max: 1, step: 0.1 }}
-            />
+              <TextField
+                label="Weight"
+                type="number"
+                value={editGoalWeight ?? ''}
+                onChange={(e) =>
+                  setEditGoalWeight(
+                    e.target.value === '' ? null : Number(e.target.value),
+                  )
+                }
+                fullWidth
+                size="small"
+                placeholder="Optional (e.g. 0.5)"
+                inputProps={{ min: 0, max: 1, step: 0.1 }}
+              />
             )}
             {editGoalError && (
               <Alert severity="error" onClose={() => setEditGoalError(null)}>
@@ -1834,14 +2244,19 @@ const SettingsManager = () => {
             Delete
           </Button>
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button onClick={() => setEditGoalOpen(false)} startIcon={<Cancel />}>
+            <Button
+              onClick={() => setEditGoalOpen(false)}
+              startIcon={<Cancel />}
+            >
               Cancel
             </Button>
             <Button
               variant="contained"
               onClick={handleEditGoalSubmit}
               disabled={editGoalSaving}
-              startIcon={editGoalSaving ? <CircularProgress size={16} /> : <Save />}
+              startIcon={
+                editGoalSaving ? <CircularProgress size={16} /> : <Save />
+              }
             >
               Save
             </Button>
@@ -1858,15 +2273,24 @@ const SettingsManager = () => {
       >
         <DialogTitle>Delete goal?</DialogTitle>
         <DialogContent>
-          <Typography>Are you sure you want to delete this goal? This cannot be undone.</Typography>
+          <Typography>
+            Are you sure you want to delete this goal? This cannot be undone.
+          </Typography>
           {editGoalError && (
-            <Alert severity="error" sx={{ mt: 2 }} onClose={() => setEditGoalError(null)}>
+            <Alert
+              severity="error"
+              sx={{ mt: 2 }}
+              onClose={() => setEditGoalError(null)}
+            >
               {editGoalError}
             </Alert>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditGoalDeleteConfirmOpen(false)} disabled={editGoalDeleting}>
+          <Button
+            onClick={() => setEditGoalDeleteConfirmOpen(false)}
+            disabled={editGoalDeleting}
+          >
             Cancel
           </Button>
           <Button
@@ -1874,7 +2298,9 @@ const SettingsManager = () => {
             variant="contained"
             onClick={handleEditGoalDelete}
             disabled={editGoalDeleting}
-            startIcon={editGoalDeleting ? <CircularProgress size={16} /> : <Delete />}
+            startIcon={
+              editGoalDeleting ? <CircularProgress size={16} /> : <Delete />
+            }
           >
             {editGoalDeleting ? 'Deleting…' : 'Yes, delete'}
           </Button>
@@ -1884,7 +2310,10 @@ const SettingsManager = () => {
       <Menu
         anchorEl={periodSelectAnchor}
         open={Boolean(periodSelectAnchor)}
-        onClose={() => { setPeriodSelectAnchor(null); setPeriodPickerFor(null); }}
+        onClose={() => {
+          setPeriodSelectAnchor(null);
+          setPeriodPickerFor(null);
+        }}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         PaperProps={{ sx: { maxHeight: 400, minWidth: 420 } }}
@@ -1892,10 +2321,23 @@ const SettingsManager = () => {
         {periodsByYear.years.map((year) => {
           const row = periodsByYear.byYear[year];
           if (!row) return null;
-          const maxRows = Math.max(row.month.length, row.quarter.length, row.year.length, 1);
+          const maxRows = Math.max(
+            row.month.length,
+            row.quarter.length,
+            row.year.length,
+            1,
+          );
           return (
-            <Box key={year} sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
-              <Typography variant="subtitle2" fontWeight="bold" color="primary" gutterBottom>
+            <Box
+              key={year}
+              sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}
+            >
+              <Typography
+                variant="subtitle2"
+                fontWeight="bold"
+                color="primary"
+                gutterBottom
+              >
                 {year}
               </Typography>
               <Table size="small">
@@ -1916,7 +2358,11 @@ const SettingsManager = () => {
                             onClick={() => {
                               const p = row.month[i];
                               if (periodPickerFor === 'bonus') {
-                                setBonusCreateForm((prev) => ({ ...prev, period_id: p.id, period_label: formatPeriodLabel(p) }));
+                                setBonusCreateForm((prev) => ({
+                                  ...prev,
+                                  period_id: p.id,
+                                  period_label: formatPeriodLabel(p),
+                                }));
                               } else {
                                 setCreateGoalForm((prev) => ({
                                   ...prev,
@@ -1929,7 +2375,9 @@ const SettingsManager = () => {
                               setPeriodPickerFor(null);
                             }}
                           >
-                            <ListItemText primary={formatPeriodLabel(row.month[i])} />
+                            <ListItemText
+                              primary={formatPeriodLabel(row.month[i])}
+                            />
                           </MenuItem>
                         ) : null}
                       </TableCell>
@@ -1940,7 +2388,11 @@ const SettingsManager = () => {
                             onClick={() => {
                               const p = row.quarter[i];
                               if (periodPickerFor === 'bonus') {
-                                setBonusCreateForm((prev) => ({ ...prev, period_id: p.id, period_label: formatPeriodLabel(p) }));
+                                setBonusCreateForm((prev) => ({
+                                  ...prev,
+                                  period_id: p.id,
+                                  period_label: formatPeriodLabel(p),
+                                }));
                               } else {
                                 setCreateGoalForm((prev) => ({
                                   ...prev,
@@ -1953,7 +2405,9 @@ const SettingsManager = () => {
                               setPeriodPickerFor(null);
                             }}
                           >
-                            <ListItemText primary={formatPeriodLabel(row.quarter[i])} />
+                            <ListItemText
+                              primary={formatPeriodLabel(row.quarter[i])}
+                            />
                           </MenuItem>
                         ) : null}
                       </TableCell>
@@ -1964,7 +2418,11 @@ const SettingsManager = () => {
                             onClick={() => {
                               const p = row.year[i];
                               if (periodPickerFor === 'bonus') {
-                                setBonusCreateForm((prev) => ({ ...prev, period_id: p.id, period_label: formatPeriodLabel(p) }));
+                                setBonusCreateForm((prev) => ({
+                                  ...prev,
+                                  period_id: p.id,
+                                  period_label: formatPeriodLabel(p),
+                                }));
                               } else {
                                 setCreateGoalForm((prev) => ({
                                   ...prev,
@@ -1977,7 +2435,9 @@ const SettingsManager = () => {
                               setPeriodPickerFor(null);
                             }}
                           >
-                            <ListItemText primary={formatPeriodLabel(row.year[i])} />
+                            <ListItemText
+                              primary={formatPeriodLabel(row.year[i])}
+                            />
                           </MenuItem>
                         ) : null}
                       </TableCell>
@@ -1991,44 +2451,47 @@ const SettingsManager = () => {
       </Menu>
 
       {activeTab === 1 && (
-      <Grid container spacing={3}>
-        {/* Target Date Setting - first in Settings tab */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Card>
-            <CardHeader title="Target Date" />
-            <CardContent>
-              <Typography variant="body2" color="textSecondary" gutterBottom>
-                Set the target date for calculating days remaining in the sales overview.
-              </Typography>
-              <Box display="flex" gap={2} alignItems="center" mt={2}>
-                <TextField
-                  type="date"
-                  value={targetDate}
-                  onChange={(e) => setTargetDate(e.target.value)}
-                  size="small"
-                  fullWidth
-                />
-                <Button
-                  variant="contained"
-                  onClick={handleTargetDateChange}
-                  disabled={saving}
-                  startIcon={saving ? <CircularProgress size={16} /> : <Save />}
-                >
-                  Save
-                </Button>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+        <Grid container spacing={3}>
+          {/* Target Date Setting - first in Settings tab */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card>
+              <CardHeader title="Target Date" />
+              <CardContent>
+                <Typography variant="body2" color="textSecondary" gutterBottom>
+                  Set the target date for calculating days remaining in the
+                  sales overview.
+                </Typography>
+                <Box display="flex" gap={2} alignItems="center" mt={2}>
+                  <TextField
+                    type="date"
+                    value={targetDate}
+                    onChange={(e) => setTargetDate(e.target.value)}
+                    size="small"
+                    fullWidth
+                  />
+                  <Button
+                    variant="contained"
+                    onClick={handleTargetDateChange}
+                    disabled={saving}
+                    startIcon={
+                      saving ? <CircularProgress size={16} /> : <Save />
+                    }
+                  >
+                    Save
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
 
-        {/* Goal Profit Settings */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Card>
-            <CardHeader 
-              title="Goal Profit Targets"
-              action={
-                <Box display="flex" gap={1}>
-                  {/* <Button
+          {/* Goal Profit Settings */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card>
+              <CardHeader
+                title="Goal Profit Targets"
+                action={
+                  <Box display="flex" gap={1}>
+                    {/* <Button
                     variant="outlined"
                     onClick={handleImportStaticData}
                     disabled={saving}
@@ -2036,295 +2499,381 @@ const SettingsManager = () => {
                   >
                     Import Static Data
                   </Button> */}
-                  <Button
-                    variant="contained"
-                    startIcon={<Add />}
-                    onClick={handleAddGoalProfit}
-                    size="small"
-                  >
-                    Add Target
-                  </Button>
-                </Box>
-              }
-            />
-            <CardContent>
-              <Typography variant="body2" color="textSecondary" gutterBottom>
-                Set profit goals for different agents and months.
-              </Typography>
-              
-              <Box mt={2}>
-                {getAgentList().length === 0 ? (
-                  <Typography variant="body2" color="textSecondary">
-                    No goal profit targets set.
-                  </Typography>
-                ) : (
-                  <Box display="flex" flexDirection="column" gap={2}>
-                    {getAgentList().map((agent) => {
-                      const months = getAgentMonths(agent);
-                      const isExpanded = expandedAgents.has(agent);
-                      const totalValue = months.reduce((sum, [, value]) => sum + value, 0);
-                      
-                      return (
-                        <Box key={agent} border={1} borderColor="divider" borderRadius={1}>
-                          {/* Agent Header */}
-                          <Box
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="space-between"
-                            p={2}
-                            sx={{ 
-                              cursor: 'pointer',
-                              '&:hover': { backgroundColor: 'action.hover' }
-                            }}
-                            onClick={() => toggleAgentExpansion(agent)}
-                          >
-                            <Box display="flex" alignItems="center" gap={2}>
-                              <Typography variant="h6" fontWeight="bold">
-                                {agent}
-                              </Typography>
-                              <Chip 
-                                label={`${months.length} months`} 
-                                size="small" 
-                                color="primary" 
-                                variant="outlined"
-                              />
-                              <Typography variant="body2" color="textSecondary">
-                                Total: {new Intl.NumberFormat('en-US', {
-                                  style: 'currency',
-                                  currency: 'IDR',
-                                  minimumFractionDigits: 0,
-                                }).format(totalValue)}
-                              </Typography>
-                            </Box>
-                            <Box display="flex" alignItems="center" gap={1}>
-                              <Typography variant="body2" color="textSecondary">
-                                {isExpanded ? '▼' : '▶'}
-                              </Typography>
-                              <Tooltip title="Delete Agent">
-                                <IconButton
-                                  size="small"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteAgent(agent);
-                                  }}
-                                  color="error"
-                                >
-                                  <Delete />
-                                </IconButton>
-                              </Tooltip>
-                            </Box>
-                          </Box>
-                          
-                          {/* Agent Months */}
-                          {isExpanded && (
-                            <Box p={2} pt={0}>
-                              <Box display="flex" flexDirection="column" gap={1}>
-                                {months.map(([monthYear, value]) => (
-                                  <Box
-                                    key={`${agent}-${monthYear}`}
-                                    display="flex"
-                                    alignItems="center"
-                                    justifyContent="space-between"
-                                    p={1.5}
-                                    border={1}
-                                    borderColor="divider"
-                                    borderRadius={1}
-                                    sx={{ backgroundColor: 'background.paper' }}
-                                  >
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                      <Typography variant="body2" fontWeight="medium" minWidth="120px">
-                                        {monthYear}
-                                      </Typography>
-                                      <Typography variant="body2" fontWeight="bold">
-                                        {new Intl.NumberFormat('en-US', {
-                                          style: 'currency',
-                                          currency: 'IDR',
-                                          minimumFractionDigits: 0,
-                                        }).format(value)}
-                                      </Typography>
-                                    </Box>
-                                    <Box>
-                                      <Tooltip title="Edit">
-                                        <IconButton
-                                          size="small"
-                                          onClick={() => handleEditGoalProfit(agent, monthYear, value)}
-                                        >
-                                          <Edit />
-                                        </IconButton>
-                                      </Tooltip>
-                                      <Tooltip title="Delete">
-                                        <IconButton
-                                          size="small"
-                                          onClick={() => handleDeleteGoalProfit(agent, monthYear)}
-                                          color="error"
-                                        >
-                                          <Delete />
-                                        </IconButton>
-                                      </Tooltip>
-                                    </Box>
-                                  </Box>
-                                ))}
-                              </Box>
-                            </Box>
-                          )}
-                        </Box>
-                      );
-                    })}
+                    <Button
+                      variant="contained"
+                      startIcon={<Add />}
+                      onClick={handleAddGoalProfit}
+                      size="small"
+                    >
+                      Add Target
+                    </Button>
                   </Box>
-                )}
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+                }
+              />
+              <CardContent>
+                <Typography variant="body2" color="textSecondary" gutterBottom>
+                  Set profit goals for different agents and months.
+                </Typography>
 
-        {/* Goal Cash-In Settings - in Settings tab */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Card>
-            <CardHeader 
-              title="Cash In Goal Targets"
-              action={
-                <Box display="flex" gap={1}>
-                  <Button
-                    variant="contained"
-                    startIcon={<Add />}
-                    onClick={handleAddGoalCashIn}
-                    size="small"
-                  >
-                    Add Target
-                  </Button>
-                </Box>
-              }
-            />
-            <CardContent>
-              <Typography variant="body2" color="textSecondary" gutterBottom>
-                Set cash-in goals for different agents and months.
-              </Typography>
-              
-              <Box mt={2}>
-                {getCashInAgentList().length === 0 ? (
-                  <Typography variant="body2" color="textSecondary">
-                    No cash-in goal targets set.
-                  </Typography>
-                ) : (
-                  <Box display="flex" flexDirection="column" gap={2}>
-                    {getCashInAgentList().map((agent) => {
-                      const months = getCashInAgentMonths(agent);
-                      const isExpanded = expandedCashInAgents.has(agent);
-                      const totalValue = months.reduce((sum, [, value]) => sum + value, 0);
-                      
-                      return (
-                        <Box key={agent} border={1} borderColor="divider" borderRadius={1}>
-                          {/* Agent Header */}
+                <Box mt={2}>
+                  {getAgentList().length === 0 ? (
+                    <Typography variant="body2" color="textSecondary">
+                      No goal profit targets set.
+                    </Typography>
+                  ) : (
+                    <Box display="flex" flexDirection="column" gap={2}>
+                      {getAgentList().map((agent) => {
+                        const months = getAgentMonths(agent);
+                        const isExpanded = expandedAgents.has(agent);
+                        const totalValue = months.reduce(
+                          (sum, [, value]) => sum + value,
+                          0,
+                        );
+
+                        return (
                           <Box
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="space-between"
-                            p={2}
-                            sx={{ 
-                              cursor: 'pointer',
-                              '&:hover': { backgroundColor: 'action.hover' }
-                            }}
-                            onClick={() => toggleCashInAgentExpansion(agent)}
+                            key={agent}
+                            border={1}
+                            borderColor="divider"
+                            borderRadius={1}
                           >
-                            <Box display="flex" alignItems="center" gap={2}>
-                              <Typography variant="h6" fontWeight="bold">
-                                {agent}
-                              </Typography>
-                              <Chip 
-                                label={`${months.length} months`} 
-                                size="small" 
-                                color="secondary" 
-                                variant="outlined"
-                              />
-                              <Typography variant="body2" color="textSecondary">
-                                Total: {new Intl.NumberFormat('en-US', {
-                                  style: 'currency',
-                                  currency: 'IDR',
-                                  minimumFractionDigits: 0,
-                                }).format(totalValue)}
-                              </Typography>
-                            </Box>
-                            <Box display="flex" alignItems="center" gap={1}>
-                              <Typography variant="body2" color="textSecondary">
-                                {isExpanded ? '▼' : '▶'}
-                              </Typography>
-                              <Tooltip title="Delete Agent">
-                                <IconButton
+                            {/* Agent Header */}
+                            <Box
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="space-between"
+                              p={2}
+                              sx={{
+                                cursor: 'pointer',
+                                '&:hover': { backgroundColor: 'action.hover' },
+                              }}
+                              onClick={() => toggleAgentExpansion(agent)}
+                            >
+                              <Box display="flex" alignItems="center" gap={2}>
+                                <Typography variant="h6" fontWeight="bold">
+                                  {agent}
+                                </Typography>
+                                <Chip
+                                  label={`${months.length} months`}
                                   size="small"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteCashInAgent(agent);
-                                  }}
-                                  color="error"
+                                  color="primary"
+                                  variant="outlined"
+                                />
+                                <Typography
+                                  variant="body2"
+                                  color="textSecondary"
                                 >
-                                  <Delete />
-                                </IconButton>
-                              </Tooltip>
-                            </Box>
-                          </Box>
-                          
-                          {/* Agent Months */}
-                          {isExpanded && (
-                            <Box p={2} pt={0}>
-                              <Box display="flex" flexDirection="column" gap={1}>
-                                {months.map(([monthYear, value]) => (
-                                  <Box
-                                    key={`${agent}-${monthYear}`}
-                                    display="flex"
-                                    alignItems="center"
-                                    justifyContent="space-between"
-                                    p={1.5}
-                                    border={1}
-                                    borderColor="divider"
-                                    borderRadius={1}
-                                    sx={{ backgroundColor: 'background.paper' }}
+                                  Total:{' '}
+                                  {new Intl.NumberFormat('en-US', {
+                                    style: 'currency',
+                                    currency: 'IDR',
+                                    minimumFractionDigits: 0,
+                                  }).format(totalValue)}
+                                </Typography>
+                              </Box>
+                              <Box display="flex" alignItems="center" gap={1}>
+                                <Typography
+                                  variant="body2"
+                                  color="textSecondary"
+                                >
+                                  {isExpanded ? '▼' : '▶'}
+                                </Typography>
+                                <Tooltip title="Delete Agent">
+                                  <IconButton
+                                    size="small"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteAgent(agent);
+                                    }}
+                                    color="error"
                                   >
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                      <Typography variant="body2" fontWeight="medium" minWidth="120px">
-                                        {monthYear}
-                                      </Typography>
-                                      <Typography variant="body2" fontWeight="bold">
-                                        {new Intl.NumberFormat('en-US', {
-                                          style: 'currency',
-                                          currency: 'IDR',
-                                          minimumFractionDigits: 0,
-                                        }).format(value)}
-                                      </Typography>
-                                    </Box>
-                                    <Box>
-                                      <Tooltip title="Edit">
-                                        <IconButton
-                                          size="small"
-                                          onClick={() => handleEditGoalCashIn(agent, monthYear, value)}
-                                        >
-                                          <Edit />
-                                        </IconButton>
-                                      </Tooltip>
-                                      <Tooltip title="Delete">
-                                        <IconButton
-                                          size="small"
-                                          onClick={() => handleDeleteGoalCashIn(agent, monthYear)}
-                                          color="error"
-                                        >
-                                          <Delete />
-                                        </IconButton>
-                                      </Tooltip>
-                                    </Box>
-                                  </Box>
-                                ))}
+                                    <Delete />
+                                  </IconButton>
+                                </Tooltip>
                               </Box>
                             </Box>
-                          )}
-                        </Box>
-                      );
-                    })}
+
+                            {/* Agent Months */}
+                            {isExpanded && (
+                              <Box p={2} pt={0}>
+                                <Box
+                                  display="flex"
+                                  flexDirection="column"
+                                  gap={1}
+                                >
+                                  {months.map(([monthYear, value]) => (
+                                    <Box
+                                      key={`${agent}-${monthYear}`}
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="space-between"
+                                      p={1.5}
+                                      border={1}
+                                      borderColor="divider"
+                                      borderRadius={1}
+                                      sx={{
+                                        backgroundColor: 'background.paper',
+                                      }}
+                                    >
+                                      <Box
+                                        display="flex"
+                                        alignItems="center"
+                                        gap={2}
+                                      >
+                                        <Typography
+                                          variant="body2"
+                                          fontWeight="medium"
+                                          minWidth="120px"
+                                        >
+                                          {monthYear}
+                                        </Typography>
+                                        <Typography
+                                          variant="body2"
+                                          fontWeight="bold"
+                                        >
+                                          {new Intl.NumberFormat('en-US', {
+                                            style: 'currency',
+                                            currency: 'IDR',
+                                            minimumFractionDigits: 0,
+                                          }).format(value)}
+                                        </Typography>
+                                      </Box>
+                                      <Box>
+                                        <Tooltip title="Edit">
+                                          <IconButton
+                                            size="small"
+                                            onClick={() =>
+                                              handleEditGoalProfit(
+                                                agent,
+                                                monthYear,
+                                                value,
+                                              )
+                                            }
+                                          >
+                                            <Edit />
+                                          </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Delete">
+                                          <IconButton
+                                            size="small"
+                                            onClick={() =>
+                                              handleDeleteGoalProfit(
+                                                agent,
+                                                monthYear,
+                                              )
+                                            }
+                                            color="error"
+                                          >
+                                            <Delete />
+                                          </IconButton>
+                                        </Tooltip>
+                                      </Box>
+                                    </Box>
+                                  ))}
+                                </Box>
+                              </Box>
+                            )}
+                          </Box>
+                        );
+                      })}
+                    </Box>
+                  )}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Goal Cash-In Settings - in Settings tab */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card>
+              <CardHeader
+                title="Cash In Goal Targets"
+                action={
+                  <Box display="flex" gap={1}>
+                    <Button
+                      variant="contained"
+                      startIcon={<Add />}
+                      onClick={handleAddGoalCashIn}
+                      size="small"
+                    >
+                      Add Target
+                    </Button>
                   </Box>
-                )}
-              </Box>
-            </CardContent>
-          </Card>
+                }
+              />
+              <CardContent>
+                <Typography variant="body2" color="textSecondary" gutterBottom>
+                  Set cash-in goals for different agents and months.
+                </Typography>
+
+                <Box mt={2}>
+                  {getCashInAgentList().length === 0 ? (
+                    <Typography variant="body2" color="textSecondary">
+                      No cash-in goal targets set.
+                    </Typography>
+                  ) : (
+                    <Box display="flex" flexDirection="column" gap={2}>
+                      {getCashInAgentList().map((agent) => {
+                        const months = getCashInAgentMonths(agent);
+                        const isExpanded = expandedCashInAgents.has(agent);
+                        const totalValue = months.reduce(
+                          (sum, [, value]) => sum + value,
+                          0,
+                        );
+
+                        return (
+                          <Box
+                            key={agent}
+                            border={1}
+                            borderColor="divider"
+                            borderRadius={1}
+                          >
+                            {/* Agent Header */}
+                            <Box
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="space-between"
+                              p={2}
+                              sx={{
+                                cursor: 'pointer',
+                                '&:hover': { backgroundColor: 'action.hover' },
+                              }}
+                              onClick={() => toggleCashInAgentExpansion(agent)}
+                            >
+                              <Box display="flex" alignItems="center" gap={2}>
+                                <Typography variant="h6" fontWeight="bold">
+                                  {agent}
+                                </Typography>
+                                <Chip
+                                  label={`${months.length} months`}
+                                  size="small"
+                                  color="secondary"
+                                  variant="outlined"
+                                />
+                                <Typography
+                                  variant="body2"
+                                  color="textSecondary"
+                                >
+                                  Total:{' '}
+                                  {new Intl.NumberFormat('en-US', {
+                                    style: 'currency',
+                                    currency: 'IDR',
+                                    minimumFractionDigits: 0,
+                                  }).format(totalValue)}
+                                </Typography>
+                              </Box>
+                              <Box display="flex" alignItems="center" gap={1}>
+                                <Typography
+                                  variant="body2"
+                                  color="textSecondary"
+                                >
+                                  {isExpanded ? '▼' : '▶'}
+                                </Typography>
+                                <Tooltip title="Delete Agent">
+                                  <IconButton
+                                    size="small"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteCashInAgent(agent);
+                                    }}
+                                    color="error"
+                                  >
+                                    <Delete />
+                                  </IconButton>
+                                </Tooltip>
+                              </Box>
+                            </Box>
+
+                            {/* Agent Months */}
+                            {isExpanded && (
+                              <Box p={2} pt={0}>
+                                <Box
+                                  display="flex"
+                                  flexDirection="column"
+                                  gap={1}
+                                >
+                                  {months.map(([monthYear, value]) => (
+                                    <Box
+                                      key={`${agent}-${monthYear}`}
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="space-between"
+                                      p={1.5}
+                                      border={1}
+                                      borderColor="divider"
+                                      borderRadius={1}
+                                      sx={{
+                                        backgroundColor: 'background.paper',
+                                      }}
+                                    >
+                                      <Box
+                                        display="flex"
+                                        alignItems="center"
+                                        gap={2}
+                                      >
+                                        <Typography
+                                          variant="body2"
+                                          fontWeight="medium"
+                                          minWidth="120px"
+                                        >
+                                          {monthYear}
+                                        </Typography>
+                                        <Typography
+                                          variant="body2"
+                                          fontWeight="bold"
+                                        >
+                                          {new Intl.NumberFormat('en-US', {
+                                            style: 'currency',
+                                            currency: 'IDR',
+                                            minimumFractionDigits: 0,
+                                          }).format(value)}
+                                        </Typography>
+                                      </Box>
+                                      <Box>
+                                        <Tooltip title="Edit">
+                                          <IconButton
+                                            size="small"
+                                            onClick={() =>
+                                              handleEditGoalCashIn(
+                                                agent,
+                                                monthYear,
+                                                value,
+                                              )
+                                            }
+                                          >
+                                            <Edit />
+                                          </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Delete">
+                                          <IconButton
+                                            size="small"
+                                            onClick={() =>
+                                              handleDeleteGoalCashIn(
+                                                agent,
+                                                monthYear,
+                                              )
+                                            }
+                                            color="error"
+                                          >
+                                            <Delete />
+                                          </IconButton>
+                                        </Tooltip>
+                                      </Box>
+                                    </Box>
+                                  ))}
+                                </Box>
+                              </Box>
+                            )}
+                          </Box>
+                        );
+                      })}
+                    </Box>
+                  )}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
-      </Grid>
       )}
 
       {/* Periods tab */}
@@ -2334,13 +2883,25 @@ const SettingsManager = () => {
             title="Goal periods"
             subheader="View and manage goal periods. Filter by year, then edit dates or create new periods."
             action={
-              <Button variant="contained" startIcon={<Add />} onClick={() => setPeriodCreateOpen(true)}>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => setPeriodCreateOpen(true)}
+              >
                 Create period
               </Button>
             }
           />
           <CardContent>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3, alignItems: 'center' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 2,
+                mb: 3,
+                alignItems: 'center',
+              }}
+            >
               <TextField
                 size="small"
                 label="Year"
@@ -2359,10 +2920,17 @@ const SettingsManager = () => {
                 {/* Year: full-width tiles */}
                 {periodsByType.year.length > 0 && (
                   <Box>
-                    <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight="bold"
+                      color="primary"
+                      gutterBottom
+                    >
                       Year
                     </Typography>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Box
+                      sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+                    >
                       {periodsByType.year.map((p) => (
                         <Box
                           key={p.id}
@@ -2383,7 +2951,8 @@ const SettingsManager = () => {
                             {formatPeriodPageTitle(p)}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {formatDateDisplay(p.start_date)} – {formatDateDisplay(p.end_date)}
+                            {formatDateDisplay(p.start_date)} –{' '}
+                            {formatDateDisplay(p.end_date)}
                           </Typography>
                         </Box>
                       ))}
@@ -2394,10 +2963,25 @@ const SettingsManager = () => {
                 {/* Quarter: tiles in a row */}
                 {periodsByType.quarter.length > 0 && (
                   <Box>
-                    <Typography variant="subtitle1" fontWeight="bold" color="secondary" gutterBottom>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight="bold"
+                      color="secondary"
+                      gutterBottom
+                    >
                       Quarters
                     </Typography>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2 }}>
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: {
+                          xs: '1fr',
+                          sm: 'repeat(2, 1fr)',
+                          md: 'repeat(4, 1fr)',
+                        },
+                        gap: 2,
+                      }}
+                    >
                       {periodsByType.quarter.map((p) => (
                         <Box
                           key={p.id}
@@ -2417,7 +3001,8 @@ const SettingsManager = () => {
                             {formatPeriodPageTitle(p)}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {formatDateDisplay(p.start_date)} – {formatDateDisplay(p.end_date)}
+                            {formatDateDisplay(p.start_date)} –{' '}
+                            {formatDateDisplay(p.end_date)}
                           </Typography>
                         </Box>
                       ))}
@@ -2428,10 +3013,20 @@ const SettingsManager = () => {
                 {/* Month: table, click row to edit */}
                 {periodsByType.month.length > 0 && (
                   <Box>
-                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight="bold"
+                      gutterBottom
+                    >
                       Months
                     </Typography>
-                    <TableContainer sx={{ border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                    <TableContainer
+                      sx={{
+                        border: 1,
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                      }}
+                    >
                       <Table size="small">
                         <TableHead>
                           <TableRow sx={{ bgcolor: 'action.hover' }}>
@@ -2448,9 +3043,15 @@ const SettingsManager = () => {
                               onClick={() => openPeriodEdit(p)}
                               sx={{ cursor: 'pointer' }}
                             >
-                              <TableCell sx={{ fontWeight: 500 }}>{formatPeriodPageTitle(p)}</TableCell>
-                              <TableCell>{formatDateDisplay(p.start_date)}</TableCell>
-                              <TableCell>{formatDateDisplay(p.end_date)}</TableCell>
+                              <TableCell sx={{ fontWeight: 500 }}>
+                                {formatPeriodPageTitle(p)}
+                              </TableCell>
+                              <TableCell>
+                                {formatDateDisplay(p.start_date)}
+                              </TableCell>
+                              <TableCell>
+                                {formatDateDisplay(p.end_date)}
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -2477,7 +3078,15 @@ const SettingsManager = () => {
             subheader="View progress toward goals by month, year, and goal type. All filters are required."
           />
           <CardContent>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3, alignItems: 'center' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 2,
+                mb: 3,
+                alignItems: 'center',
+              }}
+            >
               <FormControl size="small" sx={{ minWidth: 140 }} required>
                 <InputLabel>Month</InputLabel>
                 <Select
@@ -2486,7 +3095,9 @@ const SettingsManager = () => {
                   onChange={(e) => setProgressMonth(e.target.value)}
                 >
                   {MONTH_OPTIONS.filter((o) => o.value).map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
@@ -2503,19 +3114,29 @@ const SettingsManager = () => {
                 size="small"
                 sx={{ minWidth: 220 }}
                 options={[...ALLOWED_GOAL_TYPES]}
-                value={ALLOWED_GOAL_TYPES.find((t) => goalTypesMatch(t, progressGoalType)) ?? undefined}
+                value={
+                  ALLOWED_GOAL_TYPES.find((t) =>
+                    goalTypesMatch(t, progressGoalType),
+                  ) ?? undefined
+                }
                 onChange={(_, v) => setProgressGoalType(v ?? '')}
                 disableClearable
                 getOptionLabel={(o) => goalTypeDisplayLabel(o)}
                 isOptionEqualToValue={(a, b) => goalTypesMatch(a, b)}
                 renderInput={(params) => (
-                  <TextField {...params} label="Goal type" required placeholder="Search (e.g. 60+)" />
+                  <TextField
+                    {...params}
+                    label="Goal type"
+                    required
+                    placeholder="Search (e.g. 60+)"
+                  />
                 )}
               />
             </Box>
             {!progressGoalType ? (
               <Typography variant="body2" color="text.secondary">
-                Select month, year, and goal type (all required) to view progress.
+                Select month, year, and goal type (all required) to view
+                progress.
               </Typography>
             ) : progressLoading ? (
               <Box display="flex" justifyContent="center" py={4}>
@@ -2524,10 +3145,19 @@ const SettingsManager = () => {
             ) : (
               <Box display="flex" flexDirection="column" gap={3}>
                 {(() => {
-                  const ProgressBlock = ({ g, periodLabel }: { g: GoalProgressItem; periodLabel: string }) => {
+                  const ProgressBlock = ({
+                    g,
+                    periodLabel,
+                  }: {
+                    g: GoalProgressItem;
+                    periodLabel: string;
+                  }) => {
                     const actual = g.progress?.actual_value ?? 0;
                     const target = g.target_value || 1;
-                    const pct = Math.min(100, Math.round((actual / target) * 100));
+                    const pct = Math.min(
+                      100,
+                      Math.round((actual / target) * 100),
+                    );
                     return (
                       <Box
                         onClick={() => openProgressEdit(g)}
@@ -2544,62 +3174,114 @@ const SettingsManager = () => {
                         <Typography variant="caption" color="text.secondary">
                           {periodLabel} · {goalTypeDisplayLabel(g.goal_type)}
                         </Typography>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5, gap: 2 }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            mt: 0.5,
+                            gap: 2,
+                          }}
+                        >
                           <Typography variant="body2">
-                            {formatGoalValue(actual, g.goal_type)} / {formatGoalValue(g.target_value, g.goal_type)}
+                            {formatGoalValue(actual, g.goal_type)} /{' '}
+                            {formatGoalValue(g.target_value, g.goal_type)}
                           </Typography>
                           <Typography variant="body2" fontWeight="bold">
                             {pct}%
                           </Typography>
                         </Box>
-                        <LinearProgress variant="determinate" value={pct} sx={{ mt: 1, height: 8, borderRadius: 1 }} />
+                        <LinearProgress
+                          variant="determinate"
+                          value={pct}
+                          sx={{ mt: 1, height: 8, borderRadius: 1 }}
+                        />
                       </Box>
                     );
                   };
                   const periodLabelFor = (g: GoalProgressItem) => {
                     const p = progressPeriodById[g.period_id];
-                    return p ? formatPeriodPageTitle(p) : `Period ${g.period_id}`;
+                    return p
+                      ? formatPeriodPageTitle(p)
+                      : `Period ${g.period_id}`;
                   };
                   return (
                     <>
                       {/* National — full width */}
-                      {(progressByType.year.national.length > 0 || progressByType.quarter.national.length > 0 || progressByType.month.national.length > 0) && (
+                      {(progressByType.year.national.length > 0 ||
+                        progressByType.quarter.national.length > 0 ||
+                        progressByType.month.national.length > 0) && (
                         <Box sx={{ width: '100%' }}>
-                          <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
+                          <Typography
+                            variant="subtitle1"
+                            fontWeight="bold"
+                            color="primary"
+                            gutterBottom
+                          >
                             National
                           </Typography>
                           {progressByType.year.national.length > 0 && (
                             <Box sx={{ mb: 2 }}>
                               {progressByType.year.national.map((g) => (
                                 <Box key={g.id} sx={{ mb: 2 }}>
-                                  <ProgressBlock g={g} periodLabel={periodLabelFor(g)} />
+                                  <ProgressBlock
+                                    g={g}
+                                    periodLabel={periodLabelFor(g)}
+                                  />
                                 </Box>
                               ))}
                             </Box>
                           )}
                           {progressByType.quarter.national.length > 0 && (
-                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2, mb: 2 }}>
+                            <Box
+                              sx={{
+                                display: 'grid',
+                                gridTemplateColumns: {
+                                  xs: '1fr',
+                                  sm: 'repeat(2, 1fr)',
+                                  md: 'repeat(3, 1fr)',
+                                },
+                                gap: 2,
+                                mb: 2,
+                              }}
+                            >
                               {progressByType.quarter.national.map((g) => (
-                                <ProgressBlock key={g.id} g={g} periodLabel={periodLabelFor(g)} />
+                                <ProgressBlock
+                                  key={g.id}
+                                  g={g}
+                                  periodLabel={periodLabelFor(g)}
+                                />
                               ))}
                             </Box>
                           )}
                           {progressByType.month.national.length > 0 && (
-                            <TableContainer sx={{ border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                            <TableContainer
+                              sx={{
+                                border: 1,
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                              }}
+                            >
                               <Table size="small">
                                 <TableHead>
                                   <TableRow sx={{ bgcolor: 'action.hover' }}>
                                     <TableCell>Period</TableCell>
                                     <TableCell>Goal type</TableCell>
                                     <TableCell>Actual / Target</TableCell>
-                                    <TableCell align="right">Progress</TableCell>
+                                    <TableCell align="right">
+                                      Progress
+                                    </TableCell>
                                   </TableRow>
                                 </TableHead>
                                 <TableBody>
                                   {progressByType.month.national.map((g) => {
-                                    const actual = g.progress?.actual_value ?? 0;
+                                    const actual =
+                                      g.progress?.actual_value ?? 0;
                                     const target = g.target_value || 1;
-                                    const pct = Math.min(100, Math.round((actual / target) * 100));
+                                    const pct = Math.min(
+                                      100,
+                                      Math.round((actual / target) * 100),
+                                    );
                                     return (
                                       <TableRow
                                         key={g.id}
@@ -2607,13 +3289,41 @@ const SettingsManager = () => {
                                         onClick={() => openProgressEdit(g)}
                                         sx={{ cursor: 'pointer' }}
                                       >
-                                        <TableCell>{periodLabelFor(g)}</TableCell>
-                                        <TableCell>{goalTypeDisplayLabel(g.goal_type)}</TableCell>
-                                        <TableCell>{formatGoalValue(actual, g.goal_type)} / {formatGoalValue(g.target_value, g.goal_type)}</TableCell>
+                                        <TableCell>
+                                          {periodLabelFor(g)}
+                                        </TableCell>
+                                        <TableCell>
+                                          {goalTypeDisplayLabel(g.goal_type)}
+                                        </TableCell>
+                                        <TableCell>
+                                          {formatGoalValue(actual, g.goal_type)}{' '}
+                                          /{' '}
+                                          {formatGoalValue(
+                                            g.target_value,
+                                            g.goal_type,
+                                          )}
+                                        </TableCell>
                                         <TableCell align="right">
-                                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'flex-end' }}>
-                                            <LinearProgress variant="determinate" value={pct} sx={{ width: 80, height: 6, borderRadius: 1 }} />
-                                            <Typography variant="body2">{pct}%</Typography>
+                                          <Box
+                                            sx={{
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              gap: 1,
+                                              justifyContent: 'flex-end',
+                                            }}
+                                          >
+                                            <LinearProgress
+                                              variant="determinate"
+                                              value={pct}
+                                              sx={{
+                                                width: 80,
+                                                height: 6,
+                                                borderRadius: 1,
+                                              }}
+                                            />
+                                            <Typography variant="body2">
+                                              {pct}%
+                                            </Typography>
                                           </Box>
                                         </TableCell>
                                       </TableRow>
@@ -2634,12 +3344,24 @@ const SettingsManager = () => {
                         ]);
                         if (agentNames.size === 0) return null;
                         return (
-                          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+                          <Box
+                            sx={{
+                              display: 'grid',
+                              gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                              gap: 3,
+                            }}
+                          >
                             {Array.from(agentNames).map((agentName) => {
-                              const yearList = progressByType.year.agent[agentName] ?? [];
-                              const quarterList = progressByType.quarter.agent[agentName] ?? [];
-                              const monthList = progressByType.month.agent[agentName] ?? [];
-                              const hasAny = yearList.length > 0 || quarterList.length > 0 || monthList.length > 0;
+                              const yearList =
+                                progressByType.year.agent[agentName] ?? [];
+                              const quarterList =
+                                progressByType.quarter.agent[agentName] ?? [];
+                              const monthList =
+                                progressByType.month.agent[agentName] ?? [];
+                              const hasAny =
+                                yearList.length > 0 ||
+                                quarterList.length > 0 ||
+                                monthList.length > 0;
                               if (!hasAny) return null;
                               return (
                                 <Box
@@ -2652,55 +3374,129 @@ const SettingsManager = () => {
                                     bgcolor: 'background.paper',
                                   }}
                                 >
-                                  <Typography variant="subtitle2" fontWeight="bold" color="secondary" gutterBottom>
+                                  <Typography
+                                    variant="subtitle2"
+                                    fontWeight="bold"
+                                    color="secondary"
+                                    gutterBottom
+                                  >
                                     {agentName}
                                   </Typography>
                                   {yearList.length > 0 && (
                                     <Box sx={{ mb: 2 }}>
                                       {yearList.map((g) => (
                                         <Box key={g.id} sx={{ mb: 2 }}>
-                                          <ProgressBlock g={g} periodLabel={periodLabelFor(g)} />
+                                          <ProgressBlock
+                                            g={g}
+                                            periodLabel={periodLabelFor(g)}
+                                          />
                                         </Box>
                                       ))}
                                     </Box>
                                   )}
                                   {quarterList.length > 0 && (
-                                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 2, mb: 2 }}>
+                                    <Box
+                                      sx={{
+                                        display: 'grid',
+                                        gridTemplateColumns:
+                                          'repeat(auto-fill, minmax(140px, 1fr))',
+                                        gap: 2,
+                                        mb: 2,
+                                      }}
+                                    >
                                       {quarterList.map((g) => (
-                                        <ProgressBlock key={g.id} g={g} periodLabel={periodLabelFor(g)} />
+                                        <ProgressBlock
+                                          key={g.id}
+                                          g={g}
+                                          periodLabel={periodLabelFor(g)}
+                                        />
                                       ))}
                                     </Box>
                                   )}
                                   {monthList.length > 0 && (
-                                    <TableContainer sx={{ border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                                    <TableContainer
+                                      sx={{
+                                        border: 1,
+                                        borderColor: 'divider',
+                                        borderRadius: 1,
+                                      }}
+                                    >
                                       <Table size="small">
                                         <TableHead>
-                                          <TableRow sx={{ bgcolor: 'action.hover' }}>
+                                          <TableRow
+                                            sx={{ bgcolor: 'action.hover' }}
+                                          >
                                             <TableCell>Period</TableCell>
                                             <TableCell>Goal type</TableCell>
-                                            <TableCell>Actual / Target</TableCell>
-                                            <TableCell align="right">Progress</TableCell>
+                                            <TableCell>
+                                              Actual / Target
+                                            </TableCell>
+                                            <TableCell align="right">
+                                              Progress
+                                            </TableCell>
                                           </TableRow>
                                         </TableHead>
                                         <TableBody>
                                           {monthList.map((g) => {
-                                            const actual = g.progress?.actual_value ?? 0;
+                                            const actual =
+                                              g.progress?.actual_value ?? 0;
                                             const target = g.target_value || 1;
-                                            const pct = Math.min(100, Math.round((actual / target) * 100));
+                                            const pct = Math.min(
+                                              100,
+                                              Math.round(
+                                                (actual / target) * 100,
+                                              ),
+                                            );
                                             return (
                                               <TableRow
                                                 key={g.id}
                                                 hover
-                                                onClick={() => openProgressEdit(g)}
+                                                onClick={() =>
+                                                  openProgressEdit(g)
+                                                }
                                                 sx={{ cursor: 'pointer' }}
                                               >
-                                                <TableCell>{periodLabelFor(g)}</TableCell>
-                                                <TableCell>{goalTypeDisplayLabel(g.goal_type)}</TableCell>
-                                                <TableCell>{formatGoalValue(actual, g.goal_type)} / {formatGoalValue(g.target_value, g.goal_type)}</TableCell>
+                                                <TableCell>
+                                                  {periodLabelFor(g)}
+                                                </TableCell>
+                                                <TableCell>
+                                                  {goalTypeDisplayLabel(
+                                                    g.goal_type,
+                                                  )}
+                                                </TableCell>
+                                                <TableCell>
+                                                  {formatGoalValue(
+                                                    actual,
+                                                    g.goal_type,
+                                                  )}{' '}
+                                                  /{' '}
+                                                  {formatGoalValue(
+                                                    g.target_value,
+                                                    g.goal_type,
+                                                  )}
+                                                </TableCell>
                                                 <TableCell align="right">
-                                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'flex-end' }}>
-                                                    <LinearProgress variant="determinate" value={pct} sx={{ width: 80, height: 6, borderRadius: 1 }} />
-                                                    <Typography variant="body2">{pct}%</Typography>
+                                                  <Box
+                                                    sx={{
+                                                      display: 'flex',
+                                                      alignItems: 'center',
+                                                      gap: 1,
+                                                      justifyContent:
+                                                        'flex-end',
+                                                    }}
+                                                  >
+                                                    <LinearProgress
+                                                      variant="determinate"
+                                                      value={pct}
+                                                      sx={{
+                                                        width: 80,
+                                                        height: 6,
+                                                        borderRadius: 1,
+                                                      }}
+                                                    />
+                                                    <Typography variant="body2">
+                                                      {pct}%
+                                                    </Typography>
                                                   </Box>
                                                 </TableCell>
                                               </TableRow>
@@ -2718,7 +3514,8 @@ const SettingsManager = () => {
                       })()}
                       {progressGoals.length === 0 && (
                         <Typography variant="body2" color="text.secondary">
-                          No goal progress for this month and year. Select another month/year or ensure goals exist.
+                          No goal progress for this month and year. Select
+                          another month/year or ensure goals exist.
                         </Typography>
                       )}
                     </>
@@ -2756,7 +3553,15 @@ const SettingsManager = () => {
             }
           />
           <CardContent>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3, alignItems: 'center' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 2,
+                mb: 3,
+                alignItems: 'center',
+              }}
+            >
               <TextField
                 size="small"
                 label="Year"
@@ -2782,10 +3587,17 @@ const SettingsManager = () => {
                   const agentNames = Object.keys(byAgent).sort();
                   return agentNames.length === 0 ? (
                     <Typography variant="body2" color="text.secondary">
-                      No bonuses for this year. Select another year or ensure the bonus API returns data.
+                      No bonuses for this year. Select another year or ensure
+                      the bonus API returns data.
                     </Typography>
                   ) : (
-                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                        gap: 2,
+                      }}
+                    >
                       {agentNames.map((agentName) => {
                         const list = byAgent[agentName];
                         const sorted = [...list].sort((a, b) => {
@@ -2796,14 +3608,29 @@ const SettingsManager = () => {
                           if (aIsYear && !bIsYear) return -1;
                           if (!aIsYear && bIsYear) return 1;
                           if (aIsYear && bIsYear) return 0;
-                          const aQ = parseInt(a.period_title.match(qMatch)?.[1] ?? '0', 10);
-                          const bQ = parseInt(b.period_title.match(qMatch)?.[1] ?? '0', 10);
+                          const aQ = parseInt(
+                            a.period_title.match(qMatch)?.[1] ?? '0',
+                            10,
+                          );
+                          const bQ = parseInt(
+                            b.period_title.match(qMatch)?.[1] ?? '0',
+                            10,
+                          );
                           return aQ - bQ;
                         });
                         return (
-                          <Card key={agentName} variant="outlined" sx={{ overflow: 'hidden' }}>
+                          <Card
+                            key={agentName}
+                            variant="outlined"
+                            sx={{ overflow: 'hidden' }}
+                          >
                             <CardContent sx={{ p: 0 }}>
-                              <Typography variant="subtitle1" fontWeight="bold" color="secondary" sx={{ px: 2, py: 1.5, bgcolor: 'action.hover' }}>
+                              <Typography
+                                variant="subtitle1"
+                                fontWeight="bold"
+                                color="secondary"
+                                sx={{ px: 2, py: 1.5, bgcolor: 'action.hover' }}
+                              >
                                 {agentName}
                               </Typography>
                               <TableContainer>
@@ -2823,7 +3650,9 @@ const SettingsManager = () => {
                                         sx={{ cursor: 'pointer' }}
                                       >
                                         <TableCell>{b.period_title}</TableCell>
-                                        <TableCell align="right">{formatCurrency(b.bonus_amount)}</TableCell>
+                                        <TableCell align="right">
+                                          {formatCurrency(b.bonus_amount)}
+                                        </TableCell>
                                       </TableRow>
                                     ))}
                                   </TableBody>
@@ -2850,7 +3679,15 @@ const SettingsManager = () => {
             subheader="View 60+ overdue metrics and edit guardrail flags (60+ OK, EBITDA, fraud) per quarter."
           />
           <CardContent>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3, alignItems: 'center' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 2,
+                mb: 3,
+                alignItems: 'center',
+              }}
+            >
               <FormControl size="small" sx={{ minWidth: 220 }}>
                 <InputLabel id="guardrails-period-label">Quarter</InputLabel>
                 <Select
@@ -2863,7 +3700,8 @@ const SettingsManager = () => {
                   }
                   onChange={(e) => {
                     const v = e.target.value;
-                    if (v === 'current') setGuardrailsPeriodSelection('current');
+                    if (v === 'current')
+                      setGuardrailsPeriodSelection('current');
                     else setGuardrailsPeriodSelection(Number(v));
                   }}
                 >
@@ -2883,12 +3721,20 @@ const SettingsManager = () => {
             </Box>
 
             {guardrailsError && (
-              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setGuardrailsError(null)}>
+              <Alert
+                severity="error"
+                sx={{ mb: 2 }}
+                onClose={() => setGuardrailsError(null)}
+              >
                 {guardrailsError}
               </Alert>
             )}
             {guardrailsSaveMessage && (
-              <Alert severity="success" sx={{ mb: 2 }} onClose={() => setGuardrailsSaveMessage(null)}>
+              <Alert
+                severity="success"
+                sx={{ mb: 2 }}
+                onClose={() => setGuardrailsSaveMessage(null)}
+              >
                 {guardrailsSaveMessage}
               </Alert>
             )}
@@ -2904,26 +3750,44 @@ const SettingsManager = () => {
             ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <Box>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    gutterBottom
+                  >
                     60+ overdue snapshot
                   </Typography>
                   <TableContainer>
                     <Table size="small" sx={{ maxWidth: 720 }}>
                       <TableBody>
                         <TableRow>
-                          <TableCell sx={{ fontWeight: 600, width: '40%' }}>Segment</TableCell>
-                          <TableCell>{guardrailsData.overdue_segment ?? '—'}</TableCell>
+                          <TableCell sx={{ fontWeight: 600, width: '40%' }}>
+                            Segment
+                          </TableCell>
+                          <TableCell>
+                            {guardrailsData.overdue_segment ?? '—'}
+                          </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell sx={{ fontWeight: 600 }}>Overdue status</TableCell>
-                          <TableCell>{guardrailsData.overdue_status ?? '—'}</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>
+                            Overdue status
+                          </TableCell>
+                          <TableCell>
+                            {guardrailsData.overdue_status ?? '—'}
+                          </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell sx={{ fontWeight: 600 }}>Order count</TableCell>
-                          <TableCell>{guardrailsData.order_count ?? '—'}</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>
+                            Order count
+                          </TableCell>
+                          <TableCell>
+                            {guardrailsData.order_count ?? '—'}
+                          </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell sx={{ fontWeight: 600 }}>Total invoice</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>
+                            Total invoice
+                          </TableCell>
                           <TableCell>
                             {guardrailsData.total_invoice != null
                               ? formatCurrency(guardrailsData.total_invoice)
@@ -2931,7 +3795,9 @@ const SettingsManager = () => {
                           </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell sx={{ fontWeight: 600 }}>% of total invoice</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>
+                            % of total invoice
+                          </TableCell>
                           <TableCell>
                             {guardrailsData.percentage_of_total_invoice != null
                               ? `${guardrailsData.percentage_of_total_invoice}%`
@@ -2939,17 +3805,23 @@ const SettingsManager = () => {
                           </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell sx={{ fontWeight: 600 }}>National goal progress</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>
+                            National goal progress
+                          </TableCell>
                           <TableCell>
-                            {guardrailsData.national_goal_progress_percentage != null
+                            {guardrailsData.national_goal_progress_percentage !=
+                            null
                               ? `${guardrailsData.national_goal_progress_percentage}%`
                               : '—'}
                           </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell sx={{ fontWeight: 600 }}>National cash-in progress</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>
+                            National cash-in progress
+                          </TableCell>
                           <TableCell>
-                            {guardrailsData.national_cash_in_progress_percentage != null
+                            {guardrailsData.national_cash_in_progress_percentage !=
+                            null
                               ? `${guardrailsData.national_cash_in_progress_percentage}%`
                               : '—'}
                           </TableCell>
@@ -2960,15 +3832,28 @@ const SettingsManager = () => {
                 </Box>
 
                 <Box>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    gutterBottom
+                  >
                     Editable guardrails
                   </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 1,
+                      mb: 2,
+                    }}
+                  >
                     <FormControlLabel
                       control={
                         <Switch
                           checked={editOverdue60PlusOk}
-                          onChange={(_, checked) => setEditOverdue60PlusOk(checked)}
+                          onChange={(_, checked) =>
+                            setEditOverdue60PlusOk(checked)
+                          }
                           color="primary"
                         />
                       }
@@ -3004,7 +3889,13 @@ const SettingsManager = () => {
                         ? guardrailsData?.period_id == null
                         : false)
                     }
-                    startIcon={guardrailsSaving ? <CircularProgress size={16} /> : <Save />}
+                    startIcon={
+                      guardrailsSaving ? (
+                        <CircularProgress size={16} />
+                      ) : (
+                        <Save />
+                      )
+                    }
                   >
                     Save guardrails
                   </Button>
@@ -3016,7 +3907,12 @@ const SettingsManager = () => {
       )}
 
       {/* Edit bonus dialog */}
-      <Dialog open={bonusEditOpen} onClose={() => setBonusEditOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog
+        open={bonusEditOpen}
+        onClose={() => setBonusEditOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
         <DialogTitle>Edit bonus</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} pt={1}>
@@ -3045,14 +3941,19 @@ const SettingsManager = () => {
             Delete
           </Button>
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button onClick={() => setBonusEditOpen(false)} startIcon={<Cancel />}>
+            <Button
+              onClick={() => setBonusEditOpen(false)}
+              startIcon={<Cancel />}
+            >
               Cancel
             </Button>
             <Button
               variant="contained"
               onClick={handleBonusEditSubmit}
               disabled={bonusEditSaving}
-              startIcon={bonusEditSaving ? <CircularProgress size={16} /> : <Save />}
+              startIcon={
+                bonusEditSaving ? <CircularProgress size={16} /> : <Save />
+              }
             >
               Save
             </Button>
@@ -3069,15 +3970,24 @@ const SettingsManager = () => {
       >
         <DialogTitle>Delete bonus?</DialogTitle>
         <DialogContent>
-          <Typography>Are you sure you want to delete this bonus? This cannot be undone.</Typography>
+          <Typography>
+            Are you sure you want to delete this bonus? This cannot be undone.
+          </Typography>
           {bonusEditError && (
-            <Alert severity="error" sx={{ mt: 2 }} onClose={() => setBonusEditError(null)}>
+            <Alert
+              severity="error"
+              sx={{ mt: 2 }}
+              onClose={() => setBonusEditError(null)}
+            >
               {bonusEditError}
             </Alert>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setBonusDeleteConfirmOpen(false)} disabled={bonusDeleting}>
+          <Button
+            onClick={() => setBonusDeleteConfirmOpen(false)}
+            disabled={bonusDeleting}
+          >
             Cancel
           </Button>
           <Button
@@ -3085,7 +3995,9 @@ const SettingsManager = () => {
             variant="contained"
             onClick={handleBonusDelete}
             disabled={bonusDeleting}
-            startIcon={bonusDeleting ? <CircularProgress size={16} /> : <Delete />}
+            startIcon={
+              bonusDeleting ? <CircularProgress size={16} /> : <Delete />
+            }
           >
             {bonusDeleting ? 'Deleting…' : 'Yes, delete'}
           </Button>
@@ -3093,7 +4005,12 @@ const SettingsManager = () => {
       </Dialog>
 
       {/* Create bonus dialog */}
-      <Dialog open={bonusCreateOpen} onClose={() => setBonusCreateOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog
+        open={bonusCreateOpen}
+        onClose={() => setBonusCreateOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
         <DialogTitle>Create new bonus</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} pt={1}>
@@ -3102,15 +4019,27 @@ const SettingsManager = () => {
               <Select
                 value={bonusCreateForm.agent_id || ''}
                 label="Agent"
-                onChange={(e) => setBonusCreateForm((prev) => ({ ...prev, agent_id: Number(e.target.value) }))}
+                onChange={(e) =>
+                  setBonusCreateForm((prev) => ({
+                    ...prev,
+                    agent_id: Number(e.target.value),
+                  }))
+                }
               >
                 {agentsFromApi.map((a) => (
-                  <MenuItem key={a.id} value={a.id}>{a.name}</MenuItem>
+                  <MenuItem key={a.id} value={a.id}>
+                    {a.name}
+                  </MenuItem>
                 ))}
               </Select>
             </FormControl>
             <Box>
-              <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+                gutterBottom
+              >
                 Period
               </Typography>
               <Button
@@ -3129,7 +4058,12 @@ const SettingsManager = () => {
               label="Bonus amount"
               type="number"
               value={bonusCreateForm.bonus_amount || ''}
-              onChange={(e) => setBonusCreateForm((prev) => ({ ...prev, bonus_amount: Number(e.target.value) || 0 }))}
+              onChange={(e) =>
+                setBonusCreateForm((prev) => ({
+                  ...prev,
+                  bonus_amount: Number(e.target.value) || 0,
+                }))
+              }
               fullWidth
               size="small"
               inputProps={{ min: 0 }}
@@ -3146,8 +4080,14 @@ const SettingsManager = () => {
           <Button
             variant="contained"
             onClick={handleBonusCreateSubmit}
-            disabled={bonusCreateSaving || !bonusCreateForm.agent_id || !bonusCreateForm.period_id}
-            startIcon={bonusCreateSaving ? <CircularProgress size={16} /> : <Save />}
+            disabled={
+              bonusCreateSaving ||
+              !bonusCreateForm.agent_id ||
+              !bonusCreateForm.period_id
+            }
+            startIcon={
+              bonusCreateSaving ? <CircularProgress size={16} /> : <Save />
+            }
           >
             Create
           </Button>
@@ -3155,7 +4095,12 @@ const SettingsManager = () => {
       </Dialog>
 
       {/* Edit progress dialog */}
-      <Dialog open={progressEditOpen} onClose={() => setProgressEditOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog
+        open={progressEditOpen}
+        onClose={() => setProgressEditOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
         <DialogTitle>Edit progress</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} pt={1}>
@@ -3163,7 +4108,9 @@ const SettingsManager = () => {
               label="Actual value"
               type="number"
               value={progressEditActualValue || ''}
-              onChange={(e) => setProgressEditActualValue(Number(e.target.value) || 0)}
+              onChange={(e) =>
+                setProgressEditActualValue(Number(e.target.value) || 0)
+              }
               fullWidth
               size="small"
               inputProps={{ min: 0 }}
@@ -3181,14 +4128,26 @@ const SettingsManager = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setProgressEditOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleProgressEditSubmit} disabled={progressEditSaving} startIcon={progressEditSaving ? <CircularProgress size={16} /> : <Save />}>
+          <Button
+            variant="contained"
+            onClick={handleProgressEditSubmit}
+            disabled={progressEditSaving}
+            startIcon={
+              progressEditSaving ? <CircularProgress size={16} /> : <Save />
+            }
+          >
             Save
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Edit period dialog */}
-      <Dialog open={periodEditOpen} onClose={() => setPeriodEditOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog
+        open={periodEditOpen}
+        onClose={() => setPeriodEditOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
         <DialogTitle>Edit period dates</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} pt={1}>
@@ -3225,7 +4184,14 @@ const SettingsManager = () => {
           </Button>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button onClick={() => setPeriodEditOpen(false)}>Cancel</Button>
-            <Button variant="contained" onClick={handlePeriodEditSubmit} disabled={periodEditSaving} startIcon={periodEditSaving ? <CircularProgress size={16} /> : <Save />}>
+            <Button
+              variant="contained"
+              onClick={handlePeriodEditSubmit}
+              disabled={periodEditSaving}
+              startIcon={
+                periodEditSaving ? <CircularProgress size={16} /> : <Save />
+              }
+            >
               Save
             </Button>
           </Box>
@@ -3233,7 +4199,12 @@ const SettingsManager = () => {
       </Dialog>
 
       {/* Create period dialog */}
-      <Dialog open={periodCreateOpen} onClose={() => setPeriodCreateOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog
+        open={periodCreateOpen}
+        onClose={() => setPeriodCreateOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
         <DialogTitle>Create new period</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} pt={1}>
@@ -3242,7 +4213,12 @@ const SettingsManager = () => {
               <Select
                 value={periodCreateForm.period_type}
                 label="Period type"
-                onChange={(e) => setPeriodCreateForm((prev) => ({ ...prev, period_type: e.target.value as 'month' | 'quarter' | 'year' }))}
+                onChange={(e) =>
+                  setPeriodCreateForm((prev) => ({
+                    ...prev,
+                    period_type: e.target.value as 'month' | 'quarter' | 'year',
+                  }))
+                }
               >
                 <MenuItem value="month">month</MenuItem>
                 <MenuItem value="quarter">quarter</MenuItem>
@@ -3253,16 +4229,28 @@ const SettingsManager = () => {
               label="Year"
               type="number"
               value={periodCreateForm.year || ''}
-              onChange={(e) => setPeriodCreateForm((prev) => ({ ...prev, year: parseInt(e.target.value, 10) || new Date().getFullYear() }))}
+              onChange={(e) =>
+                setPeriodCreateForm((prev) => ({
+                  ...prev,
+                  year:
+                    parseInt(e.target.value, 10) || new Date().getFullYear(),
+                }))
+              }
               fullWidth
               size="small"
             />
-            {(periodCreateForm.period_type === 'month' || periodCreateForm.period_type === 'quarter') && (
+            {(periodCreateForm.period_type === 'month' ||
+              periodCreateForm.period_type === 'quarter') && (
               <TextField
                 label="Quarter (1-4)"
                 type="number"
                 value={periodCreateForm.quarter || ''}
-                onChange={(e) => setPeriodCreateForm((prev) => ({ ...prev, quarter: parseInt(e.target.value, 10) || 1 }))}
+                onChange={(e) =>
+                  setPeriodCreateForm((prev) => ({
+                    ...prev,
+                    quarter: parseInt(e.target.value, 10) || 1,
+                  }))
+                }
                 fullWidth
                 size="small"
                 inputProps={{ min: 1, max: 4 }}
@@ -3273,7 +4261,12 @@ const SettingsManager = () => {
                 label="Month (1-12)"
                 type="number"
                 value={periodCreateForm.month ?? ''}
-                onChange={(e) => setPeriodCreateForm((prev) => ({ ...prev, month: parseInt(e.target.value, 10) || 1 }))}
+                onChange={(e) =>
+                  setPeriodCreateForm((prev) => ({
+                    ...prev,
+                    month: parseInt(e.target.value, 10) || 1,
+                  }))
+                }
                 fullWidth
                 size="small"
                 inputProps={{ min: 1, max: 12 }}
@@ -3283,7 +4276,12 @@ const SettingsManager = () => {
               label="Start date"
               type="date"
               value={periodCreateForm.start_date}
-              onChange={(e) => setPeriodCreateForm((prev) => ({ ...prev, start_date: e.target.value }))}
+              onChange={(e) =>
+                setPeriodCreateForm((prev) => ({
+                  ...prev,
+                  start_date: e.target.value,
+                }))
+              }
               fullWidth
               size="small"
               InputLabelProps={{ shrink: true }}
@@ -3292,7 +4290,12 @@ const SettingsManager = () => {
               label="End date"
               type="date"
               value={periodCreateForm.end_date}
-              onChange={(e) => setPeriodCreateForm((prev) => ({ ...prev, end_date: e.target.value }))}
+              onChange={(e) =>
+                setPeriodCreateForm((prev) => ({
+                  ...prev,
+                  end_date: e.target.value,
+                }))
+              }
               fullWidth
               size="small"
               InputLabelProps={{ shrink: true }}
@@ -3304,8 +4307,14 @@ const SettingsManager = () => {
           <Button
             variant="contained"
             onClick={handlePeriodCreateSubmit}
-            disabled={periodCreateSaving || !periodCreateForm.start_date || !periodCreateForm.end_date}
-            startIcon={periodCreateSaving ? <CircularProgress size={16} /> : <Save />}
+            disabled={
+              periodCreateSaving ||
+              !periodCreateForm.start_date ||
+              !periodCreateForm.end_date
+            }
+            startIcon={
+              periodCreateSaving ? <CircularProgress size={16} /> : <Save />
+            }
           >
             Create
           </Button>
@@ -3313,21 +4322,44 @@ const SettingsManager = () => {
       </Dialog>
 
       {/* Delete period confirmation */}
-      <Dialog open={periodDeleteConfirmId != null} onClose={() => !periodDeleteSaving && setPeriodDeleteConfirmId(null)}>
+      <Dialog
+        open={periodDeleteConfirmId != null}
+        onClose={() => !periodDeleteSaving && setPeriodDeleteConfirmId(null)}
+      >
         <DialogTitle>Delete period?</DialogTitle>
         <DialogContent>
-          <Typography>Are you sure you want to delete this period? This cannot be undone.</Typography>
+          <Typography>
+            Are you sure you want to delete this period? This cannot be undone.
+          </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPeriodDeleteConfirmId(null)} disabled={periodDeleteSaving}>Cancel</Button>
-          <Button color="error" variant="contained" onClick={handlePeriodDelete} disabled={periodDeleteSaving} startIcon={periodDeleteSaving ? <CircularProgress size={16} /> : <Delete />}>
+          <Button
+            onClick={() => setPeriodDeleteConfirmId(null)}
+            disabled={periodDeleteSaving}
+          >
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={handlePeriodDelete}
+            disabled={periodDeleteSaving}
+            startIcon={
+              periodDeleteSaving ? <CircularProgress size={16} /> : <Delete />
+            }
+          >
             {periodDeleteSaving ? 'Deleting…' : 'Yes, delete'}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Goal Profit Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>
           {isEditing ? 'Edit' : 'Add'} Goal Profit Target
         </DialogTitle>
@@ -3339,7 +4371,11 @@ const SettingsManager = () => {
               <Select
                 value={editingEntry?.agent || ''}
                 label="Agent Name"
-                onChange={(e: any) => setEditingEntry(prev => prev ? { ...prev, agent: e.target.value } : null)}
+                onChange={(e: any) =>
+                  setEditingEntry((prev) =>
+                    prev ? { ...prev, agent: e.target.value } : null,
+                  )
+                }
                 disabled={isEditing}
               >
                 {availableAgents.map((agent) => (
@@ -3356,7 +4392,11 @@ const SettingsManager = () => {
               <Select
                 value={editingEntry?.monthYear || ''}
                 label="Month Year"
-                onChange={(e: any) => setEditingEntry(prev => prev ? { ...prev, monthYear: e.target.value } : null)}
+                onChange={(e: any) =>
+                  setEditingEntry((prev) =>
+                    prev ? { ...prev, monthYear: e.target.value } : null,
+                  )
+                }
                 disabled={isEditing}
               >
                 {getMonthYearOptions().map((monthYear) => (
@@ -3372,7 +4412,13 @@ const SettingsManager = () => {
               label="Target Amount"
               type="number"
               value={editingEntry?.value || 0}
-              onChange={(e) => setEditingEntry(prev => prev ? { ...prev, value: parseFloat(e.target.value) || 0 } : null)}
+              onChange={(e) =>
+                setEditingEntry((prev) =>
+                  prev
+                    ? { ...prev, value: parseFloat(e.target.value) || 0 }
+                    : null,
+                )
+              }
               fullWidth
               size="small"
             />
@@ -3386,7 +4432,9 @@ const SettingsManager = () => {
             onClick={handleSaveGoalProfit}
             variant="contained"
             startIcon={saving ? <CircularProgress size={16} /> : <Save />}
-            disabled={saving || !editingEntry?.agent || !editingEntry?.monthYear}
+            disabled={
+              saving || !editingEntry?.agent || !editingEntry?.monthYear
+            }
           >
             Save
           </Button>
@@ -3394,7 +4442,12 @@ const SettingsManager = () => {
       </Dialog>
 
       {/* Goal Cash-In Dialog */}
-      <Dialog open={cashInDialogOpen} onClose={() => setCashInDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={cashInDialogOpen}
+        onClose={() => setCashInDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>
           {isEditingCashIn ? 'Edit' : 'Add'} Cash In Goal Target
         </DialogTitle>
@@ -3406,7 +4459,11 @@ const SettingsManager = () => {
               <Select
                 value={editingCashInEntry?.agent || ''}
                 label="Agent Name"
-                onChange={(e: any) => setEditingCashInEntry(prev => prev ? { ...prev, agent: e.target.value } : null)}
+                onChange={(e: any) =>
+                  setEditingCashInEntry((prev) =>
+                    prev ? { ...prev, agent: e.target.value } : null,
+                  )
+                }
                 disabled={isEditingCashIn}
               >
                 {availableAgents.map((agent) => (
@@ -3423,7 +4480,11 @@ const SettingsManager = () => {
               <Select
                 value={editingCashInEntry?.monthYear || ''}
                 label="Month Year"
-                onChange={(e: any) => setEditingCashInEntry(prev => prev ? { ...prev, monthYear: e.target.value } : null)}
+                onChange={(e: any) =>
+                  setEditingCashInEntry((prev) =>
+                    prev ? { ...prev, monthYear: e.target.value } : null,
+                  )
+                }
                 disabled={isEditingCashIn}
               >
                 {getMonthYearOptions().map((monthYear) => (
@@ -3439,21 +4500,34 @@ const SettingsManager = () => {
               label="Target Amount"
               type="number"
               value={editingCashInEntry?.value || 0}
-              onChange={(e) => setEditingCashInEntry(prev => prev ? { ...prev, value: parseFloat(e.target.value) || 0 } : null)}
+              onChange={(e) =>
+                setEditingCashInEntry((prev) =>
+                  prev
+                    ? { ...prev, value: parseFloat(e.target.value) || 0 }
+                    : null,
+                )
+              }
               fullWidth
               size="small"
             />
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCashInDialogOpen(false)} startIcon={<Cancel />}>
+          <Button
+            onClick={() => setCashInDialogOpen(false)}
+            startIcon={<Cancel />}
+          >
             Cancel
           </Button>
           <Button
             onClick={handleSaveGoalCashIn}
             variant="contained"
             startIcon={saving ? <CircularProgress size={16} /> : <Save />}
-            disabled={saving || !editingCashInEntry?.agent || !editingCashInEntry?.monthYear}
+            disabled={
+              saving ||
+              !editingCashInEntry?.agent ||
+              !editingCashInEntry?.monthYear
+            }
           >
             Save
           </Button>

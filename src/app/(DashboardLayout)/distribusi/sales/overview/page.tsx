@@ -1,6 +1,15 @@
 'use client';
 
-import { fetchOrderFilters, fetchTotalStores, fetchUpdatedSalesSummary, fetchUpdatedSalesSummaryMonthly, MonthlySummaryData, OrderFiltersData, SalesSummaryData, TotalStoresData } from '@/app/api/distribusi/DistribusiSlice';
+import {
+  fetchOrderFilters,
+  fetchTotalStores,
+  fetchUpdatedSalesSummary,
+  fetchUpdatedSalesSummaryMonthly,
+  MonthlySummaryData,
+  OrderFiltersData,
+  SalesSummaryData,
+  TotalStoresData,
+} from '@/app/api/distribusi/DistribusiSlice';
 import ProtectedRoute from '@/app/components/auth/ProtectedRoute';
 import PageContainer from '@/app/components/container/PageContainer';
 import { DistribusiFilterValues } from '@/app/components/distribusi/DistribusiFilters';
@@ -13,8 +22,22 @@ import SummaryTiles from '@/app/components/shared/SummaryTiles';
 import { useAuth } from '@/app/context/AuthContext';
 import { useSettings } from '@/app/context/SettingsContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
-import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from '@/config/roles';
-import { Box, Button, FormControl, Grid, InputLabel, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
+import {
+  getAgentNameFromRole,
+  getPageRoles,
+  getRestrictedRoles,
+} from '@/config/roles';
+import {
+  Box,
+  Button,
+  FormControl,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  Typography,
+} from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
@@ -34,40 +57,51 @@ type SalesOverviewFilterValues = DistribusiFilterValues;
 const SalesOverview = () => {
   const { user, roles, refreshRoles } = useAuth();
   const { settings } = useSettings();
-  
+
   // Check access for allowed roles (configurable via roles config)
   const accessCheck = useCheckRoles(getPageRoles('DISTRIBUSI_DASHBOARD'));
-  
+
   // Get restricted roles from config
   const restrictedRoles = getRestrictedRoles();
-  
+
   // Check if current user has a restricted role
-  const hasRestrictedRole = roles.some(role => restrictedRoles.includes(role));
-  const userRoleForFiltering = roles.find(role => restrictedRoles.includes(role));
-  
+  const hasRestrictedRole = roles.some((role) =>
+    restrictedRoles.includes(role),
+  );
+  const userRoleForFiltering = roles.find((role) =>
+    restrictedRoles.includes(role),
+  );
+
   // Log access check result for debugging
   console.log('Sales Overview Access Check:', accessCheck);
   console.log('User roles:', roles);
   console.log('Restricted roles from config:', restrictedRoles);
   console.log('Has restricted role:', hasRestrictedRole);
   console.log('User role for filtering:', userRoleForFiltering);
-  console.log('Role matching check:', roles.map(role => ({
-    role,
-    isRestricted: restrictedRoles.includes(role),
-    mappedAgent: getAgentNameFromRole(role)
-  })));
-  
+  console.log(
+    'Role matching check:',
+    roles.map((role) => ({
+      role,
+      isRestricted: restrictedRoles.includes(role),
+      mappedAgent: getAgentNameFromRole(role),
+    })),
+  );
+
   const [salesData, setSalesData] = useState<SalesSummaryData | null>(null);
-  const [monthlySummaryData, setMonthlySummaryData] = useState<MonthlySummaryData[]>([]);
-  const [totalStoresData, setTotalStoresData] = useState<TotalStoresData | null>(null);
+  const [monthlySummaryData, setMonthlySummaryData] = useState<
+    MonthlySummaryData[]
+  >([]);
+  const [totalStoresData, setTotalStoresData] =
+    useState<TotalStoresData | null>(null);
   const [loading, setLoading] = useState(false);
   const [monthlyLoading, setMonthlyLoading] = useState(false);
   const [totalStoresLoading, setTotalStoresLoading] = useState(false);
-  const [availableFilters, setAvailableFilters] = useState<OrderFiltersData | null>(null);
+  const [availableFilters, setAvailableFilters] =
+    useState<OrderFiltersData | null>(null);
   const [filtersLoading, setFiltersLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [storeSummaryModalOpen, setStoreSummaryModalOpen] = useState(false);
-  
+
   // Initialize filters with empty values to avoid hydration mismatch
   const [filters, setFilters] = useState<SalesOverviewFilterValues>({
     month: '',
@@ -79,14 +113,15 @@ const SalesOverview = () => {
   });
 
   // Applied filters (used for data fetching)
-  const [appliedFilters, setAppliedFilters] = useState<SalesOverviewFilterValues>({
-    month: '',
-    year: '',
-    agent: '',
-    area: '',
-    segment: '',
-    business_type: '',
-  });
+  const [appliedFilters, setAppliedFilters] =
+    useState<SalesOverviewFilterValues>({
+      month: '',
+      year: '',
+      agent: '',
+      area: '',
+      segment: '',
+      business_type: '',
+    });
 
   // Additional filter for status_payment
   const [statusPayment, setStatusPayment] = useState<string>('');
@@ -94,14 +129,18 @@ const SalesOverview = () => {
 
   // Goals from API (replaces settings.goal_profit for profit goals)
   const [goalsFromApi, setGoalsFromApi] = useState<GoalFromApi[]>([]);
-  const [goalsForChartFromApi, setGoalsForChartFromApi] = useState<GoalFromApi[]>([]);
+  const [goalsForChartFromApi, setGoalsForChartFromApi] = useState<
+    GoalFromApi[]
+  >([]);
 
   // Set initial date values in useEffect to avoid hydration issues
   useEffect(() => {
     const currentDate = new Date();
-    const currentMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+    const currentMonth = (currentDate.getMonth() + 1)
+      .toString()
+      .padStart(2, '0');
     const currentYear = currentDate.getFullYear().toString();
-    
+
     const initialFilters = {
       month: currentMonth,
       year: currentYear,
@@ -110,177 +149,267 @@ const SalesOverview = () => {
       segment: '',
       business_type: '',
     };
-    
+
     setFilters(initialFilters);
     setAppliedFilters(initialFilters);
   }, []);
 
-  const fetchSalesDataCallback = useCallback(async (currentFilters: SalesOverviewFilterValues, paymentStatus: string) => {
-    console.log('Fetching sales data with filters:', currentFilters, 'payment status:', paymentStatus);
-    setLoading(true);
-    setError(null); // Clear any previous errors
-    try {
-      // Only fetch data if we have month and year (required)
-      if (currentFilters.month && currentFilters.year) {
-        // Format month for API (e.g., "08" -> "August 2025")
-        const monthNames = [
-          'January', 'February', 'March', 'April', 'May', 'June',
-          'July', 'August', 'September', 'October', 'November', 'December'
-        ];
-        const monthName = monthNames[parseInt(currentFilters.month) - 1];
-        const formattedMonth = `${monthName} ${currentFilters.year}`;
-        
-        // For users with restricted roles, use their mapped agent name instead of filter selection
-        const agentName = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (currentFilters.agent || undefined);
-        
-        const response = await fetchUpdatedSalesSummary({
-          month: formattedMonth,
-          agent_name: agentName,
-          area: currentFilters.area || undefined,
-          segment: currentFilters.segment || undefined,
-          business_type: currentFilters.business_type || undefined,
-          status_payment: paymentStatus || undefined,
-        });
-        console.log('Sales data response:', response);
-        setSalesData(response.data);
-        setError(null); // Clear error on success
-      } else {
+  const fetchSalesDataCallback = useCallback(
+    async (
+      currentFilters: SalesOverviewFilterValues,
+      paymentStatus: string,
+    ) => {
+      console.log(
+        'Fetching sales data with filters:',
+        currentFilters,
+        'payment status:',
+        paymentStatus,
+      );
+      setLoading(true);
+      setError(null); // Clear any previous errors
+      try {
+        // Only fetch data if we have month and year (required)
+        if (currentFilters.month && currentFilters.year) {
+          // Format month for API (e.g., "08" -> "August 2025")
+          const monthNames = [
+            'January',
+            'February',
+            'March',
+            'April',
+            'May',
+            'June',
+            'July',
+            'August',
+            'September',
+            'October',
+            'November',
+            'December',
+          ];
+          const monthName = monthNames[parseInt(currentFilters.month) - 1];
+          const formattedMonth = `${monthName} ${currentFilters.year}`;
+
+          // For users with restricted roles, use their mapped agent name instead of filter selection
+          const agentName = hasRestrictedRole
+            ? getAgentNameFromRole(userRoleForFiltering!)
+            : currentFilters.agent || undefined;
+
+          const response = await fetchUpdatedSalesSummary({
+            month: formattedMonth,
+            agent_name: agentName,
+            area: currentFilters.area || undefined,
+            segment: currentFilters.segment || undefined,
+            business_type: currentFilters.business_type || undefined,
+            status_payment: paymentStatus || undefined,
+          });
+          console.log('Sales data response:', response);
+          setSalesData(response.data);
+          setError(null); // Clear error on success
+        } else {
+          setSalesData(null);
+        }
+      } catch (err) {
+        console.error('Failed to fetch sales data:', err);
         setSalesData(null);
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Failed to fetch sales data:', err);
-      setSalesData(null);
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  }, [hasRestrictedRole, userRoleForFiltering]);
+    },
+    [hasRestrictedRole, userRoleForFiltering],
+  );
 
-  const fetchTotalStoresCallback = useCallback(async (currentFilters: SalesOverviewFilterValues, paymentStatus: string) => {
-    console.log('Fetching total stores data with filters:', currentFilters, 'payment status:', paymentStatus);
-    setTotalStoresLoading(true);
-    try {
-      // Only fetch data if we have month and year (required)
-      if (currentFilters.month && currentFilters.year) {
-        // Format month for API (e.g., "08" -> "August 2025")
-        const monthNames = [
-          'January', 'February', 'March', 'April', 'May', 'June',
-          'July', 'August', 'September', 'October', 'November', 'December'
-        ];
-        const monthName = monthNames[parseInt(currentFilters.month) - 1];
-        const formattedMonth = `${monthName} ${currentFilters.year}`;
-        
-        // For users with restricted roles, use their mapped agent name instead of filter selection
-        const agentName = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (currentFilters.agent || undefined);
-        
-        const response = await fetchTotalStores({
-          month: formattedMonth,
-          agent_name: agentName,
-          area: currentFilters.area || undefined,
-          segment: currentFilters.segment || undefined,
-          business_type: currentFilters.business_type || undefined,
-          status_payment: paymentStatus || undefined,
-        });
-        console.log('Total stores data response:', response);
-        setTotalStoresData(response.data);
-      } else {
+  const fetchTotalStoresCallback = useCallback(
+    async (
+      currentFilters: SalesOverviewFilterValues,
+      paymentStatus: string,
+    ) => {
+      console.log(
+        'Fetching total stores data with filters:',
+        currentFilters,
+        'payment status:',
+        paymentStatus,
+      );
+      setTotalStoresLoading(true);
+      try {
+        // Only fetch data if we have month and year (required)
+        if (currentFilters.month && currentFilters.year) {
+          // Format month for API (e.g., "08" -> "August 2025")
+          const monthNames = [
+            'January',
+            'February',
+            'March',
+            'April',
+            'May',
+            'June',
+            'July',
+            'August',
+            'September',
+            'October',
+            'November',
+            'December',
+          ];
+          const monthName = monthNames[parseInt(currentFilters.month) - 1];
+          const formattedMonth = `${monthName} ${currentFilters.year}`;
+
+          // For users with restricted roles, use their mapped agent name instead of filter selection
+          const agentName = hasRestrictedRole
+            ? getAgentNameFromRole(userRoleForFiltering!)
+            : currentFilters.agent || undefined;
+
+          const response = await fetchTotalStores({
+            month: formattedMonth,
+            agent_name: agentName,
+            area: currentFilters.area || undefined,
+            segment: currentFilters.segment || undefined,
+            business_type: currentFilters.business_type || undefined,
+            status_payment: paymentStatus || undefined,
+          });
+          console.log('Total stores data response:', response);
+          setTotalStoresData(response.data);
+        } else {
+          setTotalStoresData(null);
+        }
+      } catch (err) {
+        console.error('Failed to fetch total stores data:', err);
         setTotalStoresData(null);
+      } finally {
+        setTotalStoresLoading(false);
       }
-    } catch (err) {
-      console.error('Failed to fetch total stores data:', err);
-      setTotalStoresData(null);
-    } finally {
-      setTotalStoresLoading(false);
-    }
-  }, [hasRestrictedRole, userRoleForFiltering]);
+    },
+    [hasRestrictedRole, userRoleForFiltering],
+  );
 
-  const fetchMonthlySummaryCallback = useCallback(async (currentFilters: SalesOverviewFilterValues, paymentStatus: string) => {
-    console.log('Fetching monthly summary data with filters:', currentFilters, 'payment status:', paymentStatus);
-    setMonthlyLoading(true);
-    setError(null); // Clear any previous errors
-    try {
-      // Only fetch data if we have month and year (required)
-      if (currentFilters.month && currentFilters.year) {
-        // Format month for API (e.g., "08" -> "August 2025")
-        const monthNames = [
-          'January', 'February', 'March', 'April', 'May', 'June',
-          'July', 'August', 'September', 'October', 'November', 'December'
-        ];
-        const monthName = monthNames[parseInt(currentFilters.month) - 1];
-        const formattedMonth = `${monthName} ${currentFilters.year}`;
-        
-        // Get the last 3 months for the monthly trend
-        const currentDate = new Date(parseInt(currentFilters.year), parseInt(currentFilters.month) - 1);
-        const startDate = new Date(currentDate);
-        startDate.setMonth(startDate.getMonth() - 2);
-        
-        const startMonth = `${monthNames[startDate.getMonth()]} ${startDate.getFullYear()}`;
+  const fetchMonthlySummaryCallback = useCallback(
+    async (
+      currentFilters: SalesOverviewFilterValues,
+      paymentStatus: string,
+    ) => {
+      console.log(
+        'Fetching monthly summary data with filters:',
+        currentFilters,
+        'payment status:',
+        paymentStatus,
+      );
+      setMonthlyLoading(true);
+      setError(null); // Clear any previous errors
+      try {
+        // Only fetch data if we have month and year (required)
+        if (currentFilters.month && currentFilters.year) {
+          // Format month for API (e.g., "08" -> "August 2025")
+          const monthNames = [
+            'January',
+            'February',
+            'March',
+            'April',
+            'May',
+            'June',
+            'July',
+            'August',
+            'September',
+            'October',
+            'November',
+            'December',
+          ];
+          const monthName = monthNames[parseInt(currentFilters.month) - 1];
+          const formattedMonth = `${monthName} ${currentFilters.year}`;
 
-        // For users with restricted roles, use their mapped agent name instead of filter selection
-        const agentName = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (currentFilters.agent || undefined);
-        
-        const response = await fetchUpdatedSalesSummaryMonthly({
-          start_month: startMonth,
-          end_month: formattedMonth,
-          agent_name: agentName,
-          area: currentFilters.area || undefined,
-          segment: currentFilters.segment || undefined,
-          business_type: currentFilters.business_type || undefined,
-          status_payment: paymentStatus || undefined,
-        });
-        console.log('Monthly summary data response:', response);
-        setMonthlySummaryData(response.data);
-        setError(null); // Clear error on success
-      } else {
+          // Get the last 3 months for the monthly trend
+          const currentDate = new Date(
+            parseInt(currentFilters.year),
+            parseInt(currentFilters.month) - 1,
+          );
+          const startDate = new Date(currentDate);
+          startDate.setMonth(startDate.getMonth() - 2);
+
+          const startMonth = `${monthNames[startDate.getMonth()]} ${startDate.getFullYear()}`;
+
+          // For users with restricted roles, use their mapped agent name instead of filter selection
+          const agentName = hasRestrictedRole
+            ? getAgentNameFromRole(userRoleForFiltering!)
+            : currentFilters.agent || undefined;
+
+          const response = await fetchUpdatedSalesSummaryMonthly({
+            start_month: startMonth,
+            end_month: formattedMonth,
+            agent_name: agentName,
+            area: currentFilters.area || undefined,
+            segment: currentFilters.segment || undefined,
+            business_type: currentFilters.business_type || undefined,
+            status_payment: paymentStatus || undefined,
+          });
+          console.log('Monthly summary data response:', response);
+          setMonthlySummaryData(response.data);
+          setError(null); // Clear error on success
+        } else {
+          setMonthlySummaryData([]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch monthly summary data:', err);
         setMonthlySummaryData([]);
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setMonthlyLoading(false);
       }
-    } catch (err) {
-      console.error('Failed to fetch monthly summary data:', err);
-      setMonthlySummaryData([]);
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setMonthlyLoading(false);
-    }
-  }, [hasRestrictedRole, userRoleForFiltering]);
+    },
+    [hasRestrictedRole, userRoleForFiltering],
+  );
 
+  const fetchFiltersCallback = useCallback(
+    async (month: string, year: string) => {
+      setFiltersLoading(true);
+      try {
+        if (month && year) {
+          // Format month for API (e.g., "08" -> "August 2025")
+          const monthNames = [
+            'January',
+            'February',
+            'March',
+            'April',
+            'May',
+            'June',
+            'July',
+            'August',
+            'September',
+            'October',
+            'November',
+            'December',
+          ];
+          const monthName = monthNames[parseInt(month) - 1];
+          const formattedMonth = `${monthName} ${year}`;
 
-  const fetchFiltersCallback = useCallback(async (month: string, year: string) => {
-    setFiltersLoading(true);
-    try {
-      if (month && year) {
-        // Format month for API (e.g., "08" -> "August 2025")
-        const monthNames = [
-          'January', 'February', 'March', 'April', 'May', 'June',
-          'July', 'August', 'September', 'October', 'November', 'December'
-        ];
-        const monthName = monthNames[parseInt(month) - 1];
-        const formattedMonth = `${monthName} ${year}`;
-        
-        const response = await fetchOrderFilters({
-          month: formattedMonth,
-        });
-        setAvailableFilters(response.data);
-      } else {
+          const response = await fetchOrderFilters({
+            month: formattedMonth,
+          });
+          setAvailableFilters(response.data);
+        } else {
+          setAvailableFilters(null);
+        }
+      } catch (error) {
+        console.error('Failed to fetch filters:', error);
         setAvailableFilters(null);
+      } finally {
+        setFiltersLoading(false);
       }
-    } catch (error) {
-      console.error('Failed to fetch filters:', error);
-      setAvailableFilters(null);
-    } finally {
-      setFiltersLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
-  const handleFiltersChange = useCallback((newFilters: SalesOverviewFilterValues) => {
-    console.log('Filters changed:', newFilters);
-    setFilters(newFilters);
-  }, []);
+  const handleFiltersChange = useCallback(
+    (newFilters: SalesOverviewFilterValues) => {
+      console.log('Filters changed:', newFilters);
+      setFilters(newFilters);
+    },
+    [],
+  );
 
-  const handleStatusPaymentChange = useCallback((event: SelectChangeEvent<string>) => {
-    const newStatus = event.target.value;
-    console.log('Status payment changed:', newStatus);
-    setStatusPayment(newStatus);
-  }, []);
+  const handleStatusPaymentChange = useCallback(
+    (event: SelectChangeEvent<string>) => {
+      const newStatus = event.target.value;
+      console.log('Status payment changed:', newStatus);
+      setStatusPayment(newStatus);
+    },
+    [],
+  );
 
   const handleApplyFilters = useCallback(() => {
     console.log('Applying filters:', filters, 'status payment:', statusPayment);
@@ -301,7 +430,19 @@ const SalesOverview = () => {
       fetchMonthlySummaryCallback(appliedFilters, appliedStatusPayment);
       fetchFiltersCallback(appliedFilters.month, appliedFilters.year);
     }
-  }, [appliedFilters.month, appliedFilters.year, appliedFilters.agent, appliedFilters.area, appliedFilters.segment, appliedFilters.business_type, appliedStatusPayment, fetchSalesDataCallback, fetchTotalStoresCallback, fetchMonthlySummaryCallback, fetchFiltersCallback]);
+  }, [
+    appliedFilters.month,
+    appliedFilters.year,
+    appliedFilters.agent,
+    appliedFilters.area,
+    appliedFilters.segment,
+    appliedFilters.business_type,
+    appliedStatusPayment,
+    fetchSalesDataCallback,
+    fetchTotalStoresCallback,
+    fetchMonthlySummaryCallback,
+    fetchFiltersCallback,
+  ]);
 
   // Fetch profit goals from API for current month+year
   useEffect(() => {
@@ -319,7 +460,9 @@ const SalesOverview = () => {
           month: String(monthNum),
           year,
         });
-        const res = await fetch(`${API_BASE}/api/goals?${params.toString()}`);
+        const res = await fetch(
+          `${API_BASE}/api-dashboard/goals?${params.toString()}`,
+        );
         const json = await res.json();
         if (cancelled) return;
         if (json?.data?.goals) setGoalsFromApi(json.data.goals);
@@ -328,7 +471,9 @@ const SalesOverview = () => {
         if (!cancelled) setGoalsFromApi([]);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [appliedFilters.month, appliedFilters.year]);
 
   // Fetch profit goals for chart (all months in year)
@@ -340,8 +485,13 @@ const SalesOverview = () => {
     let cancelled = false;
     (async () => {
       try {
-        const params = new URLSearchParams({ goal_type: 'profit', year: appliedFilters.year });
-        const res = await fetch(`${API_BASE}/api/goals?${params.toString()}`);
+        const params = new URLSearchParams({
+          goal_type: 'profit',
+          year: appliedFilters.year,
+        });
+        const res = await fetch(
+          `${API_BASE}/api-dashboard/goals?${params.toString()}`,
+        );
         const json = await res.json();
         if (cancelled) return;
         if (json?.data?.goals) setGoalsForChartFromApi(json.data.goals);
@@ -350,50 +500,76 @@ const SalesOverview = () => {
         if (!cancelled) setGoalsForChartFromApi([]);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [appliedFilters.year]);
 
   // Get goal profit for selected agent/month from API (agent linked by agent_name)
   const getGoalProfitValue = () => {
     if (!appliedFilters.month || !appliedFilters.year) return 0;
-    const agentKey = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (appliedFilters.agent || 'NATIONAL');
-    const monthGoals = goalsFromApi.filter(g => (g.period_type || 'month') === 'month');
+    const agentKey = hasRestrictedRole
+      ? getAgentNameFromRole(userRoleForFiltering!)
+      : appliedFilters.agent || 'NATIONAL';
+    const monthGoals = goalsFromApi.filter(
+      (g) => (g.period_type || 'month') === 'month',
+    );
     if (agentKey === 'NATIONAL' || !agentKey) {
-      const national = monthGoals.find(g => g.scope === 'national');
+      const national = monthGoals.find((g) => g.scope === 'national');
       return national?.target_value ?? 0;
     }
-    const agentGoal = monthGoals.find(g => g.scope === 'agent' && (g.agent_name || '').toLowerCase() === agentKey.toLowerCase());
+    const agentGoal = monthGoals.find(
+      (g) =>
+        g.scope === 'agent' &&
+        (g.agent_name || '').toLowerCase() === agentKey.toLowerCase(),
+    );
     if (agentGoal) return agentGoal.target_value;
-    const national = monthGoals.find(g => g.scope === 'national');
+    const national = monthGoals.find((g) => g.scope === 'national');
     return national?.target_value ?? 0;
   };
 
   // Get profit goals for chart: period string -> value (for selected agent or NATIONAL)
   const getProfitGoalsForChartValue = () => {
-    const agentKey = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : (appliedFilters.agent || 'NATIONAL');
-    const monthGoals = goalsForChartFromApi.filter(g => (g.period_type || 'month') === 'month');
+    const agentKey = hasRestrictedRole
+      ? getAgentNameFromRole(userRoleForFiltering!)
+      : appliedFilters.agent || 'NATIONAL';
+    const monthGoals = goalsForChartFromApi.filter(
+      (g) => (g.period_type || 'month') === 'month',
+    );
     const byPeriod: Record<string, number> = {};
     if (agentKey === 'NATIONAL' || !agentKey) {
-      monthGoals.filter(g => g.scope === 'national').forEach(g => {
-        if (g.period) byPeriod[g.period] = g.target_value;
-      });
+      monthGoals
+        .filter((g) => g.scope === 'national')
+        .forEach((g) => {
+          if (g.period) byPeriod[g.period] = g.target_value;
+        });
     } else {
-      monthGoals.filter(g => g.scope === 'agent' && (g.agent_name || '').toLowerCase() === agentKey.toLowerCase()).forEach(g => {
-        if (g.period) byPeriod[g.period] = g.target_value;
-      });
+      monthGoals
+        .filter(
+          (g) =>
+            g.scope === 'agent' &&
+            (g.agent_name || '').toLowerCase() === agentKey.toLowerCase(),
+        )
+        .forEach((g) => {
+          if (g.period) byPeriod[g.period] = g.target_value;
+        });
     }
     return byPeriod;
   };
 
   // Get goal profit per agent for current month (for OrderTypeChart); agent linked by agent_name
   const getGoalProfitByAgent = () => {
-    const monthGoals = goalsFromApi.filter(g => (g.period_type || 'month') === 'month');
+    const monthGoals = goalsFromApi.filter(
+      (g) => (g.period_type || 'month') === 'month',
+    );
     const out: { [agentName: string]: number } = {};
-    const national = monthGoals.find(g => g.scope === 'national');
+    const national = monthGoals.find((g) => g.scope === 'national');
     if (national) out['NATIONAL'] = national.target_value;
-    monthGoals.filter(g => g.scope === 'agent' && g.agent_name).forEach(g => {
-      out[g.agent_name!] = g.target_value;
-    });
+    monthGoals
+      .filter((g) => g.scope === 'agent' && g.agent_name)
+      .forEach((g) => {
+        out[g.agent_name!] = g.target_value;
+      });
     return out;
   };
 
@@ -403,20 +579,20 @@ const SalesOverview = () => {
     const targetDateStr = settings?.target_date || '2025-10-03';
     const targetDate = new Date(targetDateStr);
     const today = new Date();
-    
+
     // Reset time to start of day for accurate day calculation
     today.setHours(0, 0, 0, 0);
     targetDate.setHours(0, 0, 0, 0);
-    
+
     // If target date has passed, return 0
     if (targetDate <= today) {
       return 0;
     }
-    
+
     // Count working days (excluding Sundays) between today and target date
     let workingDays = 0;
     const currentDate = new Date(today);
-    
+
     while (currentDate < targetDate) {
       // Check if current day is not Sunday (0 = Sunday)
       if (currentDate.getDay() !== 0) {
@@ -425,33 +601,35 @@ const SalesOverview = () => {
       // Move to next day
       currentDate.setDate(currentDate.getDate() + 1);
     }
-    
+
     return workingDays;
   };
 
   // Calculate daily and weekly profit to goal
   const getDailyProfitToGoal = () => {
-    const profitRemaining = (salesData?.total_profit || 0) - getGoalProfitValue();
+    const profitRemaining =
+      (salesData?.total_profit || 0) - getGoalProfitValue();
     const daysRemaining = getDaysRemaining();
-    
+
     // If goal is already met or exceeded, return 0
     if (profitRemaining >= 0) {
       return 0;
     }
-    
+
     // Return positive number (absolute value) representing profit needed per day
     return daysRemaining > 0 ? Math.abs(profitRemaining) / daysRemaining : 0;
   };
 
   const getWeeklyProfitToGoal = () => {
-    const profitRemaining = (salesData?.total_profit || 0) - getGoalProfitValue();
+    const profitRemaining =
+      (salesData?.total_profit || 0) - getGoalProfitValue();
     const weeksRemaining = getDaysRemaining() / 7;
-    
+
     // If goal is already met or exceeded, return 0
     if (profitRemaining >= 0) {
       return 0;
     }
-    
+
     // Return positive number (absolute value) representing profit needed per week
     return weeksRemaining > 0 ? Math.abs(profitRemaining) / weeksRemaining : 0;
   };
@@ -474,7 +652,10 @@ const SalesOverview = () => {
   };
 
   // Calculate progress percentage for profit to goal metrics
-  const getProfitToGoalProgress = (currentValue: number, targetValue: number) => {
+  const getProfitToGoalProgress = (
+    currentValue: number,
+    targetValue: number,
+  ) => {
     if (targetValue === 0) return 100; // If no target, consider it 100%
     return Math.min(100, (currentValue / targetValue) * 100);
   };
@@ -488,54 +669,64 @@ const SalesOverview = () => {
         value: salesData?.total_invoice || 0,
         isCurrency: true,
         mdSize: 2.4,
-        isLoading: loading && !salesData
+        isLoading: loading && !salesData,
       },
       {
         title: 'Total Profit',
         value: salesData?.total_profit || 0,
         isCurrency: true,
         mdSize: 2.4,
-        isLoading: loading && !salesData
+        isLoading: loading && !salesData,
       },
       {
         title: 'Goal Profit',
         value: getGoalProfitValue(),
         isCurrency: true,
         mdSize: 2.4,
-        isLoading: false
+        isLoading: false,
       },
       {
         title: 'Profit Remaining',
-        value:  (salesData?.total_profit || 0) - getGoalProfitValue(),
+        value: (salesData?.total_profit || 0) - getGoalProfitValue(),
         isCurrency: true,
         mdSize: 2.4,
         isLoading: loading && !salesData,
-        color: ( (salesData?.total_profit || 0) - getGoalProfitValue()) >= 0 ? '#22c55e' : '#ef4444'
+        color:
+          (salesData?.total_profit || 0) - getGoalProfitValue() >= 0
+            ? '#22c55e'
+            : '#ef4444',
       },
       {
         title: 'Profit Progress',
-        value: getGoalProfitValue() > 0 ? ((salesData?.total_profit || 0) / getGoalProfitValue()) * 100 : 0,
+        value:
+          getGoalProfitValue() > 0
+            ? ((salesData?.total_profit || 0) / getGoalProfitValue()) * 100
+            : 0,
         isCurrency: false,
         unit: '%',
         mdSize: 2.4,
         isLoading: loading && !salesData,
-        color: getProgressColor(getGoalProfitValue() > 0 ? ((salesData?.total_profit || 0) / getGoalProfitValue()) * 100 : 0)
+        color: getProgressColor(
+          getGoalProfitValue() > 0
+            ? ((salesData?.total_profit || 0) / getGoalProfitValue()) * 100
+            : 0,
+        ),
       },
-      
+
       // Second row - 6 tiles
       {
         title: 'Average Daily Profit',
         value: salesData?.average_profit_day || 0,
         isCurrency: true,
         mdSize: 2.4,
-        isLoading: loading && !salesData
+        isLoading: loading && !salesData,
       },
       {
         title: 'Average Weekly Profit',
         value: salesData?.average_profit_week || 0,
         isCurrency: true,
         mdSize: 2.4,
-        isLoading: loading && !salesData
+        isLoading: loading && !salesData,
       },
       {
         title: 'Daily Profit to Goal',
@@ -543,7 +734,11 @@ const SalesOverview = () => {
         isCurrency: true,
         mdSize: 2.4,
         isLoading: loading && !salesData,
-        color: getProgressColor(getGoalProfitValue() > 0 ? ((salesData?.total_profit || 0) / getGoalProfitValue()) * 100 : 0)
+        color: getProgressColor(
+          getGoalProfitValue() > 0
+            ? ((salesData?.total_profit || 0) / getGoalProfitValue()) * 100
+            : 0,
+        ),
       },
       {
         title: 'Weekly Profit to Goal',
@@ -551,7 +746,11 @@ const SalesOverview = () => {
         isCurrency: true,
         mdSize: 2.4,
         isLoading: loading && !salesData,
-        color: getProgressColor(getGoalProfitValue() > 0 ? ((salesData?.total_profit || 0) / getGoalProfitValue()) * 100 : 0)
+        color: getProgressColor(
+          getGoalProfitValue() > 0
+            ? ((salesData?.total_profit || 0) / getGoalProfitValue()) * 100
+            : 0,
+        ),
       },
       {
         title: 'Days Remaining',
@@ -560,7 +759,12 @@ const SalesOverview = () => {
         unit: ' days',
         mdSize: 2.4,
         isLoading: false,
-        color: getDaysRemaining() <= 30 ? '#ef4444' : getDaysRemaining() <= 90 ? '#f59e0b' : '#22c55e'
+        color:
+          getDaysRemaining() <= 30
+            ? '#ef4444'
+            : getDaysRemaining() <= 90
+              ? '#f59e0b'
+              : '#22c55e',
       },
     ];
   };
@@ -573,21 +777,21 @@ const SalesOverview = () => {
         value: salesData?.invoice_count || 0,
         isCurrency: false,
         mdSize: 2.4,
-        isLoading: loading && !salesData
+        isLoading: loading && !salesData,
       },
       {
         title: 'Active Stores',
         value: totalStoresData?.active_stores || 0,
         isCurrency: false,
         mdSize: 2.4,
-        isLoading: totalStoresLoading && !totalStoresData
+        isLoading: totalStoresLoading && !totalStoresData,
       },
       {
         title: 'Total Stores',
         value: totalStoresData?.total_stores || 0,
         isCurrency: false,
         mdSize: 2.4,
-        isLoading: totalStoresLoading && !totalStoresData
+        isLoading: totalStoresLoading && !totalStoresData,
       },
       {
         title: 'Activation Rate',
@@ -595,7 +799,7 @@ const SalesOverview = () => {
         isCurrency: false,
         unit: '%',
         mdSize: 2.4,
-        isLoading: totalStoresLoading && !totalStoresData
+        isLoading: totalStoresLoading && !totalStoresData,
       },
       {
         title: 'Margin',
@@ -603,13 +807,16 @@ const SalesOverview = () => {
         isCurrency: false,
         unit: '%',
         mdSize: 2.4,
-        isLoading: loading && !salesData
+        isLoading: loading && !salesData,
       },
     ];
   };
 
   return (
-    <PageContainer title="Sales Overview" description="Monitor sales performance and metrics">
+    <PageContainer
+      title="Sales Overview"
+      description="Monitor sales performance and metrics"
+    >
       <Box>
         {/* Header */}
         <Box mb={3}>
@@ -620,8 +827,13 @@ const SalesOverview = () => {
             Monitor sales performance, invoice metrics, and store statistics
           </Typography>
           {hasRestrictedRole && (
-            <Typography variant="body2" color="info.main" sx={{ mt: 1, fontStyle: 'italic' }}>
-              Showing data for {getAgentNameFromRole(userRoleForFiltering!)} only
+            <Typography
+              variant="body2"
+              color="info.main"
+              sx={{ mt: 1, fontStyle: 'italic' }}
+            >
+              Showing data for {getAgentNameFromRole(userRoleForFiltering!)}{' '}
+              only
             </Typography>
           )}
         </Box>
@@ -636,11 +848,16 @@ const SalesOverview = () => {
                 <Select
                   value={filters.month}
                   label="Month"
-                  onChange={(e) => handleFiltersChange({ ...filters, month: e.target.value })}
+                  onChange={(e) =>
+                    handleFiltersChange({ ...filters, month: e.target.value })
+                  }
                 >
                   {Array.from({ length: 12 }, (_, i) => {
                     const monthNum = (i + 1).toString().padStart(2, '0');
-                    const monthName = new Date(2024, i).toLocaleString('en-US', { month: 'long' });
+                    const monthName = new Date(2024, i).toLocaleString(
+                      'en-US',
+                      { month: 'long' },
+                    );
                     return (
                       <MenuItem key={monthNum} value={monthNum}>
                         {monthName}
@@ -656,7 +873,9 @@ const SalesOverview = () => {
                 <Select
                   value={filters.year}
                   label="Year"
-                  onChange={(e) => handleFiltersChange({ ...filters, year: e.target.value })}
+                  onChange={(e) =>
+                    handleFiltersChange({ ...filters, year: e.target.value })
+                  }
                 >
                   {Array.from({ length: 6 }, (_, i) => {
                     const year = (new Date().getFullYear() - i).toString();
@@ -677,7 +896,9 @@ const SalesOverview = () => {
                 <Select
                   value={filters.agent}
                   label="Agent"
-                  onChange={(e) => handleFiltersChange({ ...filters, agent: e.target.value })}
+                  onChange={(e) =>
+                    handleFiltersChange({ ...filters, agent: e.target.value })
+                  }
                   disabled={filtersLoading || hasRestrictedRole}
                 >
                   <MenuItem value="">All Agents</MenuItem>
@@ -695,7 +916,9 @@ const SalesOverview = () => {
                 <Select
                   value={filters.area}
                   label="Area"
-                  onChange={(e) => handleFiltersChange({ ...filters, area: e.target.value })}
+                  onChange={(e) =>
+                    handleFiltersChange({ ...filters, area: e.target.value })
+                  }
                   disabled={filtersLoading}
                 >
                   <MenuItem value="">All Areas</MenuItem>
@@ -713,7 +936,9 @@ const SalesOverview = () => {
                 <Select
                   value={filters.segment}
                   label="Segment"
-                  onChange={(e) => handleFiltersChange({ ...filters, segment: e.target.value })}
+                  onChange={(e) =>
+                    handleFiltersChange({ ...filters, segment: e.target.value })
+                  }
                 >
                   <MenuItem value="">All Segments</MenuItem>
                   <MenuItem value="RESELLER">RESELLER</MenuItem>
@@ -728,13 +953,20 @@ const SalesOverview = () => {
                 <Select
                   value={filters.business_type}
                   label="Business Type"
-                  onChange={(e) => handleFiltersChange({ ...filters, business_type: e.target.value })}
+                  onChange={(e) =>
+                    handleFiltersChange({
+                      ...filters,
+                      business_type: e.target.value,
+                    })
+                  }
                 >
                   <MenuItem value="">All Business Types</MenuItem>
                   <MenuItem value="Hotel">Hotel</MenuItem>
                   <MenuItem value="Resto">Resto</MenuItem>
                   <MenuItem value="Catering">Catering</MenuItem>
-                  <MenuItem value="Retail Tradisional">Retail Tradisional</MenuItem>
+                  <MenuItem value="Retail Tradisional">
+                    Retail Tradisional
+                  </MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -758,15 +990,15 @@ const SalesOverview = () => {
                 fullWidth
                 onClick={handleApplyFilters}
                 disabled={
-                  !filters.month || 
-                  !filters.year || 
+                  !filters.month ||
+                  !filters.year ||
                   (filters.month === appliedFilters.month &&
-                   filters.year === appliedFilters.year &&
-                   filters.agent === appliedFilters.agent &&
-                   filters.area === appliedFilters.area &&
-                   filters.segment === appliedFilters.segment &&
-                   filters.business_type === appliedFilters.business_type &&
-                   statusPayment === appliedStatusPayment)
+                    filters.year === appliedFilters.year &&
+                    filters.agent === appliedFilters.agent &&
+                    filters.area === appliedFilters.area &&
+                    filters.segment === appliedFilters.segment &&
+                    filters.business_type === appliedFilters.business_type &&
+                    statusPayment === appliedStatusPayment)
                 }
                 sx={{ height: '40px' }}
               >
@@ -777,12 +1009,23 @@ const SalesOverview = () => {
         </Box>
 
         {/* Stores Owed Notice */}
-        <StoresOwedNotice agentFilter={hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : appliedFilters.agent} />
+        <StoresOwedNotice
+          agentFilter={
+            hasRestrictedRole
+              ? getAgentNameFromRole(userRoleForFiltering!)
+              : appliedFilters.agent
+          }
+        />
 
         {/* Currency Summary Tiles */}
         <Box mb={3}>
           {error ? (
-            <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              height="200px"
+            >
               <Typography variant="body1" color="error">
                 {error}
               </Typography>
@@ -794,15 +1037,17 @@ const SalesOverview = () => {
 
         {/* Monthly Sales Chart */}
         <Box mb={3}>
-          <SalesMonthlyChart 
+          <SalesMonthlyChart
             filters={{
-              agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : appliedFilters.agent,
+              agent: hasRestrictedRole
+                ? getAgentNameFromRole(userRoleForFiltering!)
+                : appliedFilters.agent,
               area: appliedFilters.area,
               segment: appliedFilters.segment,
               business_type: appliedFilters.business_type,
               month: appliedFilters.month,
               year: appliedFilters.year,
-              status_payment: appliedStatusPayment
+              status_payment: appliedStatusPayment,
             }}
             monthlyData={monthlySummaryData}
             profitGoals={getProfitGoalsForChartValue()}
@@ -815,7 +1060,12 @@ const SalesOverview = () => {
             Performance Metrics
           </Typography> */}
           {error ? (
-            <Box display="flex" justifyContent="center" alignItems="center" height="200px">
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              height="200px"
+            >
               <Typography variant="body1" color="error">
                 {error}
               </Typography>
@@ -827,15 +1077,17 @@ const SalesOverview = () => {
 
         {/* Monthly Stores Chart */}
         <Box mb={3}>
-          <StoresMonthlyChart 
+          <StoresMonthlyChart
             filters={{
-              agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : appliedFilters.agent,
+              agent: hasRestrictedRole
+                ? getAgentNameFromRole(userRoleForFiltering!)
+                : appliedFilters.agent,
               area: appliedFilters.area,
               segment: appliedFilters.segment,
               business_type: appliedFilters.business_type,
               month: appliedFilters.month,
               year: appliedFilters.year,
-              status_payment: appliedStatusPayment
+              status_payment: appliedStatusPayment,
             }}
             onViewAllStores={() => setStoreSummaryModalOpen(true)}
           />
@@ -844,9 +1096,11 @@ const SalesOverview = () => {
         {/* Order Type Chart - Only for admin and distribusi roles */}
         {(roles.includes('admin') || roles.includes('distribusi')) && (
           <Box mb={3}>
-            <OrderTypeChart 
+            <OrderTypeChart
               filters={{
-                agent: hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : appliedFilters.agent,
+                agent: hasRestrictedRole
+                  ? getAgentNameFromRole(userRoleForFiltering!)
+                  : appliedFilters.agent,
                 area: appliedFilters.area,
                 segment: appliedFilters.segment,
                 business_type: appliedFilters.business_type,
@@ -866,17 +1120,30 @@ const SalesOverview = () => {
             onClose={() => setStoreSummaryModalOpen(false)}
             month={(() => {
               const monthNames = [
-                'January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December'
+                'January',
+                'February',
+                'March',
+                'April',
+                'May',
+                'June',
+                'July',
+                'August',
+                'September',
+                'October',
+                'November',
+                'December',
               ];
               const monthName = monthNames[parseInt(appliedFilters.month) - 1];
               return `${monthName} ${appliedFilters.year}`;
             })()}
-            agent={hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : appliedFilters.agent}
+            agent={
+              hasRestrictedRole
+                ? getAgentNameFromRole(userRoleForFiltering!)
+                : appliedFilters.agent
+            }
             business_type={appliedFilters.business_type}
           />
         )}
-
       </Box>
     </PageContainer>
   );
