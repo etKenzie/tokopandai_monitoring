@@ -1,6 +1,11 @@
 'use client';
 
-import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
+import {
+  Download as DownloadIcon,
+  Refresh as RefreshIcon,
+  Search as SearchIcon,
+  UploadFile as UploadFileIcon,
+} from '@mui/icons-material';
 import {
     Box,
     Button,
@@ -29,6 +34,9 @@ import {
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { fetchFullOrders, fetchOrders, FullOrder, Order } from '../../api/distribusi/DistribusiSlice';
+import { useAuth } from '../../context/AuthContext';
+import { ROLES } from '@/config/roles';
+import BuyPriceImportModal from '../shared/BuyPriceImportModal';
 import OrderDetailModal from '../shared/OrderDetailModal';
 
 type OrderDirection = 'asc' | 'desc';
@@ -75,6 +83,7 @@ const SalesOrdersTable = ({
   title = 'Sales Orders',
   agentName
 }: SalesOrdersTableProps) => {
+  const { roles } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,6 +101,11 @@ const SalesOrdersTable = ({
   const [selectedOrderCode, setSelectedOrderCode] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [fullDownloadLoading, setFullDownloadLoading] = useState(false);
+  const [buyPriceImportOpen, setBuyPriceImportOpen] = useState(false);
+  const normalizedRoles = roles.map((role) => role.trim().toLowerCase());
+  const canImportBuyPrices =
+    normalizedRoles.includes(ROLES.ADMIN) ||
+    normalizedRoles.includes(ROLES.BUY_PRICE);
 
   const fetchOrdersData = async () => {
     // Only fetch data if month is selected
@@ -339,8 +353,10 @@ const SalesOrdersTable = ({
         order.detail_order.forEach((detail) => {
           data.push({
             'Order Code': order.order_code,
-            'User ID': order.user_id,
             'Order Item ID': detail.order_item_id,
+            'Buy Price': detail.buy_price,
+            'New Buy Price': '',
+            'User ID': order.user_id,
             'Month': order.month,
             'Reseller Name': order.reseller_name,
             'Store Name': order.store_name,
@@ -368,7 +384,6 @@ const SalesOrdersTable = ({
             'Stock Product': detail.stock_product,
             'Variant': detail.variant,
             'Variant Value': detail.variant_value,
-            'Buy Price': detail.buy_price,
             'Principle': detail.principle,
             'Hub': detail.hub,
             'Address': detail.alamat,
@@ -378,8 +393,10 @@ const SalesOrdersTable = ({
         // If no detail_order, add the main order data
         data.push({
           'Order Code': order.order_code,
-          'User ID': order.user_id,
           'Order Item ID': '',
+          'Buy Price': '',
+          'New Buy Price': '',
+          'User ID': order.user_id,
           'Month': order.month,
           'Reseller Name': order.reseller_name,
           'Store Name': order.store_name,
@@ -407,7 +424,6 @@ const SalesOrdersTable = ({
           'Stock Product': '',
           'Variant': '',
           'Variant Value': '',
-          'Buy Price': '',
           'Principle': '',
           'Hub': '',
           'Address': '',
@@ -449,8 +465,10 @@ const SalesOrdersTable = ({
       // Set column widths
       const colWidths = [
         { wch: 15 }, // Order Code
-        { wch: 15 }, // User ID
         { wch: 25 }, // Order Item ID
+        { wch: 15 }, // Buy Price
+        { wch: 18 }, // New Buy Price
+        { wch: 15 }, // User ID
         { wch: 15 }, // Month
         { wch: 25 }, // Reseller Name
         { wch: 25 }, // Store Name
@@ -478,7 +496,6 @@ const SalesOrdersTable = ({
         { wch: 15 }, // Stock Product
         { wch: 15 }, // Variant
         { wch: 15 }, // Variant Value
-        { wch: 15 }, // Buy Price
         { wch: 25 }, // Principle
         { wch: 15 }, // Hub
         { wch: 40 }, // Address
@@ -567,6 +584,16 @@ const SalesOrdersTable = ({
           }}
         >
           <Box>
+            {canImportBuyPrices && (
+              <Button
+                variant="contained"
+                startIcon={<UploadFileIcon />}
+                onClick={() => setBuyPriceImportOpen(true)}
+                sx={{ mr: 1 }}
+              >
+                Import Buy Prices
+              </Button>
+            )}
             <Button
               variant="outlined"
               startIcon={<RefreshIcon />}
@@ -910,6 +937,12 @@ const SalesOrdersTable = ({
           />
         </TableContainer>
       </CardContent>
+
+      <BuyPriceImportModal
+        open={buyPriceImportOpen}
+        onClose={() => setBuyPriceImportOpen(false)}
+        onImported={fetchOrdersData}
+      />
 
       {/* Order Detail Modal */}
       <OrderDetailModal

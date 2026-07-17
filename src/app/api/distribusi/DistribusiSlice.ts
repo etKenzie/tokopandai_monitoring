@@ -723,6 +723,50 @@ export const updateOrderItemBuyPrices = async (updateData: OrderItemUpdateReques
   return data;
 };
 
+export interface BuyPriceImportResult {
+  dry_run: boolean;
+  total: number;
+  success: number;
+  errors: number;
+  skipped: number;
+  success_rate: number;
+  error_details: unknown[];
+  error_details_truncated: boolean;
+}
+
+export interface BuyPriceImportResponse {
+  code: number;
+  status: string;
+  message: string;
+  data: BuyPriceImportResult;
+}
+
+export const importOrderItemBuyPrices = async (
+  file: File
+): Promise<BuyPriceImportResponse> => {
+  if (!AM_API_URL) {
+    throw new Error('API URL is not configured');
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${AM_API_URL}/api/order/order-items/buy-price/import`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(
+      payload?.message ||
+        `Failed to import buy prices: ${response.status} ${response.statusText}`
+    );
+  }
+
+  return payload as BuyPriceImportResponse;
+};
+
 // Types for Cash-In API
 export interface CashInData {
   total_paid: number;
