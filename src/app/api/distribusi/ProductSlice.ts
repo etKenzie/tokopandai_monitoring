@@ -70,7 +70,7 @@ export const fetchProductOrders = async (productId: string): Promise<ProductOrde
   const queryParams = new URLSearchParams();
   queryParams.append('product_id', productId);
   
-  const url = `${baseUrl}/api/product/item?${queryParams.toString()}`;
+  const url = `${baseUrl}/product/item?${queryParams.toString()}`;
   
   console.log('Fetching product orders from:', url);
   console.log('Product ID:', productId);

@@ -1,20 +1,22 @@
 'use client';
 
 import {
-    Box,
-    Card,
-    CardContent,
-    CircularProgress,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
-    Typography
+  Box,
+  Card,
+  CardContent,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Typography,
 } from '@mui/material';
-import dynamic from "next/dynamic";
+import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 
-const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
+const ReactApexChart = dynamic(() => import('react-apexcharts'), {
+  ssr: false,
+});
 
 interface OrderTypeData {
   type_name: string;
@@ -48,7 +50,11 @@ interface OrderTypeChartProps {
   goalProfitByAgent?: { [agentName: string]: number };
 }
 
-const OrderTypeChart = ({ filters, goalProfit = 0, goalProfitByAgent = {} }: OrderTypeChartProps) => {
+const OrderTypeChart = ({
+  filters,
+  goalProfit = 0,
+  goalProfitByAgent = {},
+}: OrderTypeChartProps) => {
   const [chartData, setChartData] = useState<OrderTypeData[]>([]);
   const [loading, setLoading] = useState(false);
   const [groupBy, setGroupBy] = useState<string>('agent');
@@ -60,7 +66,7 @@ const OrderTypeChart = ({ filters, goalProfit = 0, goalProfitByAgent = {} }: Ord
     { value: 'segment', label: 'Segment' },
     { value: 'business_type', label: 'Business Type' },
     { value: 'sub_business_type', label: 'Sub Business Type' },
-    { value: 'payment_status', label: 'Payment Status' }
+    { value: 'payment_status', label: 'Payment Status' },
   ];
 
   const metricTypeOptions = [
@@ -68,21 +74,34 @@ const OrderTypeChart = ({ filters, goalProfit = 0, goalProfitByAgent = {} }: Ord
     { value: 'invoice_profit', label: 'Invoice & Profit' },
     { value: 'margin', label: 'Margin' },
     { value: 'orders_stores', label: 'Total Orders & Active Stores' },
-    { value: 'paid_unpaid', label: 'Paid & Unpaid Invoice' }
+    { value: 'paid_unpaid', label: 'Paid & Unpaid Invoice' },
   ];
 
   const fetchChartData = async () => {
     if (!filters.month || !filters.year) {
-      console.log('OrderTypeChart: Missing month or year filters', { month: filters.month, year: filters.year });
+      console.log('OrderTypeChart: Missing month or year filters', {
+        month: filters.month,
+        year: filters.year,
+      });
       return;
     }
-    
+
     setLoading(true);
     try {
       // Format month for API (e.g., "08" -> "August 2025")
       const monthNames = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
       ];
       const monthIndex = parseInt(filters.month, 10) - 1;
       const monthName = monthNames[monthIndex];
@@ -90,23 +109,24 @@ const OrderTypeChart = ({ filters, goalProfit = 0, goalProfitByAgent = {} }: Ord
 
       const params = new URLSearchParams({
         month: formattedMonth,
-        group_by: groupBy
+        group_by: groupBy,
       });
       if (filters.agent) params.append('agent', filters.agent);
       if (filters.area) params.append('area', filters.area);
       if (filters.segment) params.append('segment', filters.segment);
-      if (filters.business_type) params.append('business_type', filters.business_type);
+      if (filters.business_type)
+        params.append('business_type', filters.business_type);
 
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/order/type?${params.toString()}`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/order/type?${params.toString()}`;
       console.log('OrderTypeChart: Fetching data from:', apiUrl);
       console.log('OrderTypeChart: Filters:', filters);
       console.log('OrderTypeChart: GroupBy:', groupBy);
 
       const response = await fetch(apiUrl);
       const result: OrderTypeResponse = await response.json();
-      
+
       console.log('OrderTypeChart: API Response:', result);
-      
+
       if (result.code === 200) {
         console.log('OrderTypeChart: Data received:', result.data);
         setChartData(result.data);
@@ -125,7 +145,15 @@ const OrderTypeChart = ({ filters, goalProfit = 0, goalProfitByAgent = {} }: Ord
   // Fetch data when filters or groupBy change
   useEffect(() => {
     fetchChartData();
-  }, [filters.month, filters.year, filters.agent, filters.area, filters.segment, filters.business_type, groupBy]);
+  }, [
+    filters.month,
+    filters.year,
+    filters.agent,
+    filters.area,
+    filters.segment,
+    filters.business_type,
+    groupBy,
+  ]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -151,7 +179,7 @@ const OrderTypeChart = ({ filters, goalProfit = 0, goalProfitByAgent = {} }: Ord
 
     // Case-insensitive key match
     const matchedKey = Object.keys(goalProfitByAgent).find(
-      (key) => key.trim().toLowerCase() === normalizedAgent
+      (key) => key.trim().toLowerCase() === normalizedAgent,
     );
     if (matchedKey) {
       return goalProfitByAgent[matchedKey];
@@ -171,161 +199,262 @@ const OrderTypeChart = ({ filters, goalProfit = 0, goalProfitByAgent = {} }: Ord
           return {
             yaxis: [
               {
-                title: { text: 'Total Profit (IDR)', style: { fontSize: '14px', fontWeight: 600 } },
-                labels: { formatter: (value: number) => formatCurrency(value) }
-              }
+                title: {
+                  text: 'Total Profit (IDR)',
+                  style: { fontSize: '14px', fontWeight: 600 },
+                },
+                labels: { formatter: (value: number) => formatCurrency(value) },
+              },
             ],
             tooltip: {
               y: [
-                { formatter: (value: number) => formatCurrency(value), title: { formatter: () => 'Total Profit: ' } }
-              ]
+                {
+                  formatter: (value: number) => formatCurrency(value),
+                  title: { formatter: () => 'Total Profit: ' },
+                },
+              ],
             },
             colors: ['#10B981'],
             series: [
-              { name: 'Total Profit', data: chartData.map(item => item.total_profit) }
-            ]
+              {
+                name: 'Total Profit',
+                data: chartData.map((item) => item.total_profit),
+              },
+            ],
           };
         }
-        
+
         // When grouping by agent, show both goal profit and total profit on same axis
-        const goalProfitData = chartData.map(item => getGoalForAgent(item.type_name));
-        
+        const goalProfitData = chartData.map((item) =>
+          getGoalForAgent(item.type_name),
+        );
+
         return {
           yaxis: [
             {
-              title: { text: 'Profit (IDR)', style: { fontSize: '14px', fontWeight: 600 } },
-              labels: { formatter: (value: number) => formatCurrency(value) }
-            }
+              title: {
+                text: 'Profit (IDR)',
+                style: { fontSize: '14px', fontWeight: 600 },
+              },
+              labels: { formatter: (value: number) => formatCurrency(value) },
+            },
           ],
           tooltip: {
             y: [
-              { formatter: (value: number) => formatCurrency(value), title: { formatter: () => 'Goal Profit: ' } },
-              { formatter: (value: number) => formatCurrency(value), title: { formatter: () => 'Total Profit: ' } }
-            ]
+              {
+                formatter: (value: number) => formatCurrency(value),
+                title: { formatter: () => 'Goal Profit: ' },
+              },
+              {
+                formatter: (value: number) => formatCurrency(value),
+                title: { formatter: () => 'Total Profit: ' },
+              },
+            ],
           },
           colors: ['#8B5CF6', '#10B981'],
           series: [
             { name: 'Goal Profit', data: goalProfitData },
-            { name: 'Total Profit', data: chartData.map(item => item.total_profit) }
-          ]
+            {
+              name: 'Total Profit',
+              data: chartData.map((item) => item.total_profit),
+            },
+          ],
         };
       case 'invoice_profit':
         return {
           yaxis: [
             {
-              title: { text: 'Total Invoice (IDR)', style: { fontSize: '14px', fontWeight: 600 } },
-              labels: { formatter: (value: number) => formatCurrency(value) }
+              title: {
+                text: 'Total Invoice (IDR)',
+                style: { fontSize: '14px', fontWeight: 600 },
+              },
+              labels: { formatter: (value: number) => formatCurrency(value) },
             },
             {
               opposite: true,
-              title: { text: 'Total Profit (IDR)', style: { fontSize: '14px', fontWeight: 600 } },
-              labels: { formatter: (value: number) => formatCurrency(value) }
-            }
+              title: {
+                text: 'Total Profit (IDR)',
+                style: { fontSize: '14px', fontWeight: 600 },
+              },
+              labels: { formatter: (value: number) => formatCurrency(value) },
+            },
           ],
           tooltip: {
             y: [
-              { formatter: (value: number) => formatCurrency(value), title: { formatter: () => 'Total Invoice: ' } },
-              { formatter: (value: number) => formatCurrency(value), title: { formatter: () => 'Total Profit: ' } }
-            ]
+              {
+                formatter: (value: number) => formatCurrency(value),
+                title: { formatter: () => 'Total Invoice: ' },
+              },
+              {
+                formatter: (value: number) => formatCurrency(value),
+                title: { formatter: () => 'Total Profit: ' },
+              },
+            ],
           },
           colors: ['#3B82F6', '#10B981'],
           series: [
-            { name: 'Total Invoice', data: chartData.map(item => item.total_invoice) },
-            { name: 'Total Profit', data: chartData.map(item => item.total_profit) }
-          ]
+            {
+              name: 'Total Invoice',
+              data: chartData.map((item) => item.total_invoice),
+            },
+            {
+              name: 'Total Profit',
+              data: chartData.map((item) => item.total_profit),
+            },
+          ],
         };
       case 'margin':
         return {
           yaxis: [
             {
-              title: { text: 'Margin (%)', style: { fontSize: '14px', fontWeight: 600 } },
-              labels: { formatter: (value: number) => `${value.toFixed(2)}%` }
-            }
+              title: {
+                text: 'Margin (%)',
+                style: { fontSize: '14px', fontWeight: 600 },
+              },
+              labels: { formatter: (value: number) => `${value.toFixed(2)}%` },
+            },
           ],
           tooltip: {
             y: [
-              { formatter: (value: number) => `${value.toFixed(2)}%`, title: { formatter: () => 'Margin: ' } }
-            ]
+              {
+                formatter: (value: number) => `${value.toFixed(2)}%`,
+                title: { formatter: () => 'Margin: ' },
+              },
+            ],
           },
           colors: ['#F59E0B'],
           series: [
-            { name: 'Margin', data: chartData.map(item => item.margin) }
-          ]
+            { name: 'Margin', data: chartData.map((item) => item.margin) },
+          ],
         };
       case 'orders_stores':
         return {
           yaxis: [
             {
-              title: { text: 'Total Orders', style: { fontSize: '14px', fontWeight: 600 } },
-              labels: { formatter: (value: number) => formatNumber(value) }
+              title: {
+                text: 'Total Orders',
+                style: { fontSize: '14px', fontWeight: 600 },
+              },
+              labels: { formatter: (value: number) => formatNumber(value) },
             },
             {
               opposite: true,
-              title: { text: 'Active Stores', style: { fontSize: '14px', fontWeight: 600 } },
-              labels: { formatter: (value: number) => formatNumber(value) }
-            }
+              title: {
+                text: 'Active Stores',
+                style: { fontSize: '14px', fontWeight: 600 },
+              },
+              labels: { formatter: (value: number) => formatNumber(value) },
+            },
           ],
           tooltip: {
             y: [
-              { formatter: (value: number) => formatNumber(value), title: { formatter: () => 'Total Orders: ' } },
-              { formatter: (value: number) => formatNumber(value), title: { formatter: () => 'Active Stores: ' } }
-            ]
+              {
+                formatter: (value: number) => formatNumber(value),
+                title: { formatter: () => 'Total Orders: ' },
+              },
+              {
+                formatter: (value: number) => formatNumber(value),
+                title: { formatter: () => 'Active Stores: ' },
+              },
+            ],
           },
           colors: ['#F59E0B', '#8B5CF6'],
           series: [
-            { name: 'Total Orders', data: chartData.map(item => item.total_orders) },
-            { name: 'Active Stores', data: chartData.map(item => item.active_stores) }
-          ]
+            {
+              name: 'Total Orders',
+              data: chartData.map((item) => item.total_orders),
+            },
+            {
+              name: 'Active Stores',
+              data: chartData.map((item) => item.active_stores),
+            },
+          ],
         };
       case 'paid_unpaid':
         return {
           yaxis: [
             {
-              title: { text: 'Paid Invoice (IDR)', style: { fontSize: '14px', fontWeight: 600 } },
-              labels: { formatter: (value: number) => formatCurrency(value) }
+              title: {
+                text: 'Paid Invoice (IDR)',
+                style: { fontSize: '14px', fontWeight: 600 },
+              },
+              labels: { formatter: (value: number) => formatCurrency(value) },
             },
             {
               opposite: true,
-              title: { text: 'Unpaid Invoice (IDR)', style: { fontSize: '14px', fontWeight: 600 } },
-              labels: { formatter: (value: number) => formatCurrency(value) }
-            }
+              title: {
+                text: 'Unpaid Invoice (IDR)',
+                style: { fontSize: '14px', fontWeight: 600 },
+              },
+              labels: { formatter: (value: number) => formatCurrency(value) },
+            },
           ],
           tooltip: {
             y: [
-              { formatter: (value: number) => formatCurrency(value), title: { formatter: () => 'Paid Invoice: ' } },
-              { formatter: (value: number) => formatCurrency(value), title: { formatter: () => 'Unpaid Invoice: ' } }
-            ]
+              {
+                formatter: (value: number) => formatCurrency(value),
+                title: { formatter: () => 'Paid Invoice: ' },
+              },
+              {
+                formatter: (value: number) => formatCurrency(value),
+                title: { formatter: () => 'Unpaid Invoice: ' },
+              },
+            ],
           },
           colors: ['#22C55E', '#EF4444'],
           series: [
-            { name: 'Paid Invoice', data: chartData.map(item => item.paid_invoice) },
-            { name: 'Unpaid Invoice', data: chartData.map(item => item.unpaid_invoice) }
-          ]
+            {
+              name: 'Paid Invoice',
+              data: chartData.map((item) => item.paid_invoice),
+            },
+            {
+              name: 'Unpaid Invoice',
+              data: chartData.map((item) => item.unpaid_invoice),
+            },
+          ],
         };
       default:
         return {
           yaxis: [
             {
-              title: { text: 'Total Invoice (IDR)', style: { fontSize: '14px', fontWeight: 600 } },
-              labels: { formatter: (value: number) => formatCurrency(value) }
+              title: {
+                text: 'Total Invoice (IDR)',
+                style: { fontSize: '14px', fontWeight: 600 },
+              },
+              labels: { formatter: (value: number) => formatCurrency(value) },
             },
             {
               opposite: true,
-              title: { text: 'Total Orders', style: { fontSize: '14px', fontWeight: 600 } },
-              labels: { formatter: (value: number) => formatNumber(value) }
-            }
+              title: {
+                text: 'Total Orders',
+                style: { fontSize: '14px', fontWeight: 600 },
+              },
+              labels: { formatter: (value: number) => formatNumber(value) },
+            },
           ],
           tooltip: {
             y: [
-              { formatter: (value: number) => formatCurrency(value), title: { formatter: () => 'Total Invoice: ' } },
-              { formatter: (value: number) => formatNumber(value), title: { formatter: () => 'Total Orders: ' } }
-            ]
+              {
+                formatter: (value: number) => formatCurrency(value),
+                title: { formatter: () => 'Total Invoice: ' },
+              },
+              {
+                formatter: (value: number) => formatNumber(value),
+                title: { formatter: () => 'Total Orders: ' },
+              },
+            ],
           },
           colors: ['#3B82F6', '#10B981'],
           series: [
-            { name: 'Total Invoice', data: chartData.map(item => item.total_invoice) },
-            { name: 'Total Orders', data: chartData.map(item => item.total_orders) }
-          ]
+            {
+              name: 'Total Invoice',
+              data: chartData.map((item) => item.total_invoice),
+            },
+            {
+              name: 'Total Orders',
+              data: chartData.map((item) => item.total_orders),
+            },
+          ],
         };
     }
   };
@@ -367,7 +496,7 @@ const OrderTypeChart = ({ filters, goalProfit = 0, goalProfitByAgent = {} }: Ord
       colors: ['transparent'],
     },
     xaxis: {
-      categories: chartData.map(item => item.type_name),
+      categories: chartData.map((item) => item.type_name),
       labels: {
         style: {
           fontSize: '12px',
@@ -397,9 +526,15 @@ const OrderTypeChart = ({ filters, goalProfit = 0, goalProfitByAgent = {} }: Ord
       <Card>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            Order Distribution by {groupByOptions.find(opt => opt.value === groupBy)?.label}
+            Order Distribution by{' '}
+            {groupByOptions.find((opt) => opt.value === groupBy)?.label}
           </Typography>
-          <Box display="flex" justifyContent="center" alignItems="center" height={400}>
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            height={400}
+          >
             <CircularProgress />
           </Box>
         </CardContent>
@@ -408,22 +543,30 @@ const OrderTypeChart = ({ filters, goalProfit = 0, goalProfitByAgent = {} }: Ord
   }
 
   if (!chartData || chartData.length === 0) {
-    console.log('OrderTypeChart: No data available', { 
-      chartData, 
-      chartDataLength: chartData?.length, 
-      loading, 
+    console.log('OrderTypeChart: No data available', {
+      chartData,
+      chartDataLength: chartData?.length,
+      loading,
       filters,
-      groupBy 
+      groupBy,
     });
     return (
       <Card>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            Order Distribution by {groupByOptions.find(opt => opt.value === groupBy)?.label}
+            Order Distribution by{' '}
+            {groupByOptions.find((opt) => opt.value === groupBy)?.label}
           </Typography>
-          <Box display="flex" justifyContent="center" alignItems="center" height={400}>
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            height={400}
+          >
             <Typography color="textSecondary">
-              No data available for {groupByOptions.find(opt => opt.value === groupBy)?.label} in {filters.month}/{filters.year}
+              No data available for{' '}
+              {groupByOptions.find((opt) => opt.value === groupBy)?.label} in{' '}
+              {filters.month}/{filters.year}
             </Typography>
           </Box>
         </CardContent>
@@ -434,11 +577,19 @@ const OrderTypeChart = ({ filters, goalProfit = 0, goalProfitByAgent = {} }: Ord
   return (
     <Card>
       <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mb: 3,
+          }}
+        >
           <Typography variant="h6">
-            Order Distribution by {groupByOptions.find(opt => opt.value === groupBy)?.label}
+            Order Distribution by{' '}
+            {groupByOptions.find((opt) => opt.value === groupBy)?.label}
           </Typography>
-          
+
           <Box sx={{ display: 'flex', gap: 2 }}>
             <FormControl size="small" sx={{ minWidth: 150 }}>
               <InputLabel>Group By</InputLabel>
@@ -471,11 +622,18 @@ const OrderTypeChart = ({ filters, goalProfit = 0, goalProfitByAgent = {} }: Ord
             </FormControl>
           </Box>
         </Box>
-        
+
         <Typography variant="body2" color="textSecondary" mb={3}>
-          Distribution of orders by {groupByOptions.find(opt => opt.value === groupBy)?.label.toLowerCase()} showing {metricTypeOptions.find(opt => opt.value === metricType)?.label.toLowerCase()}
+          Distribution of orders by{' '}
+          {groupByOptions
+            .find((opt) => opt.value === groupBy)
+            ?.label.toLowerCase()}{' '}
+          showing{' '}
+          {metricTypeOptions
+            .find((opt) => opt.value === metricType)
+            ?.label.toLowerCase()}
         </Typography>
-        
+
         <Box>
           <ReactApexChart
             options={chartOptions}
@@ -484,16 +642,31 @@ const OrderTypeChart = ({ filters, goalProfit = 0, goalProfitByAgent = {} }: Ord
             height={400}
           />
         </Box>
-        
+
         <Box mt={3}>
           <Typography variant="subtitle2" gutterBottom>
             Summary:
           </Typography>
           <Typography variant="body2" color="textSecondary">
-            Total {groupByOptions.find(opt => opt.value === groupBy)?.label.toLowerCase()} categories: {chartData.length} | 
-            Total invoice: {formatCurrency(chartData.reduce((sum, item) => sum + Number(item.total_invoice) || 0, 0))} | 
-            Total orders: {formatNumber(chartData.reduce((sum, item) => sum + item.total_orders, 0))} |
-            Total active stores: {formatNumber(chartData.reduce((sum, item) => sum + item.active_stores, 0))}
+            Total{' '}
+            {groupByOptions
+              .find((opt) => opt.value === groupBy)
+              ?.label.toLowerCase()}{' '}
+            categories: {chartData.length} | Total invoice:{' '}
+            {formatCurrency(
+              chartData.reduce(
+                (sum, item) => sum + Number(item.total_invoice) || 0,
+                0,
+              ),
+            )}{' '}
+            | Total orders:{' '}
+            {formatNumber(
+              chartData.reduce((sum, item) => sum + item.total_orders, 0),
+            )}{' '}
+            | Total active stores:{' '}
+            {formatNumber(
+              chartData.reduce((sum, item) => sum + item.active_stores, 0),
+            )}
           </Typography>
         </Box>
       </CardContent>

@@ -74,7 +74,7 @@ export const fetchVisits = async (params: VisitQueryParams): Promise<VisitsRespo
   if (params.area) queryParams.append('area', params.area);
   if (params.visit_type) queryParams.append('visit_type', params.visit_type);
   
-  const url = `${baseUrl}/api/monitoring/visit?${queryParams.toString()}`;
+  const url = `${baseUrl}/monitoring/visit?${queryParams.toString()}`;
   
   console.log('Fetching visits from:', url);
   console.log('Query params:', queryParams.toString());
@@ -195,7 +195,7 @@ export const fetchVisitSummary = async (params: VisitSummaryQueryParams): Promis
   if (params.area) queryParams.append('area', params.area);
   if (params.visit_type) queryParams.append('visit_type', params.visit_type);
   
-  const url = `${baseUrl}/api/monitoring/visit/summary?${queryParams.toString()}`;
+  const url = `${baseUrl}/monitoring/visit/summary?${queryParams.toString()}`;
   
   console.log('Fetching visit summary from:', url);
   console.log('Query params:', queryParams.toString());
@@ -274,7 +274,7 @@ export const fetchComplaints = async (params: ComplaintQueryParams): Promise<Com
   if (params.product_name) queryParams.append('product_name', params.product_name);
   if (params.agent) queryParams.append('agent_name', params.agent);
   
-  const url = `${baseUrl}/api/monitoring/complaint?${queryParams.toString()}`;
+  const url = `${baseUrl}/monitoring/complaint?${queryParams.toString()}`;
   
   console.log('Fetching complaints from:', url);
   console.log('Query params:', queryParams.toString());
@@ -364,7 +364,7 @@ export const fetchComplaintSummary = async (params: ComplaintSummaryQueryParams)
   if (params.year) queryParams.append('year', params.year);
   if (params.alasan) queryParams.append('alasan', params.alasan);
   
-  const url = `${baseUrl}/api/monitoring/complaint/summary?${queryParams.toString()}`;
+  const url = `${baseUrl}/monitoring/complaint/summary?${queryParams.toString()}`;
   
   console.log('Fetching complaint summary from:', url);
   console.log('Query params:', queryParams.toString());
