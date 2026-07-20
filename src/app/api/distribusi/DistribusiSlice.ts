@@ -742,7 +742,8 @@ export interface BuyPriceImportResponse {
 }
 
 export const importOrderItemBuyPrices = async (
-  file: File
+  file: File,
+  dryRun = false
 ): Promise<BuyPriceImportResponse> => {
   if (!AM_API_URL) {
     throw new Error('API URL is not configured');
@@ -751,7 +752,8 @@ export const importOrderItemBuyPrices = async (
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await fetch(`${AM_API_URL}/api/order/order-items/buy-price/import`, {
+  const url = `${AM_API_URL}/order/order-items/buy-price/import?dry_run=${dryRun}`;
+  const response = await fetch(url, {
     method: 'POST',
     body: formData,
   });

@@ -188,7 +188,7 @@ const BuyPriceImportModal = ({
     setUploading(true);
     setError(null);
     try {
-      const response = await importOrderItemBuyPrices(file);
+      const response = await importOrderItemBuyPrices(file, false);
       setResult(response.data);
       onImported?.();
     } catch (uploadError) {
