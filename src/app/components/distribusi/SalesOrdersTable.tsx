@@ -368,7 +368,7 @@ const SalesOrdersTable = ({
             'Payment Type': order.payment_type,
             'Order Date': formatDate(order.order_date),
             'Payment Due Date': getPaymentDueDateDisplay(order.payment_due_date).label,
-            'Total Invoice': detail.total_invoice, // Use total_invoice from detail_order
+            'Total Invoice': Math.round(Number(detail.total_invoice) || 0),
             'Profit': detail.profit, // Use profit from detail_order
             'Business Type': order.business_type,
             'Sub Business Type': order.sub_business_type,
@@ -408,7 +408,7 @@ const SalesOrdersTable = ({
           'Payment Type': order.payment_type,
           'Order Date': formatDate(order.order_date),
           'Payment Due Date': getPaymentDueDateDisplay(order.payment_due_date).label,
-          'Total Invoice': order.total_invoice,
+          'Total Invoice': Math.round(Number(order.total_invoice) || 0),
           'Profit': order.profit,
           'Business Type': order.business_type,
           'Sub Business Type': order.sub_business_type,
