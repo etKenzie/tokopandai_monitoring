@@ -64,6 +64,42 @@ interface CashInOrdersTableProps {
   agentName?: string;
 }
 
+/** One row per order_code; multiple payments for the same order are summed. */
+const dedupeCashInOrdersByCode = (items: CashInListItem[]): CashInListItem[] => {
+  const byCode = new Map<string, CashInListItem>();
+
+  items.forEach((item) => {
+    const code = String(item.order_code ?? '').trim();
+    if (!code) return;
+
+    const existing = byCode.get(code);
+    if (!existing) {
+      byCode.set(code, { ...item, order_code: code });
+      return;
+    }
+
+    const existingDate = existing.payment_date ? new Date(existing.payment_date).getTime() : 0;
+    const nextDate = item.payment_date ? new Date(item.payment_date).getTime() : 0;
+    const preferNext = nextDate > existingDate;
+
+    byCode.set(code, {
+      ...existing,
+      ...(preferNext ? item : {}),
+      order_code: code,
+      total_paid: Number(existing.total_paid || 0) + Number(item.total_paid || 0),
+      repayment_type:
+        existing.repayment_type === 'FULL' || item.repayment_type === 'FULL'
+          ? 'FULL'
+          : preferNext
+            ? item.repayment_type
+            : existing.repayment_type,
+      payment_date: preferNext ? item.payment_date : existing.payment_date,
+    });
+  });
+
+  return Array.from(byCode.values());
+};
+
 const CashInOrdersTable = ({ 
   filters,
   title = 'Cash-In Orders',
@@ -105,7 +141,7 @@ const CashInOrdersTable = ({
         area: filters.area
       });
       
-      setOrders(response.data);
+      setOrders(dedupeCashInOrdersByCode(response.data || []));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       console.error('Failed to fetch cash-in list data:', err);
@@ -595,7 +631,7 @@ const CashInOrdersTable = ({
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((row, index) => (
                     <TableRow 
-                      key={`${row.order_id}-${row.payment_date || 'no-date'}-${row.total_paid}-${index}`} 
+                      key={row.order_code || `${row.order_id}-${index}`} 
                       hover 
                       onClick={() => handleRowClick(row.order_code)}
                       sx={{ 
