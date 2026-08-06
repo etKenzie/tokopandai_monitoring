@@ -14,11 +14,13 @@ import ProtectedRoute from '@/app/components/auth/ProtectedRoute';
 import PageContainer from '@/app/components/container/PageContainer';
 import { DistribusiFilterValues } from '@/app/components/distribusi/DistribusiFilters';
 import OrderTypeChart from '@/app/components/distribusi/OrderTypeChart';
+import InvoiceSummaryCard from '@/app/components/distribusi/InvoiceSummaryCard';
+import ProfitProgressCard from '@/app/components/distribusi/ProfitProgressCard';
 import SalesMonthlyChart from '@/app/components/distribusi/SalesMonthlyChart';
+import StoresSummaryCard from '@/app/components/distribusi/StoresSummaryCard';
 import StoresMonthlyChart from '@/app/components/distribusi/StoresMonthlyChart';
 import StoresOwedNotice from '@/app/components/distribusi/StoresOwedNotice';
 import StoreSummaryModal from '@/app/components/distribusi/StoreSummaryModal';
-import SummaryTiles from '@/app/components/shared/SummaryTiles';
 import { useAuth } from '@/app/context/AuthContext';
 import { useSettings } from '@/app/context/SettingsContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
@@ -656,158 +658,6 @@ const SalesOverview = () => {
     return Math.min(100, (currentValue / targetValue) * 100);
   };
 
-  // Prepare currency summary tiles data
-  const getCurrencySummaryTiles = () => {
-    return [
-      // First row - 6 tiles
-      {
-        title: 'Total Invoice',
-        value: salesData?.total_invoice || 0,
-        isCurrency: true,
-        mdSize: 2.4,
-        isLoading: loading && !salesData,
-      },
-      {
-        title: 'Total Profit',
-        value: salesData?.total_profit || 0,
-        isCurrency: true,
-        mdSize: 2.4,
-        isLoading: loading && !salesData,
-      },
-      {
-        title: 'Goal Profit',
-        value: getGoalProfitValue(),
-        isCurrency: true,
-        mdSize: 2.4,
-        isLoading: false,
-      },
-      {
-        title: 'Profit Remaining',
-        value: (salesData?.total_profit || 0) - getGoalProfitValue(),
-        isCurrency: true,
-        mdSize: 2.4,
-        isLoading: loading && !salesData,
-        color:
-          (salesData?.total_profit || 0) - getGoalProfitValue() >= 0
-            ? '#22c55e'
-            : '#ef4444',
-      },
-      {
-        title: 'Profit Progress',
-        value:
-          getGoalProfitValue() > 0
-            ? ((salesData?.total_profit || 0) / getGoalProfitValue()) * 100
-            : 0,
-        isCurrency: false,
-        unit: '%',
-        mdSize: 2.4,
-        isLoading: loading && !salesData,
-        color: getProgressColor(
-          getGoalProfitValue() > 0
-            ? ((salesData?.total_profit || 0) / getGoalProfitValue()) * 100
-            : 0,
-        ),
-      },
-
-      // Second row - 6 tiles
-      {
-        title: 'Average Daily Profit',
-        value: salesData?.average_profit_day || 0,
-        isCurrency: true,
-        mdSize: 2.4,
-        isLoading: loading && !salesData,
-      },
-      {
-        title: 'Average Weekly Profit',
-        value: salesData?.average_profit_week || 0,
-        isCurrency: true,
-        mdSize: 2.4,
-        isLoading: loading && !salesData,
-      },
-      {
-        title: 'Daily Profit to Goal',
-        value: getDailyProfitToGoal(),
-        isCurrency: true,
-        mdSize: 2.4,
-        isLoading: loading && !salesData,
-        color: getProgressColor(
-          getGoalProfitValue() > 0
-            ? ((salesData?.total_profit || 0) / getGoalProfitValue()) * 100
-            : 0,
-        ),
-      },
-      {
-        title: 'Weekly Profit to Goal',
-        value: getWeeklyProfitToGoal(),
-        isCurrency: true,
-        mdSize: 2.4,
-        isLoading: loading && !salesData,
-        color: getProgressColor(
-          getGoalProfitValue() > 0
-            ? ((salesData?.total_profit || 0) / getGoalProfitValue()) * 100
-            : 0,
-        ),
-      },
-      {
-        title: 'Days Remaining',
-        value: getDaysRemaining(),
-        isCurrency: false,
-        unit: ' days',
-        mdSize: 2.4,
-        isLoading: false,
-        color:
-          getDaysRemaining() <= 30
-            ? '#ef4444'
-            : getDaysRemaining() <= 90
-              ? '#f59e0b'
-              : '#22c55e',
-      },
-    ];
-  };
-
-  // Prepare non-currency summary tiles data
-  const getNonCurrencySummaryTiles = () => {
-    return [
-      {
-        title: 'Invoice Count',
-        value: salesData?.invoice_count || 0,
-        isCurrency: false,
-        mdSize: 2.4,
-        isLoading: loading && !salesData,
-      },
-      {
-        title: 'Active Stores',
-        value: totalStoresData?.active_stores || 0,
-        isCurrency: false,
-        mdSize: 2.4,
-        isLoading: totalStoresLoading && !totalStoresData,
-      },
-      {
-        title: 'Total Stores',
-        value: totalStoresData?.total_stores || 0,
-        isCurrency: false,
-        mdSize: 2.4,
-        isLoading: totalStoresLoading && !totalStoresData,
-      },
-      {
-        title: 'Activation Rate',
-        value: totalStoresData?.activation_rate || 0,
-        isCurrency: false,
-        unit: '%',
-        mdSize: 2.4,
-        isLoading: totalStoresLoading && !totalStoresData,
-      },
-      {
-        title: 'Margin',
-        value: salesData?.margin || 0,
-        isCurrency: false,
-        unit: '%',
-        mdSize: 2.4,
-        isLoading: loading && !salesData,
-      },
-    ];
-  };
-
   return (
     <PageContainer
       title="Sales Overview"
@@ -1013,7 +863,7 @@ const SalesOverview = () => {
           }
         />
 
-        {/* Currency Summary Tiles */}
+        {/* Profit Progress */}
         <Box mb={3}>
           {error ? (
             <Box
@@ -1027,7 +877,30 @@ const SalesOverview = () => {
               </Typography>
             </Box>
           ) : (
-            <SummaryTiles tiles={getCurrencySummaryTiles()} />
+            <ProfitProgressCard
+              isLoading={loading && !salesData}
+              goalAccentColor={getProgressColor(
+                getGoalProfitValue() > 0
+                  ? ((salesData?.total_profit || 0) / getGoalProfitValue()) * 100
+                  : 0,
+              )}
+              data={{
+                totalProfit: salesData?.total_profit || 0,
+                goalProfit: getGoalProfitValue(),
+                profitRemaining:
+                  (salesData?.total_profit || 0) - getGoalProfitValue(),
+                profitProgress:
+                  getGoalProfitValue() > 0
+                    ? ((salesData?.total_profit || 0) / getGoalProfitValue()) *
+                      100
+                    : 0,
+                daysRemaining: getDaysRemaining(),
+                averageDailyProfit: salesData?.average_profit_day || 0,
+                averageWeeklyProfit: salesData?.average_profit_week || 0,
+                dailyProfitToGoal: getDailyProfitToGoal(),
+                weeklyProfitToGoal: getWeeklyProfitToGoal(),
+              }}
+            />
           )}
         </Box>
 
@@ -1050,26 +923,38 @@ const SalesOverview = () => {
           />
         </Box>
 
-        {/* Non-Currency Metrics */}
-        <Box mb={3}>
-          {/* <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
-            Performance Metrics
-          </Typography> */}
-          {error ? (
-            <Box
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              height="200px"
-            >
-              <Typography variant="body1" color="error">
-                {error}
-              </Typography>
-            </Box>
-          ) : (
-            <SummaryTiles tiles={getNonCurrencySummaryTiles()} />
-          )}
-        </Box>
+        {/* Invoice + Stores */}
+        {!error && (
+          <Box
+            mb={3}
+            sx={{
+              display: 'grid',
+              gap: 2,
+              gridTemplateColumns: {
+                xs: '1fr',
+                md: 'repeat(2, minmax(0, 1fr))',
+              },
+              alignItems: 'stretch',
+            }}
+          >
+            <InvoiceSummaryCard
+              isLoading={loading && !salesData}
+              data={{
+                totalInvoice: salesData?.total_invoice || 0,
+                invoiceCount: salesData?.invoice_count || 0,
+                margin: salesData?.margin || 0,
+              }}
+            />
+            <StoresSummaryCard
+              isLoading={totalStoresLoading && !totalStoresData}
+              data={{
+                activeStores: totalStoresData?.active_stores || 0,
+                totalStores: totalStoresData?.total_stores || 0,
+                activationRate: totalStoresData?.activation_rate || 0,
+              }}
+            />
+          </Box>
+        )}
 
         {/* Monthly Stores Chart */}
         <Box mb={3}>

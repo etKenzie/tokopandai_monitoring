@@ -2,21 +2,23 @@
 
 import { TotalStoresMonthlyResponse, fetchTotalStoresMonthly } from '@/app/api/distribusi/DistribusiSlice';
 import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
-    SelectChangeEvent,
-    Typography
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  Typography,
 } from '@mui/material';
-import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from 'react';
+import { useTheme } from '@mui/material/styles';
+import dynamic from 'next/dynamic';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
+const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
 interface StoresMonthlyChartProps {
   filters: {
@@ -33,18 +35,25 @@ interface StoresMonthlyChartProps {
 
 type ChartType = 'stores' | 'activation';
 
+const SERIES_COLORS: Record<string, string> = {
+  'Active Stores': '#16A34A',
+  'Total Stores': '#2563EB',
+  'Activation Rate': '#D97706',
+};
+
 const StoresMonthlyChart = ({ filters, onViewAllStores }: StoresMonthlyChartProps) => {
+  const theme = useTheme();
   const [chartData, setChartData] = useState<TotalStoresMonthlyResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [chartType, setChartType] = useState<ChartType>('stores');
   const [startMonthYear, setStartMonthYear] = useState<string>('');
   const [endMonthYear, setEndMonthYear] = useState<string>('');
+  const [hiddenSeries, setHiddenSeries] = useState<Set<string>>(() => new Set());
 
-  // Generate month-year options (current month - 12 months back)
   const generateMonthYearOptions = () => {
     const options = [];
     const currentDate = new Date();
-    
+
     for (let i = 0; i < 12; i++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
       const monthName = date.toLocaleString('en-US', { month: 'long' });
@@ -52,204 +61,152 @@ const StoresMonthlyChart = ({ filters, onViewAllStores }: StoresMonthlyChartProp
       const value = `${monthName} ${year}`;
       options.push({ value, label: value });
     }
-    
-    // Reverse the array so oldest months appear first (top) and newest months appear last (bottom)
+
     return options.reverse();
   };
 
   const monthYearOptions = generateMonthYearOptions();
 
-  // Initialize month range in useEffect to avoid hydration issues
   useEffect(() => {
     updateMonthRange();
   }, []);
 
-  // Update month range when filters change
   useEffect(() => {
-    console.log('Filters changed, updating month range:', filters);
     updateMonthRange();
-  }, [filters.month, filters.year, filters.agent, filters.area, filters.segment, filters.business_type, filters.status_payment]);
+  }, [
+    filters.month,
+    filters.year,
+    filters.agent,
+    filters.area,
+    filters.segment,
+    filters.business_type,
+    filters.status_payment,
+  ]);
 
   const updateMonthRange = () => {
-    console.log('Updating month range with filters:', filters);
-    
     if (filters.month && filters.year) {
-      // Use the selected month and year from filters
       const monthNames = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
       ];
       const monthName = monthNames[parseInt(filters.month) - 1];
-      const selectedMonthYear = `${monthName} ${filters.year}`;
-      
-      console.log('Selected month year:', selectedMonthYear);
-      
-      // End month: the selected month
-      setEndMonthYear(selectedMonthYear);
-      
-      // Start month: 3 months before the selected month
+      setEndMonthYear(`${monthName} ${filters.year}`);
+
       let startYearNum = parseInt(filters.year);
       let startMonthNum = parseInt(filters.month) - 3;
-      
+
       if (startMonthNum < 1) {
         startYearNum = startYearNum - 1;
-        startMonthNum = 12 + startMonthNum; // Convert negative to positive month
+        startMonthNum = 12 + startMonthNum;
       }
-      
-      const startMonthName = monthNames[startMonthNum - 1];
-      const startMonthYear = `${startMonthName} ${startYearNum}`;
-      
-      console.log('Calculated start month year:', startMonthYear);
-      
-      setStartMonthYear(startMonthYear);
+
+      setStartMonthYear(`${monthNames[startMonthNum - 1]} ${startYearNum}`);
     } else {
-      // Fallback to current month logic
       const currentDate = new Date();
       const currentMonth = currentDate.toLocaleString('en-US', { month: 'long' });
       const currentYear = currentDate.getFullYear();
-      const currentMonthYear = `${currentMonth} ${currentYear}`;
-      
-      console.log('Using current month year:', currentMonthYear);
-      
-      setEndMonthYear(currentMonthYear);
-      
-      // Start month: 3 months before current month
+      setEndMonthYear(`${currentMonth} ${currentYear}`);
+
       const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 3, 1);
       const startMonth = startDate.toLocaleString('en-US', { month: 'long' });
-      const startYear = startDate.getFullYear();
-      const startMonthYear = `${startMonth} ${startYear}`;
-      
-      console.log('Using calculated start month year:', startMonthYear);
-      
-      setStartMonthYear(startMonthYear);
+      setStartMonthYear(`${startMonth} ${startDate.getFullYear()}`);
     }
   };
 
-  // Use ref to track the latest filters to avoid stale closures
   const filtersRef = useRef(filters);
   useEffect(() => {
     filtersRef.current = filters;
   }, [filters]);
 
-  // Use ref to track the latest month range to avoid stale closures
   const monthRangeRef = useRef({ startMonthYear, endMonthYear });
   useEffect(() => {
     monthRangeRef.current = { startMonthYear, endMonthYear };
   }, [startMonthYear, endMonthYear]);
 
   const fetchChartData = async (signal?: AbortSignal) => {
-    // Get latest values from refs to avoid stale closures
     const currentFilters = filtersRef.current;
     const currentMonthRange = monthRangeRef.current;
-    
-    if (!currentMonthRange.startMonthYear || !currentMonthRange.endMonthYear) {
-      console.log('Missing month/year values:', currentMonthRange);
-      return;
-    }
-    
-    console.log('Fetching stores chart data for range:', currentMonthRange);
+
+    if (!currentMonthRange.startMonthYear || !currentMonthRange.endMonthYear) return;
+
     setLoading(true);
     try {
-      console.log('API call parameters:', {
-        start_month: currentMonthRange.startMonthYear,
-        end_month: currentMonthRange.endMonthYear,
-        agent_name: currentFilters.agent,
-        area: currentFilters.area,
-        segment: currentFilters.segment,
-        business_type: currentFilters.business_type,
-        status_payment: currentFilters.status_payment
-      });
+      const response = await fetchTotalStoresMonthly(
+        {
+          start_month: currentMonthRange.startMonthYear,
+          end_month: currentMonthRange.endMonthYear,
+          agent_name: currentFilters.agent || undefined,
+          area: currentFilters.area || undefined,
+          segment: currentFilters.segment || undefined,
+          business_type: currentFilters.business_type || undefined,
+          status_payment: currentFilters.status_payment || undefined,
+        },
+        signal,
+      );
 
-      const response = await fetchTotalStoresMonthly({
-        start_month: currentMonthRange.startMonthYear,
-        end_month: currentMonthRange.endMonthYear,
-        agent_name: currentFilters.agent || undefined,
-        area: currentFilters.area || undefined,
-        segment: currentFilters.segment || undefined,
-        business_type: currentFilters.business_type || undefined,
-        status_payment: currentFilters.status_payment || undefined,
-      }, signal);
-      
-      // Check if request was aborted before updating state
-      if (signal?.aborted) {
-        console.log('Request was aborted, ignoring response');
-        return;
-      }
-      
-      console.log('Stores chart data response:', response);
+      if (signal?.aborted) return;
       setChartData(response);
     } catch (error: any) {
-      // Ignore abort errors
-      if (error?.name === 'AbortError' || signal?.aborted) {
-        console.log('Request was aborted');
-        return;
-      }
+      if (error?.name === 'AbortError' || signal?.aborted) return;
       console.error('Failed to fetch stores chart data:', error);
     } finally {
-      // Only update loading state if request wasn't aborted
-      if (!signal?.aborted) {
-        setLoading(false);
-      }
+      if (!signal?.aborted) setLoading(false);
     }
   };
 
-  // Use ref to track in-flight requests and prevent race conditions
   const abortControllerRef = useRef<AbortController | null>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch data when month range or filters change with debouncing
   useEffect(() => {
-    if (!startMonthYear || !endMonthYear) {
-      return;
-    }
+    if (!startMonthYear || !endMonthYear) return;
 
-    // Clear any existing debounce timeout
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-
-    // Cancel any in-flight request
+    if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
     if (abortControllerRef.current) {
-      console.log('Cancelling previous request due to filter change');
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
 
-    // Debounce the fetch to avoid too many rapid requests
     debounceTimeoutRef.current = setTimeout(() => {
-      console.log('Month range or filters changed, fetching new data:', { 
-        startMonthYear, 
-        endMonthYear,
-        agent: filters.agent,
-        area: filters.area,
-        segment: filters.segment,
-        business_type: filters.business_type,
-        status_payment: filters.status_payment
-      });
-
-      // Create new abort controller for this request
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
 
       fetchChartData(abortController.signal).finally(() => {
-        // Only clear the ref if this is still the current request
         if (abortControllerRef.current === abortController) {
           abortControllerRef.current = null;
         }
       });
-    }, 300); // 300ms debounce delay
+    }, 300);
 
-    // Cleanup function
     return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
+      if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
         abortControllerRef.current = null;
       }
     };
-  }, [startMonthYear, endMonthYear, filters.agent, filters.area, filters.segment, filters.business_type, filters.status_payment]);
+  }, [
+    startMonthYear,
+    endMonthYear,
+    filters.agent,
+    filters.area,
+    filters.segment,
+    filters.business_type,
+    filters.status_payment,
+  ]);
+
+  useEffect(() => {
+    setHiddenSeries(new Set());
+  }, [chartType]);
 
   const handleChartTypeChange = (event: SelectChangeEvent<ChartType>) => {
     setChartType(event.target.value as ChartType);
@@ -264,165 +221,189 @@ const StoresMonthlyChart = ({ filters, onViewAllStores }: StoresMonthlyChartProp
   };
 
   const formatValue = (value: number, type: ChartType) => {
-    if (type === 'activation') {
-      return `${value.toFixed(1)}%`;
-    }
-    return value.toLocaleString('id-ID');
+    if (type === 'activation') return `${value.toFixed(1)}%`;
+    return value.toLocaleString('en-US');
   };
 
-  // Prepare chart data with proper validation
   const prepareChartData = () => {
     if (!chartData?.data || !Array.isArray(chartData.data) || chartData.data.length === 0) {
-      console.log('No chart data available:', chartData);
-      return { categories: [], series: [] };
+      return { categories: [], series: [] as Array<{ name: string; data: number[] }> };
     }
 
-    console.log('Processing chart data:', chartData.data);
-
-    // Sort months chronologically (Month Year format like "June 2025")
-    const sortedData = chartData.data.sort((a, b) => {
+    const sortedData = [...chartData.data].sort((a, b) => {
       const monthNames = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
       ];
-      
+
       const [monthA, yearA] = a.month.split(' ');
       const [monthB, yearB] = b.month.split(' ');
-      
       if (!monthA || !yearA || !monthB || !yearB) return 0;
-      
+
       const yearDiff = parseInt(yearA) - parseInt(yearB);
       if (yearDiff !== 0) return yearDiff;
-      
-      const monthIndexA = monthNames.indexOf(monthA);
-      const monthIndexB = monthNames.indexOf(monthB);
-      
-      return monthIndexA - monthIndexB;
+      return monthNames.indexOf(monthA) - monthNames.indexOf(monthB);
     });
-    
-    const categories = sortedData.map(item => item.month);
-    
-    let series: any[] = [];
+
+    const categories = sortedData.map((item) => item.month);
+    let series: Array<{ name: string; data: number[] }> = [];
 
     if (chartType === 'stores') {
       series = [
-        {
-          name: 'Active Stores',
-          data: sortedData.map(item => item.active_stores || 0)
-        },
-        {
-          name: 'Total Stores',
-          data: sortedData.map(item => item.total_stores || 0)
-        }
+        { name: 'Active Stores', data: sortedData.map((item) => item.active_stores || 0) },
+        { name: 'Total Stores', data: sortedData.map((item) => item.total_stores || 0) },
       ];
-    } else if (chartType === 'activation') {
+    } else {
       series = [
         {
           name: 'Activation Rate',
-          data: sortedData.map(item => item.activation_rate || 0)
-        }
+          data: sortedData.map((item) => item.activation_rate || 0),
+        },
       ];
     }
 
-    console.log('Prepared chart data:', { categories, series });
-
-    return {
-      categories,
-      series
-    };
+    return { categories, series };
   };
 
-  const chartDataConfig = prepareChartData();
+  const chartDataConfig = useMemo(() => prepareChartData(), [chartData, chartType]);
+  const legendItems = chartDataConfig.series.map((s) => ({
+    name: s.name,
+    color: SERIES_COLORS[s.name] || '#2563EB',
+  }));
+  const visibleSeries = chartDataConfig.series.filter((s) => !hiddenSeries.has(s.name));
+  const colors = visibleSeries.map((s) => SERIES_COLORS[s.name] || '#2563EB');
+  const shouldRenderChart =
+    chartDataConfig.categories.length > 0 && visibleSeries.length > 0;
 
-  // Only render chart if we have valid data
-  const shouldRenderChart = chartDataConfig.categories.length > 0 && chartDataConfig.series.length > 0;
+  const toggleSeries = useCallback(
+    (name: string) => {
+      setHiddenSeries((prev) => {
+        const isHidden = prev.has(name);
+        if (!isHidden) {
+          const visibleCount = chartDataConfig.series.filter((item) => !prev.has(item.name))
+            .length;
+          if (visibleCount <= 1) return prev;
+        }
+        const next = new Set(prev);
+        if (isHidden) next.delete(name);
+        else next.add(name);
+        return next;
+      });
+    },
+    [chartDataConfig.series],
+  );
 
-  const chartOptions = {
-    chart: {
-      type: 'line' as const,
-      height: 350,
-      toolbar: {
-        show: false
-      }
-    },
-    stroke: {
-      curve: 'smooth' as const,
-      width: 3
-    },
-    xaxis: {
-      categories: chartDataConfig.categories,
-      labels: {
-        style: {
-          fontSize: '12px'
-        }
-      }
-    },
-    yaxis: {
-      labels: {
-        formatter: function(value: number) {
-          return formatValue(value, chartType);
-        }
-      }
-    },
-    tooltip: {
-      y: {
-        formatter: function(value: number) {
-          return formatValue(value, chartType);
-        }
-      }
-    },
-    colors: ['#3B82F6', '#10B981', '#F59E0B'],
-    grid: {
-      borderColor: '#E5E7EB',
-      strokeDashArray: 4
-    },
-    markers: {
-      size: 6,
-      strokeColors: '#FFFFFF',
-      strokeWidth: 2
-    },
-    legend: {
-      position: 'bottom' as const,
-      horizontalAlign: 'center' as const
-    }
-  };
+  const chartOptions: ApexCharts.ApexOptions = useMemo(
+    () => ({
+      chart: {
+        type: 'line',
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        foreColor: theme.palette.mode === 'dark' ? '#adb0bb' : '#5e5873',
+        toolbar: { show: false },
+        zoom: { enabled: false },
+        animations: { enabled: false },
+      },
+      colors,
+      stroke: {
+        curve: 'smooth',
+        width: 2.5,
+      },
+      markers: {
+        size: 3.5,
+        hover: { sizeOffset: 2 },
+      },
+      dataLabels: { enabled: false },
+      legend: { show: false },
+      grid: {
+        borderColor: theme.palette.divider,
+        strokeDashArray: 4,
+      },
+      xaxis: {
+        categories: chartDataConfig.categories,
+        labels: { style: { fontSize: '12px' } },
+      },
+      yaxis: {
+        labels: {
+          formatter: (value: number) => formatValue(value, chartType),
+          style: { fontSize: '12px' },
+        },
+      },
+      tooltip: {
+        shared: true,
+        intersect: false,
+        followCursor: true,
+        y: {
+          formatter: (value: number) => formatValue(value, chartType),
+        },
+      },
+      noData: {
+        text: 'No data for this range',
+      },
+    }),
+    [theme, colors, chartDataConfig.categories, chartType],
+  );
 
   return (
-    <Card>
-      <CardContent>
-        
-        {/* Controls */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="h6" sx={{ margin: 0 }}>
+    <Card
+      sx={(t) => ({
+        border: '1px solid',
+        borderColor: t.palette.mode === 'dark' ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.12)',
+        boxShadow: t.palette.mode === 'dark' ? 'none' : '0 1px 4px rgba(0, 0, 0, 0.06)',
+      })}
+    >
+      <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 2,
+            mb: 1.5,
+          }}
+        >
+          <Box>
+            <Typography
+              variant="subtitle1"
+              fontWeight={700}
+              sx={{
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+                color: 'text.primary',
+              }}
+            >
               Stores Monthly Trend
             </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+              {chartType === 'stores' ? 'Active and total stores' : 'Activation rate'}
+              {startMonthYear && endMonthYear ? ` · ${startMonthYear} – ${endMonthYear}` : ''}
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
             {onViewAllStores && (
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={onViewAllStores}
-              >
+              <Button variant="outlined" size="small" onClick={onViewAllStores}>
                 View All Stores
               </Button>
             )}
-          </Box>
-          
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            <FormControl size="small">
+            <FormControl size="small" sx={{ minWidth: 140 }}>
               <InputLabel>Chart Type</InputLabel>
-              <Select
-                value={chartType}
-                label="Chart Type"
-                onChange={handleChartTypeChange}
-              >
+              <Select value={chartType} label="Chart Type" onChange={handleChartTypeChange}>
                 <MenuItem value="stores">Stores</MenuItem>
                 <MenuItem value="activation">Activation Rate</MenuItem>
               </Select>
             </FormControl>
-            
-            {/* Start Month Year */}
-            <FormControl size="small">
+            <FormControl size="small" sx={{ minWidth: 150 }}>
               <InputLabel>Start Month</InputLabel>
               <Select
                 value={startMonthYear}
@@ -436,15 +417,9 @@ const StoresMonthlyChart = ({ filters, onViewAllStores }: StoresMonthlyChartProp
                 ))}
               </Select>
             </FormControl>
-
-            {/* End Month Year */}
-            <FormControl size="small">
+            <FormControl size="small" sx={{ minWidth: 150 }}>
               <InputLabel>End Month</InputLabel>
-              <Select
-                value={endMonthYear}
-                label="End Month"
-                onChange={handleEndMonthYearChange}
-              >
+              <Select value={endMonthYear} label="End Month" onChange={handleEndMonthYearChange}>
                 {monthYearOptions.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
                     {option.label}
@@ -455,39 +430,80 @@ const StoresMonthlyChart = ({ filters, onViewAllStores }: StoresMonthlyChartProp
           </Box>
         </Box>
 
-        {/* Chart */}
-        <Box sx={{ height: 400, position: 'relative' }}>
-          {loading ? (
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                height: '100%' 
-              }}
-            >
-              <Typography>Loading chart data...</Typography>
-            </Box>
-          ) : shouldRenderChart ? (
-            <ReactApexChart
-              options={chartOptions}
-              series={chartDataConfig.series}
-              type="line"
-              height={350}
-            />
-          ) : (
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                height: '100%' 
-              }}
-            >
-              <Typography color="textSecondary">No data available for the selected month range</Typography>
-            </Box>
-          )}
-        </Box>
+        {loading ? (
+          <Box display="flex" justifyContent="center" alignItems="center" height={360}>
+            <CircularProgress />
+          </Box>
+        ) : shouldRenderChart ? (
+          <ReactApexChart
+            key={`${startMonthYear}-${endMonthYear}-${chartType}-${visibleSeries
+              .map((s) => s.name)
+              .join('-')}`}
+            options={chartOptions}
+            series={visibleSeries}
+            type="line"
+            height={360}
+          />
+        ) : (
+          <Box display="flex" justifyContent="center" alignItems="center" height={360}>
+            <Typography color="text.secondary">
+              No data available for the selected month range
+            </Typography>
+          </Box>
+        )}
+
+        {legendItems.length > 0 && (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              gap: 2,
+              mt: 1,
+            }}
+          >
+            {legendItems.map((item) => {
+              const isHidden = hiddenSeries.has(item.name);
+              return (
+                <Box
+                  key={item.name}
+                  component="button"
+                  type="button"
+                  onClick={() => toggleSeries(item.name)}
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.75,
+                    border: 'none',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    opacity: isHidden ? 0.4 : 1,
+                    p: 0.25,
+                    color: 'text.secondary',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      bgcolor: item.color,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <Typography
+                    variant="body2"
+                    fontWeight={600}
+                    sx={{ textDecoration: isHidden ? 'line-through' : 'none' }}
+                  >
+                    {item.name}
+                  </Typography>
+                </Box>
+              );
+            })}
+          </Box>
+        )}
       </CardContent>
     </Card>
   );

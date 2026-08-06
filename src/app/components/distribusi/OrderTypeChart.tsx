@@ -465,19 +465,11 @@ const OrderTypeChart = ({
   const chartOptions = {
     chart: {
       type: 'bar' as const,
-      height: 400,
-      toolbar: {
-        show: true,
-        tools: {
-          download: true,
-          selection: false,
-          zoom: false,
-          zoomin: false,
-          zoomout: false,
-          pan: false,
-          reset: false,
-        },
-      },
+      height: 360,
+      fontFamily: "'Plus Jakarta Sans', sans-serif",
+      foreColor: '#5e5873',
+      toolbar: { show: false },
+      animations: { enabled: false },
     },
     plotOptions: {
       bar: {
@@ -509,32 +501,57 @@ const OrderTypeChart = ({
     tooltip: chartConfig.tooltip,
     colors: chartConfig.colors,
     legend: {
-      position: 'top' as const,
+      position: 'bottom' as const,
       horizontalAlign: 'center' as const,
-      fontSize: '14px',
+      fontSize: '13px',
       fontWeight: 600,
+      markers: {
+        width: 10,
+        height: 10,
+        radius: 12,
+      },
     },
     grid: {
-      borderColor: '#f1f1f1',
+      borderColor: '#E5E7EB',
+      strokeDashArray: 4,
     },
   };
 
   const series = chartConfig.series;
 
+  const cardSx = {
+    border: '1px solid',
+    borderColor: 'rgba(0,0,0,0.12)',
+    boxShadow: '0 1px 4px rgba(0, 0, 0, 0.06)',
+  };
+
+  const headerTitle = (
+    <Box>
+      <Typography
+        variant="subtitle1"
+        fontWeight={700}
+        sx={{
+          textTransform: 'uppercase',
+          letterSpacing: 0.5,
+          color: 'text.primary',
+        }}
+      >
+        Order Distribution by{' '}
+        {groupByOptions.find((opt) => opt.value === groupBy)?.label}
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+        Showing{' '}
+        {metricTypeOptions.find((opt) => opt.value === metricType)?.label.toLowerCase()}
+      </Typography>
+    </Box>
+  );
+
   if (loading) {
     return (
-      <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Order Distribution by{' '}
-            {groupByOptions.find((opt) => opt.value === groupBy)?.label}
-          </Typography>
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            height={400}
-          >
+      <Card sx={cardSx}>
+        <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+          {headerTitle}
+          <Box display="flex" justifyContent="center" alignItems="center" height={360}>
             <CircularProgress />
           </Box>
         </CardContent>
@@ -543,27 +560,12 @@ const OrderTypeChart = ({
   }
 
   if (!chartData || chartData.length === 0) {
-    console.log('OrderTypeChart: No data available', {
-      chartData,
-      chartDataLength: chartData?.length,
-      loading,
-      filters,
-      groupBy,
-    });
     return (
-      <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Order Distribution by{' '}
-            {groupByOptions.find((opt) => opt.value === groupBy)?.label}
-          </Typography>
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            height={400}
-          >
-            <Typography color="textSecondary">
+      <Card sx={cardSx}>
+        <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+          {headerTitle}
+          <Box display="flex" justifyContent="center" alignItems="center" height={360}>
+            <Typography color="text.secondary">
               No data available for{' '}
               {groupByOptions.find((opt) => opt.value === groupBy)?.label} in{' '}
               {filters.month}/{filters.year}
@@ -575,22 +577,21 @@ const OrderTypeChart = ({
   }
 
   return (
-    <Card>
-      <CardContent>
+    <Card sx={cardSx}>
+      <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
         <Box
           sx={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            mb: 3,
+            flexWrap: 'wrap',
+            gap: 2,
+            mb: 1.5,
           }}
         >
-          <Typography variant="h6">
-            Order Distribution by{' '}
-            {groupByOptions.find((opt) => opt.value === groupBy)?.label}
-          </Typography>
+          {headerTitle}
 
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             <FormControl size="small" sx={{ minWidth: 150 }}>
               <InputLabel>Group By</InputLabel>
               <Select
@@ -623,47 +624,31 @@ const OrderTypeChart = ({
           </Box>
         </Box>
 
-        <Typography variant="body2" color="textSecondary" mb={3}>
-          Distribution of orders by{' '}
-          {groupByOptions
-            .find((opt) => opt.value === groupBy)
-            ?.label.toLowerCase()}{' '}
-          showing{' '}
-          {metricTypeOptions
-            .find((opt) => opt.value === metricType)
-            ?.label.toLowerCase()}
-        </Typography>
-
         <Box>
           <ReactApexChart
             options={chartOptions}
             series={series}
             type="bar"
-            height={400}
+            height={360}
           />
         </Box>
 
-        <Box mt={3}>
-          <Typography variant="subtitle2" gutterBottom>
-            Summary:
-          </Typography>
-          <Typography variant="body2" color="textSecondary">
-            Total{' '}
-            {groupByOptions
-              .find((opt) => opt.value === groupBy)
-              ?.label.toLowerCase()}{' '}
-            categories: {chartData.length} | Total invoice:{' '}
+        <Box mt={2}>
+          <Typography variant="body2" color="text.secondary">
+            {chartData.length}{' '}
+            {groupByOptions.find((opt) => opt.value === groupBy)?.label.toLowerCase()}{' '}
+            categories · Total invoice:{' '}
             {formatCurrency(
               chartData.reduce(
                 (sum, item) => sum + Number(item.total_invoice) || 0,
                 0,
               ),
             )}{' '}
-            | Total orders:{' '}
+            · Total orders:{' '}
             {formatNumber(
               chartData.reduce((sum, item) => sum + item.total_orders, 0),
             )}{' '}
-            | Total active stores:{' '}
+            · Active stores:{' '}
             {formatNumber(
               chartData.reduce((sum, item) => sum + item.active_stores, 0),
             )}

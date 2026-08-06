@@ -64,40 +64,31 @@ interface CashInOrdersTableProps {
   agentName?: string;
 }
 
-/** One row per order_code; multiple payments for the same order are summed. */
-const dedupeCashInOrdersByCode = (items: CashInListItem[]): CashInListItem[] => {
-  const byCode = new Map<string, CashInListItem>();
+/** Drop only fully identical payment rows; same order_code with different details stays. */
+const dedupeExactCashInRows = (items: CashInListItem[]): CashInListItem[] => {
+  const seen = new Set<string>();
+  const unique: CashInListItem[] = [];
 
   items.forEach((item) => {
-    const code = String(item.order_code ?? '').trim();
-    if (!code) return;
+    const key = [
+      item.order_id ?? '',
+      item.order_code ?? '',
+      item.payment_date ?? '',
+      item.total_paid ?? '',
+      item.type ?? '',
+      item.repayment_type ?? '',
+      item.store_name ?? '',
+      item.agent_name ?? '',
+      item.segment ?? '',
+      item.area ?? '',
+    ].join('|');
 
-    const existing = byCode.get(code);
-    if (!existing) {
-      byCode.set(code, { ...item, order_code: code });
-      return;
-    }
-
-    const existingDate = existing.payment_date ? new Date(existing.payment_date).getTime() : 0;
-    const nextDate = item.payment_date ? new Date(item.payment_date).getTime() : 0;
-    const preferNext = nextDate > existingDate;
-
-    byCode.set(code, {
-      ...existing,
-      ...(preferNext ? item : {}),
-      order_code: code,
-      total_paid: Number(existing.total_paid || 0) + Number(item.total_paid || 0),
-      repayment_type:
-        existing.repayment_type === 'FULL' || item.repayment_type === 'FULL'
-          ? 'FULL'
-          : preferNext
-            ? item.repayment_type
-            : existing.repayment_type,
-      payment_date: preferNext ? item.payment_date : existing.payment_date,
-    });
+    if (seen.has(key)) return;
+    seen.add(key);
+    unique.push(item);
   });
 
-  return Array.from(byCode.values());
+  return unique;
 };
 
 const CashInOrdersTable = ({ 
@@ -141,7 +132,7 @@ const CashInOrdersTable = ({
         area: filters.area
       });
       
-      setOrders(dedupeCashInOrdersByCode(response.data || []));
+      setOrders(dedupeExactCashInRows(response.data || []));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       console.error('Failed to fetch cash-in list data:', err);
@@ -631,7 +622,7 @@ const CashInOrdersTable = ({
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((row, index) => (
                     <TableRow 
-                      key={row.order_code || `${row.order_id}-${index}`} 
+                      key={`${row.order_id}-${row.payment_date || 'no-date'}-${row.total_paid}-${row.repayment_type}-${index}`} 
                       hover 
                       onClick={() => handleRowClick(row.order_code)}
                       sx={{ 
