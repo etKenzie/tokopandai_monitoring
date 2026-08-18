@@ -1,6 +1,7 @@
 'use client';
 
 import type { Order } from '@/app/api/distribusi/DistribusiSlice';
+import { formatDateUtc } from '@/utils/formatDate';
 import { calculateDaysLate } from '@/utils/overdueStatus';
 import { ArrowForward as ArrowForwardIcon, ExpandLess as ExpandLessIcon } from '@mui/icons-material';
 import {
@@ -33,13 +34,7 @@ function formatCurrency(amount: number) {
 }
 
 function formatDate(dateStr: string | null) {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  return formatDateUtc(dateStr);
 }
 
 const OverdueTransitionRecap = ({ orders, onOrderClick }: OverdueTransitionRecapProps) => {

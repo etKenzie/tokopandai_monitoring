@@ -1,6 +1,7 @@
 'use client';
 
 import { getAgentNameFromRole } from '@/config/roles';
+import { formatDateUtc } from '@/utils/formatDate';
 import { Download as DownloadIcon, Info as InfoIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
   Accordion,
@@ -482,14 +483,7 @@ const NOOTable = ({
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (dateString: string) => formatDateUtc(dateString);
 
   return (
     <Card>

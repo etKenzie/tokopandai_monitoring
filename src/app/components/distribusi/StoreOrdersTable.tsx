@@ -1,6 +1,7 @@
 'use client';
 
 import { StoreOrder } from '@/app/api/distribusi/StoreSlice';
+import { formatDateUtc } from '@/utils/formatDate';
 import {
     Box,
     Chip,
@@ -32,14 +33,7 @@ const StoreOrdersTable = ({ storeOrders }: StoreOrdersTableProps) => {
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (dateString: string) => formatDateUtc(dateString);
 
   const getPaymentStatusColor = (status: string) => {
     switch (status) {

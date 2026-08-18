@@ -1,6 +1,7 @@
 'use client';
 
 import { useSettings } from '@/app/context/SettingsContext';
+import { formatDateUtc } from '@/utils/formatDate';
 import { Add, Cancel, Delete, Edit, Save } from '@mui/icons-material';
 import {
   Alert,
@@ -553,15 +554,7 @@ const SettingsManager = () => {
     }
   };
 
-  const formatDateDisplay = (iso: string) => {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    return new Intl.DateTimeFormat('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    }).format(d);
-  };
+  const formatDateDisplay = (iso: string) => formatDateUtc(iso, 'en-GB');
 
   const formatPeriodPageTitle = (p: GoalPeriodFromApi) => {
     if (p.period_type === 'month' && p.month != null) {
@@ -1066,7 +1059,7 @@ const SettingsManager = () => {
   const getPeriodLabel = (g: GoalFromApi) =>
     g.period ??
     (g.period_start_date && g.period_end_date
-      ? `${new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(g.period_start_date))} – ${new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(g.period_end_date))}`
+      ? `${formatDateUtc(g.period_start_date, 'en-GB')} – ${formatDateUtc(g.period_end_date, 'en-GB')}`
       : '—');
 
   const isCurrentGoal = (g: GoalFromApi) => {

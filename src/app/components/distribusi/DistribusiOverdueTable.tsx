@@ -28,6 +28,7 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
+import { formatDateUtc } from '@/utils/formatDate';
 import { fetchOrders, Order } from '../../api/distribusi/DistribusiSlice';
 import OrderDetailModal from '../shared/OrderDetailModal';
 
@@ -349,14 +350,7 @@ const DistribusiOverdueTable = ({
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (dateString: string) => formatDateUtc(dateString);
 
   const getPaymentDueDateDisplay = (dueDate: string | null) => {
     if (!dueDate) return { label: 'No Due Date', color: 'default' };

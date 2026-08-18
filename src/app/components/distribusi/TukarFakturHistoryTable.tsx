@@ -1,6 +1,7 @@
 'use client';
 
 import { TukarFakturBatchListItem } from '@/app/api/distribusi/DistribusiSlice';
+import { formatDateTimeUtc } from '@/utils/formatDate';
 import { Button, Stack, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
 
 interface TukarFakturHistoryTableProps {
@@ -51,9 +52,9 @@ const TukarFakturHistoryTable = ({
               <TableCell>{row.recipient_name || row.customer_store_summary || '-'}</TableCell>
               <TableCell>
                 {row.generated_at
-                  ? new Date(row.generated_at).toLocaleString('id-ID')
+                  ? formatDateTimeUtc(row.generated_at, 'id-ID')
                   : row.created_at
-                    ? new Date(row.created_at).toLocaleString('id-ID')
+                    ? formatDateTimeUtc(row.created_at, 'id-ID')
                     : '-'}
               </TableCell>
               <TableCell>{row.due_date || '-'}</TableCell>

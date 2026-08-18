@@ -1,6 +1,7 @@
 'use client';
 
 import { ProductOrder } from '@/app/api/distribusi/ProductSlice';
+import { formatMonthYearUtc } from '@/utils/formatDate';
 import {
   Box,
   Card,
@@ -71,9 +72,7 @@ const ProductSummaryTab = ({ productOrders, product }: ProductSummaryTabProps) =
         try {
           const date = new Date(orderDate);
           if (!isNaN(date.getTime())) {
-            const monthName = date.toLocaleString('en-US', { month: 'long' });
-            const year = date.getFullYear();
-            return `${monthName} ${year}`;
+            return formatMonthYearUtc(orderDate);
           }
         } catch (e) {
           console.warn('Failed to parse order_date:', orderDate, e);

@@ -15,6 +15,7 @@ import TukarFakturHistoryTable from '@/app/components/distribusi/TukarFakturHist
 import TukarFakturInvoiceModal from '@/app/components/distribusi/TukarFakturInvoiceModal';
 import { useAuth } from '@/app/context/AuthContext';
 import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from '@/config/roles';
+import { formatDateUtc } from '@/utils/formatDate';
 import { Alert, Box, Button, Card, CardContent, Dialog, DialogContent, DialogTitle, Grid, Stack, TextField, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -31,7 +32,7 @@ const buildBatchInvoicePdfBlob = (args: {
   rows: GeneratedInvoiceRow[];
 }): Blob => {
   const { batch, recipientName, recipientAddress, rows } = args;
-  const dueDate = batch.due_date ? new Date(batch.due_date).toLocaleDateString('id-ID') : '-';
+  const dueDate = batch.due_date ? formatDateUtc(batch.due_date, 'id-ID') : '-';
   const today = new Date().toLocaleDateString('id-ID');
   const grandTotal =
     typeof batch.total_combined_amount === 'number'
@@ -287,7 +288,7 @@ const TukarFakturPage = () => {
         const first = details[0];
         const amount = details.reduce((sum, d) => sum + Number(d.total_invoice || 0), 0);
         const orderDate = first?.order_date
-          ? new Date(first.order_date).toLocaleDateString('id-ID')
+          ? formatDateUtc(first.order_date, 'id-ID')
           : '-';
         return {
           orderCode: code,

@@ -33,6 +33,7 @@ import {
 } from '../../api/distribusi/DistribusiSlice';
 import OrderItemUpdateModal from './OrderItemUpdateModal';
 import { useAuth } from '@/app/context/AuthContext';
+import { formatDateTimeUtc } from '@/utils/formatDate';
 
 interface OrderDetailModalProps {
   open: boolean;
@@ -106,16 +107,7 @@ const OrderDetailModal = ({ open, onClose, orderCode }: OrderDetailModalProps) =
     }).format(numAmount);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const formatDate = (dateString: string) => formatDateTimeUtc(dateString);
 
   const getStatusColor = (status: string) => {
     switch (status) {

@@ -1,6 +1,7 @@
 'use client';
 
 import { fetchOrders, Order } from '@/app/api/distribusi/DistribusiSlice';
+import { formatDateUtc } from '@/utils/formatDate';
 import {
   Box,
   Button,
@@ -234,7 +235,7 @@ const TukarFakturInvoiceModal = ({
                         <Checkbox checked={selectedCodes.includes(row.order_code)} onChange={() => toggleCode(row.order_code)} />
                       </TableCell>
                       <TableCell>{row.order_code}</TableCell>
-                      <TableCell>{new Date(row.order_date).toLocaleDateString('id-ID')}</TableCell>
+                      <TableCell>{formatDateUtc(row.order_date, 'id-ID')}</TableCell>
                       <TableCell align="right">{Number(row.total_invoice || 0).toLocaleString('id-ID')}</TableCell>
                       <TableCell>{row.store_name}</TableCell>
                     </TableRow>

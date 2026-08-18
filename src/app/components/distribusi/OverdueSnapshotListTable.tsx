@@ -1,6 +1,7 @@
 'use client';
 
 import { getAgentNameFromRole } from '@/config/roles';
+import { formatDateUtc } from '@/utils/formatDate';
 import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
   Box,
@@ -317,15 +318,7 @@ const OverdueSnapshotListTable = ({
     }).format(amount);
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (dateString: string | null) => formatDateUtc(dateString);
 
   if (!selectedMonth) {
     return null;

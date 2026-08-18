@@ -5,6 +5,7 @@ import {
   PrincipalOrder,
 } from '@/app/api/distribusi/DistribusiSlice';
 import OrderDetailModal from '@/app/components/shared/OrderDetailModal';
+import { formatDateUtc } from '@/utils/formatDate';
 import {
   Close as CloseIcon,
   ExpandLess as ExpandLessIcon,
@@ -99,14 +100,7 @@ const formatCurrency = (amount: number) =>
     maximumFractionDigits: 0,
   }).format(amount);
 
-const formatDate = (dateString: string | null) => {
-  if (!dateString) return '—';
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-};
+const formatDate = (dateString: string | null) => formatDateUtc(dateString);
 
 const formatPercent = (value: number) =>
   new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);

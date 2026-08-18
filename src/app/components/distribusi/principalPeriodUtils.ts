@@ -1,3 +1,5 @@
+import { formatDateUtc } from '@/utils/formatDate';
+
 export type PeriodPreset = '3m' | '6m' | 'year' | 'all';
 
 export const PERIOD_LABELS: Record<PeriodPreset, string> = {
@@ -26,9 +28,7 @@ export function getCurrentMonthLabel(): string {
 
 export function formatDateRangeLabel(start?: string, end?: string): string {
   if (!start || !end) return 'All time';
-  const fmt = (s: string) =>
-    new Date(s).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-  return `${fmt(start)} – ${fmt(end)}`;
+  return `${formatDateUtc(start)} – ${formatDateUtc(end)}`;
 }
 
 export function getDateRangeForPreset(preset: PeriodPreset): {

@@ -1,6 +1,7 @@
 'use client';
 
 import { Close as CloseIcon } from '@mui/icons-material';
+import { formatDateUtc } from '@/utils/formatDate';
 import {
   Alert,
   Box,
@@ -131,14 +132,7 @@ const StoreDetailModal = ({ open, onClose, store }: StoreDetailModalProps) => {
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (dateString: string) => formatDateUtc(dateString);
 
 
   if (!store) return null;

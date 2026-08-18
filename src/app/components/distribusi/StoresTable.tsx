@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDateUtc } from '@/utils/formatDate';
 import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
     Box,
@@ -466,14 +467,7 @@ const StoresTable = ({
     setPage(0);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (dateString: string) => formatDateUtc(dateString);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {

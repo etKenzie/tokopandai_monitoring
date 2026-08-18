@@ -28,6 +28,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
+import { formatDateUtc } from '@/utils/formatDate';
 import { ProductOrder } from '../../api/distribusi/ProductSlice';
 
 type OrderDirection = 'asc' | 'desc';
@@ -187,14 +188,7 @@ const ProductOrdersTable = ({
     }).format(numAmount);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (dateString: string) => formatDateUtc(dateString);
 
   const sortedOrders = [...filteredOrders].sort((a, b) => {
     let aValue: any = a[orderBy];

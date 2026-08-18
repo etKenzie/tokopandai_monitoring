@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDateTimeUtc, formatDateUtc } from '@/utils/formatDate';
 import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon, Visibility as VisibilityIcon } from '@mui/icons-material';
 import {
     Box,
@@ -270,25 +271,9 @@ const DistribusiVisitTable = ({
     setPage(0);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (dateString: string) => formatDateUtc(dateString);
 
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const formatDateTime = (dateString: string) => formatDateTimeUtc(dateString);
 
   const handleRowClick = (visit: Visit) => {
     setSelectedVisit(visit);

@@ -7,6 +7,7 @@ import {
   overdueStatusChipColor,
   resolveOverdueStatus,
 } from '@/utils/overdueStatus';
+import { formatDateUtc } from '@/utils/formatDate';
 import { Download as DownloadIcon, ExpandMore as ExpandMoreIcon, Info as InfoIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
   Accordion,
@@ -566,15 +567,7 @@ const OverdueOrdersTable = forwardRef<OverdueOrdersTableHandle, OverdueOrdersTab
     }).format(amount);
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (dateString: string | null) => formatDateUtc(dateString);
 
   return (
     <Card>

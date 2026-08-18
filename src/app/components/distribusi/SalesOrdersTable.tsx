@@ -36,6 +36,7 @@ import * as XLSX from 'xlsx';
 import { fetchFullOrders, fetchOrders, FullOrder, Order } from '../../api/distribusi/DistribusiSlice';
 import { useAuth } from '../../context/AuthContext';
 import { ROLES } from '@/config/roles';
+import { formatDateUtc } from '@/utils/formatDate';
 import BuyPriceImportModal from '../shared/BuyPriceImportModal';
 import OrderDetailModal from '../shared/OrderDetailModal';
 
@@ -554,14 +555,7 @@ const SalesOrdersTable = ({
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (dateString: string) => formatDateUtc(dateString);
 
   const getPaymentDueDateDisplay = (dueDate: string | null) => {
     if (!dueDate) return { label: 'No Due Date', color: 'default' };
