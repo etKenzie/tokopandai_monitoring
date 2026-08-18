@@ -304,15 +304,38 @@ export interface StoreMonthlyResponse {
   code: number;
   status: string;
   message: string;
+  metadata?: {
+    month: string;
+    range: string | null;
+    months: string[];
+  };
   data: StoreMonthly[];
 }
 
+/** Valid `range` values for `/store/monthly` compare lookback (2m, 3m, 6m, 1y). Use `1m` in UI for single previous month (no range param). */
+export type StoreMonthlyCompareRange = '1m' | '2m' | '3m' | '6m' | '1y';
+
+export const STORE_MONTHLY_COMPARE_RANGE_OPTIONS: { value: StoreMonthlyCompareRange; label: string }[] = [
+  { value: '1m', label: '1 Month' },
+  { value: '2m', label: '2 Months' },
+  { value: '3m', label: '3 Months' },
+  { value: '6m', label: '6 Months' },
+  { value: '1y', label: '1 Year' },
+];
+
 // Fetch Store Monthly data
-export const fetchStoreMonthly = async (month: string, agent_name?: string): Promise<StoreMonthlyResponse> => {
+export const fetchStoreMonthly = async (
+  month: string,
+  agent_name?: string,
+  range?: Exclude<StoreMonthlyCompareRange, '1m'>,
+): Promise<StoreMonthlyResponse> => {
   const baseUrl = AM_API_URL;
   
   const queryParams = new URLSearchParams();
   queryParams.append('month', month);
+  if (range) {
+    queryParams.append('range', range);
+  }
   if (agent_name) {
     // API accepts 'agent' parameter
     queryParams.append('agent', agent_name);

@@ -1,6 +1,12 @@
 "use client";
 
-import { fetchStoreMonthly, Store, StoreMonthly } from "@/app/api/distribusi/StoreSlice";
+import {
+  fetchStoreMonthly,
+  Store,
+  StoreMonthly,
+  StoreMonthlyCompareRange,
+  STORE_MONTHLY_COMPARE_RANGE_OPTIONS,
+} from "@/app/api/distribusi/StoreSlice";
 import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import PageContainer from "@/app/components/container/PageContainer";
 import StoreDetailModal from "@/app/components/distribusi/StoreDetailModal";
@@ -60,18 +66,33 @@ interface HeadCell {
   numeric: boolean;
 }
 
-const headCells: HeadCell[] = [
+const getComparePeriodLabel = (range: StoreMonthlyCompareRange): string => {
+  switch (range) {
+    case '2m':
+      return 'Previous 2 Months';
+    case '3m':
+      return 'Previous 3 Months';
+    case '6m':
+      return 'Previous 6 Months';
+    case '1y':
+      return 'Previous Year';
+    default:
+      return 'Previous Month';
+  }
+};
+
+const buildHeadCells = (periodLabel: string): HeadCell[] => [
   { id: 'store_name', label: 'Store Name', numeric: false },
   { id: 'agent_name', label: 'Agent', numeric: false },
   { id: 'segment', label: 'Segment', numeric: false },
   { id: 'total_invoice', label: 'Current Month Invoice', numeric: true },
-  { id: 'lastMonthInvoice', label: 'Last Month Invoice', numeric: true },
+  { id: 'lastMonthInvoice', label: `${periodLabel} Invoice`, numeric: true },
   { id: 'invoiceChange', label: 'Invoice Change', numeric: true },
   { id: 'total_profit', label: 'Current Month Profit', numeric: true },
-  { id: 'lastMonthProfit', label: 'Last Month Profit', numeric: true },
+  { id: 'lastMonthProfit', label: `${periodLabel} Profit`, numeric: true },
   { id: 'profitChange', label: 'Profit Change', numeric: true },
   { id: 'margin', label: 'Current Margin %', numeric: true },
-  { id: 'lastMonthMargin', label: 'Last Month Margin %', numeric: true },
+  { id: 'lastMonthMargin', label: `${periodLabel} Margin %`, numeric: true },
 ];
 
 const StoresComparePage = () => {
@@ -131,8 +152,10 @@ const StoresComparePage = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedCurrentMonth, setSelectedCurrentMonth] = useState<string>(getCurrentMonth());
   const [selectedLastMonth, setSelectedLastMonth] = useState<string>(getLastMonth());
+  const [selectedCompareRange, setSelectedCompareRange] = useState<StoreMonthlyCompareRange>('1m');
   const [appliedCurrentMonth, setAppliedCurrentMonth] = useState<string>(getCurrentMonth());
   const [appliedLastMonth, setAppliedLastMonth] = useState<string>(getLastMonth());
+  const [appliedCompareRange, setAppliedCompareRange] = useState<StoreMonthlyCompareRange>('1m');
   const [orderBy, setOrderBy] = useState<SortableField>('total_invoice');
   const [order, setOrder] = useState<SortDirection>('desc');
   const [page, setPage] = useState(0);
@@ -144,30 +167,40 @@ const StoresComparePage = () => {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  // Fetch data for both months
+  const comparePeriodLabel = useMemo(
+    () => getComparePeriodLabel(appliedCompareRange),
+    [appliedCompareRange],
+  );
+
+  const headCells = useMemo(
+    () => buildHeadCells(comparePeriodLabel),
+    [comparePeriodLabel],
+  );
+
+  // Fetch data for current month and comparison period
   const fetchComparisonData = useCallback(async () => {
     if (!appliedCurrentMonth || !appliedLastMonth) return;
     
     setLoading(true);
     setError(null);
     try {
-      // For users with restricted roles, use their mapped agent name
       const agentName = hasRestrictedRole ? getAgentNameFromRole(userRoleForFiltering!) : undefined;
-      
-      const [currentResponse, lastResponse] = await Promise.all([
+      const comparisonRange = appliedCompareRange === '1m' ? undefined : appliedCompareRange;
+
+      const [currentResponse, comparisonResponse] = await Promise.all([
         fetchStoreMonthly(appliedCurrentMonth, agentName),
-        fetchStoreMonthly(appliedLastMonth, agentName)
+        fetchStoreMonthly(appliedLastMonth, agentName, comparisonRange),
       ]);
       
       setCurrentMonthData(currentResponse.data);
-      setLastMonthData(lastResponse.data);
+      setLastMonthData(comparisonResponse.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch comparison data');
       console.error('Failed to fetch comparison data:', err);
     } finally {
       setLoading(false);
     }
-  }, [appliedCurrentMonth, appliedLastMonth, hasRestrictedRole, userRoleForFiltering]);
+  }, [appliedCurrentMonth, appliedLastMonth, appliedCompareRange, hasRestrictedRole, userRoleForFiltering]);
 
   // Fetch data when applied months change
   useEffect(() => {
@@ -178,6 +211,7 @@ const StoresComparePage = () => {
   const handleApply = () => {
     setAppliedCurrentMonth(selectedCurrentMonth);
     setAppliedLastMonth(selectedLastMonth);
+    setAppliedCompareRange(selectedCompareRange);
     setPage(0);
   };
 
@@ -464,7 +498,8 @@ const StoresComparePage = () => {
               Stores Comparison
             </Typography>
             <Typography variant="body1" color="textSecondary">
-              Compare store performance metrics between two months
+              Compare store performance for {appliedCurrentMonth} against {appliedLastMonth}
+              {appliedCompareRange !== '1m' ? ` (${comparePeriodLabel.toLowerCase()})` : ''}
             </Typography>
             {hasRestrictedRole && (
               <Typography variant="body2" color="info.main" sx={{ mt: 1, fontStyle: 'italic' }}>
@@ -506,13 +541,29 @@ const StoresComparePage = () => {
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth>
-                <InputLabel>Last Month</InputLabel>
+                <InputLabel>Previous Month</InputLabel>
                 <Select
                   value={selectedLastMonth}
-                  label="Last Month"
+                  label="Previous Month"
                   onChange={(e) => setSelectedLastMonth(e.target.value)}
                 >
                   {monthOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <FormControl fullWidth>
+                <InputLabel>Compare Range</InputLabel>
+                <Select
+                  value={selectedCompareRange}
+                  label="Compare Range"
+                  onChange={(e) => setSelectedCompareRange(e.target.value as StoreMonthlyCompareRange)}
+                >
+                  {STORE_MONTHLY_COMPARE_RANGE_OPTIONS.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
                       {option.label}
                     </MenuItem>
@@ -670,7 +721,7 @@ const StoresComparePage = () => {
                     <ListItem key={store.user_id} sx={{ px: 0 }}>
                       <ListItemText
                         primary={store.store_name}
-                        secondary={`Last month: ${formatCurrency(viewMode === 'invoice' ? (store.lastMonthInvoice ?? 0) : (store.lastMonthProfit ?? 0))}`}
+                        secondary={`${comparePeriodLabel}: ${formatCurrency(viewMode === 'invoice' ? (store.lastMonthInvoice ?? 0) : (store.lastMonthProfit ?? 0))}`}
                         primaryTypographyProps={{ variant: 'body2' }}
                         secondaryTypographyProps={{ variant: 'caption' }}
                       />
