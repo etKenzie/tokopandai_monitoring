@@ -92,7 +92,7 @@ const dedupeExactCashInRows = (items: CashInListItem[]): CashInListItem[] => {
   return unique;
 };
 
-const CashInOrdersTable = ({ 
+const CashInOrdersTable = ({
   filters,
   title = 'Cash-In Orders',
   agentName
