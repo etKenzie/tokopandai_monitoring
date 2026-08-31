@@ -31,7 +31,7 @@ import {
     TextField,
     Typography
 } from '@mui/material';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { fetchFullOrders, fetchOrders, FullOrder, Order } from '../../api/distribusi/DistribusiSlice';
 import { useAuth } from '../../context/AuthContext';
@@ -79,6 +79,17 @@ interface SalesOrdersTableProps {
   agentName?: string;
 }
 
+const dedupeOrdersById = (orders: Order[]): Order[] => {
+  const seen = new Set<string>();
+  return orders.filter((order) => {
+    const key = order.order_id?.trim() || order.order_code?.trim();
+    if (!key) return true;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 const SalesOrdersTable = ({ 
   filters,
   title = 'Sales Orders',
@@ -107,6 +118,7 @@ const SalesOrdersTable = ({
   const canImportBuyPrices =
     normalizedRoles.includes(ROLES.ADMIN) ||
     normalizedRoles.includes(ROLES.BUY_PRICE);
+  const fetchRequestIdRef = useRef(0);
 
   const fetchOrdersData = async () => {
     // Only fetch data if month is selected
@@ -116,8 +128,11 @@ const SalesOrdersTable = ({
       return;
     }
 
+    const requestId = ++fetchRequestIdRef.current;
     setLoading(true);
     setError(null);
+    setOrders([]);
+
     try {
       const response = await fetchOrders({
         sortTime: 'desc',
@@ -127,20 +142,25 @@ const SalesOrdersTable = ({
         segment: filters.segment,
         area: filters.area
       });
-      
-      // Check for duplicate order_ids in the source data
-      const orderIds = response.data.map(order => order.order_id);
-      const uniqueOrderIds = new Set(orderIds);
-      if (orderIds.length !== uniqueOrderIds.size) {
-        console.warn(`Found ${orderIds.length - uniqueOrderIds.size} duplicate orders in API response`);
+
+      if (requestId !== fetchRequestIdRef.current) return;
+
+      const dedupedOrders = dedupeOrdersById(response.data);
+      if (dedupedOrders.length !== response.data.length) {
+        console.warn(
+          `Removed ${response.data.length - dedupedOrders.length} duplicate orders from API response`
+        );
       }
-      
-      setOrders(response.data);
+
+      setOrders(dedupedOrders);
     } catch (err) {
+      if (requestId !== fetchRequestIdRef.current) return;
       setError(err instanceof Error ? err.message : 'An error occurred');
       console.error('Failed to fetch orders data:', err);
     } finally {
-      setLoading(false);
+      if (requestId === fetchRequestIdRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -273,6 +293,19 @@ const SalesOrdersTable = ({
   const totalInvoice = filteredOrders.reduce((sum, o) => sum + Number(o.total_invoice) || 0, 0);
   const totalProfit = filteredOrders.reduce((sum, o) => sum + Number(o.profit) || 0, 0);
   const totalOrders = filteredOrders.length;
+  const tableBodyKey = [
+    filters.month,
+    agentFilter,
+    segmentFilter,
+    businessTypeFilter,
+    areaFilter,
+    statusOrderFilter,
+    paymentStatusFilter,
+    searchQuery,
+    page,
+    rowsPerPage,
+    sortedOrders.map((order) => order.order_id).join(','),
+  ].join('|');
 
   const prepareDataForExport = (orders: Order[]) => {
     return orders.map((o) => ({
@@ -809,7 +842,7 @@ const SalesOrdersTable = ({
                 ))}
               </TableRow>
             </TableHead>
-            <TableBody>
+            <TableBody key={tableBodyKey}>
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={headCells.length} align="center">
@@ -835,9 +868,9 @@ const SalesOrdersTable = ({
               ) : (
                 sortedOrders
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((row) => (
+                  .map((row, index) => (
                     <TableRow 
-                      key={row.order_id} 
+                      key={`${row.order_id}-${row.order_code}-${page * rowsPerPage + index}`}
                       hover 
                       onClick={() => handleRowClick(row.order_code)}
                       sx={{ 
