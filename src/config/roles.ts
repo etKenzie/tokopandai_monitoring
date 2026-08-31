@@ -21,6 +21,7 @@ export const PAGE_ROLES = {
   CASH_IN_SECTION: [ROLES.ADMIN, "distribusi", "cash-in", "rully", "rifqi", "oki", "mardi"],
   TOP_SECTION: [ROLES.ADMIN, "distribusi", "top", "rully", "rifqi", "oki", "mardi"],
   ANALYTICS_DASHBOARD: [ROLES.ANALYST, ROLES.ADMIN],
+  WMS_SECTION: [ROLES.ADMIN, "wms", "purchasing", "warehouse"],
   
   // Admin pages
   ADMIN_PANEL: [ROLES.ADMIN],

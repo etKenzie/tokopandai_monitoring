@@ -1,5 +1,6 @@
 import {
   IconBuildingStore,
+  IconBuildingWarehouse,
   IconCashBanknote,
   IconDashboard,
   IconFlag,
@@ -10,6 +11,7 @@ import {
   IconMenu2,
   IconMenuOrder,
   IconPackage,
+  IconShoppingCart,
   IconTag,
   IconTimeDuration0,
   IconTrendingUp
@@ -199,6 +201,36 @@ const Menuitems: MenuitemsType[] = [
     title: "Complaints",
     icon: IconMailCancel,
     href: "/distribusi/complaint",
+  },
+  {
+    navlabel: true,
+    subheader: "WMS",
+  },
+  {
+    id: uniqueId(),
+    title: "Purchasing",
+    icon: IconShoppingCart,
+    href: "/wms/purchasing",
+    children: [
+      {
+        id: uniqueId(),
+        title: "Overview",
+        icon: IconDashboard,
+        href: "/wms/purchasing",
+      },
+      {
+        id: uniqueId(),
+        title: "Price Compare",
+        icon: IconGitCompare,
+        href: "/wms/purchasing/compare",
+      },
+    ],
+  },
+  {
+    id: uniqueId(),
+    title: "Warehouse",
+    icon: IconBuildingWarehouse,
+    href: "/wms/warehouse",
   },
   // {
   //   id: uniqueId(),
