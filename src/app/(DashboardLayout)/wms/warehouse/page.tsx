@@ -76,6 +76,9 @@ const formatCurrency = (value: number) =>
 
 const formatNumber = (value: number) => Math.round(value).toLocaleString('id-ID');
 
+const formatQtyWithUnit = (qty: number, unitCode?: string) =>
+  unitCode ? `${formatNumber(qty)} ${unitCode}` : formatNumber(qty);
+
 const WarehousePage = () => {
   const [warehouses, setWarehouses] = useState<StockWarehouse[]>([]);
   const [stockValue, setStockValue] = useState<StockValueData | null>(null);
@@ -164,6 +167,7 @@ const WarehousePage = () => {
       return (
         row.productName.toLowerCase().includes(query) ||
         row.sku.toLowerCase().includes(query) ||
+        (row.unitCode?.toLowerCase().includes(query) ?? false) ||
         row.categoryName.toLowerCase().includes(query) ||
         row.warehouseName.toLowerCase().includes(query)
       );
@@ -230,7 +234,7 @@ const WarehousePage = () => {
       Category: row.categoryName,
       Warehouse: row.warehouseName,
       'Warehouse Code': row.warehouseCode,
-      Qty: row.totalQty,
+      Qty: formatQtyWithUnit(row.totalQty, row.unitCode),
       'Stock Value': Math.round(row.totalValue),
     }));
 
@@ -501,7 +505,9 @@ const WarehousePage = () => {
                             title={row.warehouseName}
                           />
                         </TableCell>
-                        <TableCell align="right">{formatNumber(row.totalQty)}</TableCell>
+                        <TableCell align="right">
+                          {formatQtyWithUnit(row.totalQty, row.unitCode)}
+                        </TableCell>
                         <TableCell align="right" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                           {formatCurrency(row.totalValue)}
                         </TableCell>
@@ -554,6 +560,8 @@ const WarehousePage = () => {
           onClose={() => setSelectedProduct(null)}
           productId={selectedProduct?.productId ?? null}
           productName={selectedProduct?.productName}
+          sku={selectedProduct?.sku}
+          unitCode={selectedProduct?.unitCode}
         />
       </Box>
     </PageContainer>

@@ -217,7 +217,8 @@ const PriceComparePage = () => {
       if (!query) return true;
       return (
         row.productName.toLowerCase().includes(query) ||
-        row.sku.toLowerCase().includes(query)
+        row.sku.toLowerCase().includes(query) ||
+        (row.unitCode?.toLowerCase().includes(query) ?? false)
       );
     });
   }, [allRows, statusFilter, searchQuery]);
@@ -688,6 +689,8 @@ const PriceComparePage = () => {
           onClose={() => setSelectedProduct(null)}
           productId={selectedProduct?.productId ?? null}
           productName={selectedProduct?.productName}
+          sku={selectedProduct?.sku}
+          unitCode={selectedProduct?.unitCode}
         />
       </Box>
     </PageContainer>

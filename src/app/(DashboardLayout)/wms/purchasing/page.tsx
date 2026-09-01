@@ -86,6 +86,28 @@ const formatCurrency = (value: number) =>
 const formatNumber = (value: number) =>
   new Intl.NumberFormat('id-ID').format(Math.round(value));
 
+const formatQtyWithUnit = (qty: number, unitCode?: string) =>
+  unitCode ? `${formatNumber(qty)} ${unitCode}` : formatNumber(qty);
+
+const BUYER_COMPANY_OPTIONS = [
+  { value: 'PT TOKOPANDAI NUSANTARA', label: 'PT TOKOPANDAI NUSANTARA' },
+  { value: 'PT VISIPRIMA INDOPERFORMA', label: 'PT VISIPRIMA INDOPERFORMA' },
+] as const;
+
+const WAREHOUSE_OPTIONS = [
+  { value: '142405eb-6883-41be-8165-b9cad1a1e017', label: 'WH-SBY' },
+  { value: '3cc9ebd8-1222-4a45-ab0a-d87347375bb2', label: 'WH-JKT' },
+  { value: '79e32ba2-f580-4630-ac8a-ae1b82c90f89', label: 'WH-BKS' },
+  { value: 'ca901d1f-42d3-46f7-9bf0-9785cb39fd33', label: 'WH-TGR' },
+] as const;
+
+interface AppliedFilters {
+  startDate: string;
+  endDate: string;
+  buyerCompany?: string;
+  warehouseId?: string;
+}
+
 const PurchasingPage = () => {
   const [categories, setCategories] = useState<PurchasingCategoryPerformance[]>([]);
   const [companies, setCompanies] = useState<Record<string, CompanyNominal>>({});
@@ -95,7 +117,9 @@ const PurchasingPage = () => {
   // Empty until the effect below runs, so server and client render the same markup.
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [appliedRange, setAppliedRange] = useState<{ startDate: string; endDate: string } | null>(null);
+  const [buyerCompany, setBuyerCompany] = useState('');
+  const [warehouseId, setWarehouseId] = useState('');
+  const [appliedFilters, setAppliedFilters] = useState<AppliedFilters | null>(null);
 
   const [categoryFilter, setCategoryFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -114,18 +138,21 @@ const PurchasingPage = () => {
 
     setStartDate(start);
     setEndDate(end);
-    setAppliedRange({ startDate: start, endDate: end });
+    setAppliedFilters({ startDate: start, endDate: end });
   }, []);
 
   const loadData = useCallback(async () => {
-    if (!appliedRange) return;
+    if (!appliedFilters) return;
 
     setLoading(true);
     setError(null);
     try {
       const [performance, byCompany] = await Promise.all([
-        fetchProductPerformance(appliedRange),
-        fetchNominalByCompany(appliedRange),
+        fetchProductPerformance(appliedFilters),
+        fetchNominalByCompany({
+          startDate: appliedFilters.startDate,
+          endDate: appliedFilters.endDate,
+        }),
       ]);
       setCategories(performance.data ?? []);
       setCompanies(byCompany.data ?? {});
@@ -137,7 +164,7 @@ const PurchasingPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [appliedRange]);
+  }, [appliedFilters]);
 
   useEffect(() => {
     loadData();
@@ -145,7 +172,12 @@ const PurchasingPage = () => {
 
   const handleApply = () => {
     if (!startDate || !endDate) return;
-    setAppliedRange({ startDate, endDate });
+    setAppliedFilters({
+      startDate,
+      endDate,
+      ...(buyerCompany ? { buyerCompany } : {}),
+      ...(warehouseId ? { warehouseId } : {}),
+    });
     setPage(0);
   };
 
@@ -168,6 +200,7 @@ const PurchasingPage = () => {
       return (
         row.productName.toLowerCase().includes(query) ||
         row.sku.toLowerCase().includes(query) ||
+        (row.unitCode?.toLowerCase().includes(query) ?? false) ||
         row.categoryName.toLowerCase().includes(query)
       );
     });
@@ -228,8 +261,8 @@ const PurchasingPage = () => {
       'Product Name': row.productName,
       SKU: row.sku,
       Category: row.categoryName,
-      'Qty Ordered': row.totalQtyOrdered,
-      'Qty Received': row.totalQtyReceived,
+      'Qty Ordered': formatQtyWithUnit(row.totalQtyOrdered, row.unitCode),
+      'Qty Received': formatQtyWithUnit(row.totalQtyReceived, row.unitCode),
       'Total Nominal': Math.round(row.totalNominal),
       'Avg Buy Price': Math.round(row.avgBuyPrice),
       'Last Buy Price': Math.round(row.lastBuyPrice),
@@ -241,7 +274,7 @@ const PurchasingPage = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Product Performance');
     XLSX.writeFile(
       workbook,
-      `purchasing-product-performance-${appliedRange?.startDate}-to-${appliedRange?.endDate}.xlsx`,
+      `purchasing-product-performance-${appliedFilters?.startDate}-to-${appliedFilters?.endDate}.xlsx`,
     );
   };
 
@@ -257,10 +290,10 @@ const PurchasingPage = () => {
           </Typography>
         </Box>
 
-        {/* Date range */}
+        {/* Date range and API filters */}
         <Box sx={{ mb: 3 }}>
           <Grid container spacing={2} alignItems="flex-end">
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
               <TextField
                 fullWidth
                 type="date"
@@ -270,7 +303,7 @@ const PurchasingPage = () => {
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
               <TextField
                 fullWidth
                 type="date"
@@ -279,6 +312,40 @@ const PurchasingPage = () => {
                 onChange={(e) => setEndDate(e.target.value)}
                 InputLabelProps={{ shrink: true }}
               />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+              <FormControl fullWidth>
+                <InputLabel>Buyer Company</InputLabel>
+                <Select
+                  value={buyerCompany}
+                  label="Buyer Company"
+                  onChange={(e) => setBuyerCompany(e.target.value)}
+                >
+                  <MenuItem value="">All Companies</MenuItem>
+                  {BUYER_COMPANY_OPTIONS.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+              <FormControl fullWidth>
+                <InputLabel>Warehouse</InputLabel>
+                <Select
+                  value={warehouseId}
+                  label="Warehouse"
+                  onChange={(e) => setWarehouseId(e.target.value)}
+                >
+                  <MenuItem value="">All Warehouses</MenuItem>
+                  {WAREHOUSE_OPTIONS.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2 }}>
               <Button
@@ -492,8 +559,12 @@ const PurchasingPage = () => {
                         <TableCell>
                           <Chip label={row.categoryName} size="small" variant="outlined" />
                         </TableCell>
-                        <TableCell align="right">{formatNumber(row.totalQtyOrdered)}</TableCell>
-                        <TableCell align="right">{formatNumber(row.totalQtyReceived)}</TableCell>
+                        <TableCell align="right">
+                          {formatQtyWithUnit(row.totalQtyOrdered, row.unitCode)}
+                        </TableCell>
+                        <TableCell align="right">
+                          {formatQtyWithUnit(row.totalQtyReceived, row.unitCode)}
+                        </TableCell>
                         <TableCell align="right" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                           {formatCurrency(row.totalNominal)}
                         </TableCell>
@@ -557,6 +628,8 @@ const PurchasingPage = () => {
           onClose={() => setSelectedProduct(null)}
           productId={selectedProduct?.productId ?? null}
           productName={selectedProduct?.productName}
+          sku={selectedProduct?.sku}
+          unitCode={selectedProduct?.unitCode}
         />
       </Box>
     </PageContainer>

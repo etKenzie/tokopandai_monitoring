@@ -57,6 +57,8 @@ interface ProductPriceTrackingModalProps {
   onClose: () => void;
   productId: string | null;
   productName?: string;
+  sku?: string;
+  unitCode?: string;
 }
 
 const formatDateParam = (date: Date): string => {
@@ -90,6 +92,8 @@ const ProductPriceTrackingModal = ({
   onClose,
   productId,
   productName,
+  sku,
+  unitCode,
 }: ProductPriceTrackingModalProps) => {
   const [preset, setPreset] = useState<RangePreset>('6m');
   const [product, setProduct] = useState<ProductPriceTracking | null>(null);
@@ -137,6 +141,9 @@ const ProductPriceTrackingModal = ({
   }, [product]);
 
   const historyNewestFirst = useMemo(() => [...history].reverse(), [history]);
+
+  const displaySku = product?.sku ?? sku;
+  const displayUnitCode = product?.unitCode ?? unitCode;
 
   const stats = useMemo(() => {
     if (history.length === 0) return null;
@@ -201,7 +208,7 @@ const ProductPriceTrackingModal = ({
               <div style="font-weight:700">${formatCurrency(entry.unitPrice)}</div>
               <div>${formatDateUtc(entry.date)}</div>
               <div>${escapeHtml(entry.supplierName?.trim() || 'Unknown supplier')}</div>
-              <div style="opacity:0.7">${escapeHtml(entry.poNumber)} • Qty ${formatNumber(entry.qty)}</div>
+              <div style="opacity:0.7">${escapeHtml(entry.poNumber)} • Qty ${formatNumber(entry.qty)}${displayUnitCode ? ` ${escapeHtml(displayUnitCode)}` : ''}</div>
             </div>
           `;
         },
@@ -211,7 +218,7 @@ const ProductPriceTrackingModal = ({
       markers: { size: 5, strokeColors: '#FFFFFF', strokeWidth: 2 },
       legend: { show: false },
     }),
-    [history],
+    [history, displayUnitCode],
   );
 
   const renderStat = (label: string, value: string, color?: string) => (
@@ -241,10 +248,17 @@ const ProductPriceTrackingModal = ({
             <Typography variant="h5" component="div">
               {product?.productName ?? productName ?? 'Product'}
             </Typography>
-            <Typography variant="body2" color="textSecondary">
-              {product?.sku ? `SKU: ${product.sku}` : ''}
-              {product?.categoryName ? ` • ${product.categoryName}` : ''}
-            </Typography>
+            <Box display="flex" flexWrap="wrap" gap={1} alignItems="center" mt={1}>
+              {displaySku && (
+                <Chip label={`SKU: ${displaySku}`} size="small" variant="outlined" color="primary" />
+              )}
+              {displayUnitCode && (
+                <Chip label={`Unit: ${displayUnitCode}`} size="small" variant="outlined" />
+              )}
+              {product?.categoryName && (
+                <Chip label={product.categoryName} size="small" variant="outlined" color="secondary" />
+              )}
+            </Box>
           </Box>
           <Button onClick={onClose} startIcon={<CloseIcon />} variant="outlined" size="small">
             Close
@@ -289,7 +303,7 @@ const ProductPriceTrackingModal = ({
                 {renderStat('Highest', formatCurrency(stats.highest), 'error.main')}
                 {renderStat('Avg (by qty)', formatCurrency(stats.weightedAvg), 'info.main')}
                 {renderStat('Total Spend', formatCurrency(stats.spend))}
-                {renderStat('Total Qty', formatNumber(stats.totalQty))}
+                {renderStat('Total Qty', displayUnitCode ? `${formatNumber(stats.totalQty)} ${displayUnitCode}` : formatNumber(stats.totalQty))}
                 {renderStat('POs', formatNumber(stats.poCount))}
                 {renderStat('Suppliers', formatNumber(stats.supplierCount))}
               </Grid>
@@ -318,7 +332,9 @@ const ProductPriceTrackingModal = ({
                     <TableCell>PO Number</TableCell>
                     <TableCell>Supplier</TableCell>
                     <TableCell align="right">Unit Price</TableCell>
-                    <TableCell align="right">Qty</TableCell>
+                    <TableCell align="right">
+                      Qty{displayUnitCode ? ` (${displayUnitCode})` : ''}
+                    </TableCell>
                     <TableCell align="right">Total</TableCell>
                   </TableRow>
                 </TableHead>
@@ -340,7 +356,10 @@ const ProductPriceTrackingModal = ({
                       <TableCell align="right" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                         {formatCurrency(entry.unitPrice)}
                       </TableCell>
-                      <TableCell align="right">{formatNumber(entry.qty)}</TableCell>
+                      <TableCell align="right">
+                        {formatNumber(entry.qty)}
+                        {displayUnitCode ? ` ${displayUnitCode}` : ''}
+                      </TableCell>
                       <TableCell align="right">
                         {formatCurrency((entry.unitPrice || 0) * (entry.qty || 0))}
                       </TableCell>

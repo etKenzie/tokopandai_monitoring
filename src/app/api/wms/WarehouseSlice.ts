@@ -8,6 +8,7 @@ export interface StockProduct {
   productId: string;
   productName: string;
   sku: string;
+  unitCode?: string;
   totalQty: number;
   totalValue: number;
 }

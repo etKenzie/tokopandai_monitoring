@@ -8,6 +8,7 @@ export interface PurchasingProduct {
   productId: string;
   productName: string;
   sku: string;
+  unitCode?: string;
   totalQtyOrdered: number;
   totalQtyReceived: number;
   totalNominal: number;
@@ -43,6 +44,7 @@ export interface ProductPerformanceParams {
   categoryId?: string;
   buyerCompany?: string;
   supplierId?: string;
+  warehouseId?: string;
 }
 
 export const fetchProductPerformance = async (
@@ -54,6 +56,7 @@ export const fetchProductPerformance = async (
   if (params.categoryId) queryParams.append('categoryId', params.categoryId);
   if (params.buyerCompany) queryParams.append('buyerCompany', params.buyerCompany);
   if (params.supplierId) queryParams.append('supplierId', params.supplierId);
+  if (params.warehouseId) queryParams.append('warehouseId', params.warehouseId);
 
   const url = `${WMS_PROXY_URL}/ext/purchasing/product-performance?${queryParams.toString()}`;
 
@@ -140,6 +143,7 @@ export interface ProductPriceTracking {
   productId: string;
   productName: string;
   sku: string;
+  unitCode?: string;
   categoryId: string | null;
   categoryName: string;
   history: PriceHistoryEntry[];
@@ -190,6 +194,7 @@ export interface PriceCompareChangedProduct {
   productId: string;
   productName: string;
   sku: string;
+  unitCode?: string;
   priceA: number;
   priceB: number;
   diff: number;
@@ -201,6 +206,7 @@ export interface PriceCompareFlatProduct {
   productId: string;
   productName: string;
   sku: string;
+  unitCode?: string;
   price: number;
 }
 
@@ -208,6 +214,7 @@ export interface PriceCompareNewProduct {
   productId: string;
   productName: string;
   sku: string;
+  unitCode?: string;
   priceB: number;
 }
 
@@ -239,6 +246,7 @@ export interface PriceCompareRow {
   productId: string;
   productName: string;
   sku: string;
+  unitCode?: string;
   status: PriceChangeStatus;
   /** Null for products that were not purchased in month A. */
   priceA: number | null;
@@ -294,6 +302,7 @@ export const flattenPriceCompare = (data: PriceCompareData | null): PriceCompare
       productId: product.productId,
       productName: product.productName,
       sku: product.sku,
+      unitCode: product.unitCode,
       status,
       priceA: product.priceA,
       priceB: product.priceB,
@@ -308,6 +317,7 @@ export const flattenPriceCompare = (data: PriceCompareData | null): PriceCompare
       productId: product.productId,
       productName: product.productName,
       sku: product.sku,
+      unitCode: product.unitCode,
       status: 'flat' as const,
       priceA: product.price,
       priceB: product.price,
@@ -318,6 +328,7 @@ export const flattenPriceCompare = (data: PriceCompareData | null): PriceCompare
       productId: product.productId,
       productName: product.productName,
       sku: product.sku,
+      unitCode: product.unitCode,
       status: 'new' as const,
       priceA: null,
       priceB: product.priceB,
