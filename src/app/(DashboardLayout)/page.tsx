@@ -942,7 +942,7 @@ export default function Dashboard() {
     return byAgent;
   }, [bonuses]);
 
-  /** One card per period type. Quarter & Month: profit = big circular, others = linear. Year: all linear. Optional allocated bonus shown as "Alokasi Bonus". */
+  /** One card per period type. Quarter & Month: profit = big circular, others = linear. Year: all linear (unless layoutAsQuarter). Optional allocated bonus shown as "Alokasi Bonus". */
   const PeriodCard = ({
     periodType,
     periodTitle,
@@ -951,6 +951,7 @@ export default function Dashboard() {
     allocatedBonus,
     isNational = false,
     companyMultiplier,
+    layoutAsQuarter = false,
   }: {
     periodType: 'quarter' | 'month' | 'year';
     periodTitle: string;
@@ -959,11 +960,13 @@ export default function Dashboard() {
     allocatedBonus?: BonusFromApi | null;
     isNational?: boolean;
     companyMultiplier?: number | null;
+    /** When Year fills the Quarter slot (e.g. Q4), match Quarter card layout. */
+    layoutAsQuarter?: boolean;
   }) => {
     const list = getGoalsForPeriod(goals, periodType);
-    // For now, 60+ is only shown in Quarter cards (hide it in Year cards).
+    // For now, 60+ is only shown in Quarter-style cards (hide it in default Year cards).
     const visibleList =
-      periodType === 'year'
+      periodType === 'year' && !layoutAsQuarter
         ? list.filter((g) => !isInverseGoalProgressType(g.goal_type))
         : list;
     if (visibleList.length === 0 && !allocatedBonus && !companyMultiplier)
@@ -975,12 +978,13 @@ export default function Dashboard() {
         : periodType === 'month'
           ? 'Month'
           : 'Year');
-    const isQuarterOrMonth = periodType === 'quarter' || periodType === 'month';
-    const profitGoal = isQuarterOrMonth
+    const useCircularProfitLayout =
+      periodType === 'quarter' || periodType === 'month' || layoutAsQuarter;
+    const profitGoal = useCircularProfitLayout
       ? visibleList.find((g) => (g.goal_type || '').toLowerCase() === 'profit')
       : null;
     const otherGoals =
-      isQuarterOrMonth && profitGoal
+      useCircularProfitLayout && profitGoal
         ? visibleList.filter((g) => g.id !== profitGoal.id)
         : visibleList;
 
@@ -1025,10 +1029,11 @@ export default function Dashboard() {
             {otherGoals.map((g) => (
               <LinearGoalRow key={g.id} g={g} />
             ))}
-            {/* Bonus details for agent cards - only when bonus toggle is on (not for quarter since it's shown at top) */}
+            {/* Bonus details for agent cards - only when bonus toggle is on (not for quarter-style since it's shown at top) */}
             {allocatedBonus &&
               !isNational &&
               periodType !== 'quarter' &&
+              !layoutAsQuarter &&
               shouldShowBonus && (
                 <Box
                   sx={{ borderTop: 1, borderColor: 'divider', pt: 2, mt: 2 }}
@@ -1139,7 +1144,7 @@ export default function Dashboard() {
   /** When true, show Alokasi Bonus in tiles. Controlled by toggle for all users (default off). */
   const shouldShowBonus = showAllocatedBonus;
 
-  /** Render Quarter, Month, Year cards in order; year at bottom. Allocated bonus shown inside each tile when present and shouldShowBonus (agents only). */
+  /** Render Quarter, Month, Year cards; Year sits beside Month when there is no quarter goal (e.g. Q4), otherwise Year is below. */
   const ScopeSection = ({
     scopeTitle,
     titleColor = 'primary',
@@ -1175,20 +1180,27 @@ export default function Dashboard() {
     // Always get bonus data if available, but only show "Alokasi Bonus" header when toggle is on
     const quarterBonus = agentBonuses?.quarter[0] ?? null;
     const yearBonus = agentBonuses?.year[0] ?? null;
-    // Calculate next threshold info for Agents
-    const agentNextInfo =
-      !isNational &&
-      quarterBonus?.individual_factor !== undefined &&
-      quarterBonus?.bonus_amount !== undefined
-        ? getNextThresholdInfo(
-            quarterBonus.individual_factor,
-            'individual',
-            quarterBonus.bonus_amount,
-          )
-        : null;
 
     /** Goals API with period_id returns quarter rows only — hide month/year goal cards. */
     const isHistoricalQuarterView = bonusQuarterSelection !== 'current';
+    /** Q4 (and similar): no quarter main goal — Year takes the Quarter slot beside Month. */
+    const hasQuarterGoals = quarterList.length > 0;
+    const yearTakesQuarterSlot = !isHistoricalQuarterView && !hasQuarterGoals;
+    /** When Year fills the Quarter slot, year bonus drives the same UI as quarter bonus. */
+    const primaryPeriodBonus = yearTakesQuarterSlot
+      ? (yearBonus ?? quarterBonus)
+      : quarterBonus;
+    // Calculate next threshold info for Agents
+    const agentNextInfo =
+      !isNational &&
+      primaryPeriodBonus?.individual_factor !== undefined &&
+      primaryPeriodBonus?.bonus_amount !== undefined
+        ? getNextThresholdInfo(
+            primaryPeriodBonus.individual_factor,
+            'individual',
+            primaryPeriodBonus.bonus_amount,
+          )
+        : null;
     const quarterPeriodTitle =
       isHistoricalQuarterView && selectedBonusPeriodLabel
         ? selectedBonusPeriodLabel
@@ -1262,12 +1274,12 @@ export default function Dashboard() {
     const shouldZeroAgentQuarterBonus =
       !isNational && hasNationalGuardrailFailure;
     const estimatedQuarterFinal =
-      quarterBonus != null
-        ? estimateAgentFinalBonusFromRow(quarterBonus)
+      primaryPeriodBonus != null
+        ? estimateAgentFinalBonusFromRow(primaryPeriodBonus)
         : null;
-    const apiFinal = quarterBonus?.final_bonus_amount;
+    const apiFinal = primaryPeriodBonus?.final_bonus_amount;
     const effectiveQuarterFinalBonus =
-      shouldZeroAgentQuarterBonus && quarterBonus
+      shouldZeroAgentQuarterBonus && primaryPeriodBonus
         ? 0
         : apiFinal != null && apiFinal > 0
           ? apiFinal
@@ -1278,7 +1290,7 @@ export default function Dashboard() {
             : (apiFinal ?? estimatedQuarterFinal ?? 0);
 
     // National: always show the bonus dashboard (factor / multiplier / rules) when any data exists — not gated by Bonus switch.
-    // Agents: Bonus switch + quarter bonus row (allocation and/or final from API).
+    // Agents: Bonus switch + primary period bonus row (quarter, or year when Year fills the Quarter slot).
     const showNationalBonusBlock =
       isNational &&
       (effectiveCompanyFactor != null ||
@@ -1287,9 +1299,9 @@ export default function Dashboard() {
     const showCurrentBonus = isNational
       ? showNationalBonusBlock
       : showAllocatedBonus &&
-        !!quarterBonus &&
-        (quarterBonus.final_bonus_amount !== undefined ||
-          quarterBonus.bonus_amount !== undefined);
+        !!primaryPeriodBonus &&
+        (primaryPeriodBonus.final_bonus_amount !== undefined ||
+          primaryPeriodBonus.bonus_amount !== undefined);
 
     // Calculate next threshold info for National
     const nationalBonusAmount =
@@ -1804,9 +1816,9 @@ export default function Dashboard() {
                               opacity: 0.9,
                             }}
                           >
-                            {isQuarterPeriod(quarterBonus!.period_title)
+                            {isQuarterPeriod(primaryPeriodBonus!.period_title)
                               ? 'Quarter Bonus'
-                              : isYearPeriod(quarterBonus!.period_title)
+                              : isYearPeriod(primaryPeriodBonus!.period_title)
                                 ? 'Year Bonus'
                                 : 'Current Bonus'}
                           </Box>
@@ -1829,7 +1841,7 @@ export default function Dashboard() {
                   </Box>
 
                   {/* Individual Factor - 1 column */}
-                  {quarterBonus?.individual_factor !== undefined && (
+                  {primaryPeriodBonus?.individual_factor !== undefined && (
                     <Box sx={{ height: '100%', display: 'flex' }}>
                       <DashboardCard>
                         <Box
@@ -1866,7 +1878,7 @@ export default function Dashboard() {
                               width: '100%',
                             }}
                           >
-                            {quarterBonus.individual_factor.toFixed(2)}
+                            {primaryPeriodBonus.individual_factor.toFixed(2)}
                           </Box>
                         </Box>
                       </DashboardCard>
@@ -1916,15 +1928,16 @@ export default function Dashboard() {
                             width: '100%',
                           }}
                         >
-                          Rp {formatBonusAmount(quarterBonus!.bonus_amount)}
+                          Rp{' '}
+                          {formatBonusAmount(primaryPeriodBonus!.bonus_amount)}
                         </Box>
                       </Box>
                     </DashboardCard>
                   </Box>
 
                   {/* Individual Multiplier - 1 column */}
-                  {(quarterBonus?.individual_multiplier !== undefined ||
-                    quarterBonus?.multiplier !== undefined) && (
+                  {(primaryPeriodBonus?.individual_multiplier !== undefined ||
+                    primaryPeriodBonus?.multiplier !== undefined) && (
                     <Box sx={{ height: '100%', display: 'flex' }}>
                       <DashboardCard>
                         <Box
@@ -1962,8 +1975,8 @@ export default function Dashboard() {
                             }}
                           >
                             {(
-                              quarterBonus.individual_multiplier ??
-                              quarterBonus.multiplier ??
+                              primaryPeriodBonus.individual_multiplier ??
+                              primaryPeriodBonus.multiplier ??
                               0
                             ).toFixed(2)}
                           </Box>
@@ -1982,7 +1995,7 @@ export default function Dashboard() {
                       .sort((a, b) => a.min_factor - b.min_factor);
 
                     const currentIndividualFactor =
-                      quarterBonus?.individual_factor;
+                      primaryPeriodBonus?.individual_factor;
 
                     return (
                       <Box
@@ -2093,8 +2106,8 @@ export default function Dashboard() {
                                   currentIndividualFactor <= rule.max_factor;
 
                                 const potentialBonus =
-                                  quarterBonus?.bonus_amount
-                                    ? quarterBonus.bonus_amount *
+                                  primaryPeriodBonus?.bonus_amount
+                                    ? primaryPeriodBonus.bonus_amount *
                                       rule.multiplier
                                     : 0;
 
@@ -2200,15 +2213,28 @@ export default function Dashboard() {
               mb: 2,
             }}
           >
-            <PeriodCard
-              periodType="quarter"
-              periodTitle={getPeriodTitleFromGoals(quarterList)}
-              goals={goals}
-              titleColor={titleColor}
-              allocatedBonus={quarterBonus}
-              isNational={isNational}
-              companyMultiplier={effectiveCompanyMultiplier}
-            />
+            {yearTakesQuarterSlot ? (
+              <PeriodCard
+                periodType="year"
+                periodTitle={getPeriodTitleFromGoals(yearList)}
+                goals={goals}
+                titleColor={titleColor}
+                allocatedBonus={primaryPeriodBonus}
+                isNational={isNational}
+                companyMultiplier={effectiveCompanyMultiplier}
+                layoutAsQuarter
+              />
+            ) : (
+              <PeriodCard
+                periodType="quarter"
+                periodTitle={getPeriodTitleFromGoals(quarterList)}
+                goals={goals}
+                titleColor={titleColor}
+                allocatedBonus={quarterBonus}
+                isNational={isNational}
+                companyMultiplier={effectiveCompanyMultiplier}
+              />
+            )}
             <PeriodCard
               periodType="month"
               periodTitle={getPeriodTitleFromGoals(monthList)}
@@ -2511,7 +2537,7 @@ export default function Dashboard() {
             </Box>
           </Box>
         )}
-        {!isHistoricalQuarterView && (
+        {!isHistoricalQuarterView && !yearTakesQuarterSlot && (
           <PeriodCard
             periodType="year"
             periodTitle={getPeriodTitleFromGoals(yearList)}
