@@ -1,6 +1,6 @@
 'use client';
 
-import { fetchOrderFilters, OrderFiltersData } from '@/app/api/distribusi/DistribusiSlice';
+import { fetchCashInFilters, OrderFiltersData } from '@/app/api/distribusi/DistribusiSlice';
 import {
   FormControl,
   Grid,
@@ -54,7 +54,7 @@ const DistribusiFilters = ({ filters, onFiltersChange, hasRestrictedRole = false
         const monthName = monthNames[parseInt(month) - 1];
         const formattedMonth = `${monthName} ${year}`;
         
-        const response = await fetchOrderFilters({
+        const response = await fetchCashInFilters({
           month: formattedMonth,
         });
         setAvailableFilters(response.data);

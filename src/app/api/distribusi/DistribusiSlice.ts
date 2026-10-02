@@ -897,6 +897,33 @@ export const fetchCashInData = async (params: CashInQueryParams): Promise<CashIn
   return response.json();
 };
 
+// Fetch Cash-In Filters (Agents and Areas)
+export const fetchCashInFilters = async (params: OrderFiltersQueryParams): Promise<OrderFiltersResponse> => {
+  const baseUrl = AM_API_URL;
+
+  const queryParams = new URLSearchParams();
+  if (params.month) queryParams.append('month', params.month);
+
+  const url = `${baseUrl}/order/cash-in/filters?${queryParams.toString()}`;
+
+  console.log('Fetching cash-in filters from:', url);
+  console.log('Query params:', queryParams.toString());
+  console.log('Params received:', params);
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch cash-in filters: ${response.status} ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
 // Types for Order Filters API
 export interface OrderFiltersData {
   agents: string[];
