@@ -27,6 +27,7 @@ import {
 } from "@mui/material";
 import React, { useState, useEffect, useCallback } from "react";
 import { fetchCompareData, CompareData } from "@/app/api/distribusi/DistribusiSlice";
+import SearchableSelect from "@/app/components/shared/SearchableSelect";
 
 const ComparePage = () => {
   const { user, roles, refreshRoles } = useAuth();
@@ -251,21 +252,19 @@ const ComparePage = () => {
                 </FormControl>
               </Grid>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Agent</InputLabel>
-                  <Select
-                    value={filters.agent}
-                    label="Agent"
-                    onChange={(e) => setFilters(prev => ({ ...prev, agent: e.target.value }))}
-                    disabled={hasRestrictedRole}
-                  >
-                    <MenuItem value="">All Agents</MenuItem>
-                    <MenuItem value="Oki irawan">Oki irawan</MenuItem>
-                    <MenuItem value="Rully">Rully</MenuItem>
-                    <MenuItem value="Rifqi">Rifqi</MenuItem>
-                    <MenuItem value="Mardi">Mardi</MenuItem>
-                  </Select>
-                </FormControl>
+                <SearchableSelect
+                  label="Agent"
+                  value={filters.agent}
+                  disabled={hasRestrictedRole}
+                  options={[
+                    { value: '', label: 'All Agents' },
+                    { value: 'Oki irawan', label: 'Oki irawan' },
+                    { value: 'Rully', label: 'Rully' },
+                    { value: 'Rifqi', label: 'Rifqi' },
+                    { value: 'Mardi', label: 'Mardi' },
+                  ]}
+                  onChange={(agent) => setFilters(prev => ({ ...prev, agent }))}
+                />
               </Grid>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Button

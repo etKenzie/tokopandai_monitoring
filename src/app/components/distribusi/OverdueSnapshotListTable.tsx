@@ -10,13 +10,9 @@ import {
   CardContent,
   Chip,
   CircularProgress,
-  FormControl,
   Grid,
   InputAdornment,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Table,
   TableBody,
   TableCell,
@@ -32,6 +28,7 @@ import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { fetchOverdueSnapshotList, OverdueSnapshotListItem } from '../../api/distribusi/DistribusiSlice';
 import OrderDetailModal from '../shared/OrderDetailModal';
+import SearchableSelect, { withAllOption } from '../shared/SearchableSelect';
 
 type OrderDirection = 'asc' | 'desc';
 type SortableField = keyof OverdueSnapshotListItem;
@@ -416,59 +413,22 @@ const OverdueSnapshotListTable = ({
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <FormControl fullWidth>
-                <InputLabel>Payment Status</InputLabel>
-                <Select
-                  value={statusPaymentFilter}
-                  label="Payment Status"
-                  onChange={(e) => setStatusPaymentFilter(e.target.value)}
-                >
-                  <MenuItem value="">All Payment Statuses</MenuItem>
-                  {uniqueStatusPayments.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect size="medium" label="Payment Status" value={statusPaymentFilter} options={withAllOption('All Payment Statuses', uniqueStatusPayments)} onChange={setStatusPaymentFilter} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <FormControl fullWidth>
-                <InputLabel>Overdue Status</InputLabel>
-                <Select
-                  value={overdueStatusFilter}
-                  label="Overdue Status"
-                  onChange={(e) => {
-                    setOverdueStatusFilter(e.target.value);
-                    setPage(0);
-                  }}
-                >
-                  <MenuItem value="">All Overdue Statuses</MenuItem>
-                  {uniqueOverdueStatuses.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                size="medium"
+                label="Overdue Status"
+                value={overdueStatusFilter}
+                options={withAllOption('All Overdue Statuses', uniqueOverdueStatuses)}
+                onChange={(value) => {
+                  setOverdueStatusFilter(value);
+                  setPage(0);
+                }}
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <FormControl fullWidth>
-                <InputLabel>Agent</InputLabel>
-                <Select
-                  value={agentFilter}
-                  label="Agent"
-                  onChange={(e) => setAgentFilter(e.target.value)}
-                  disabled={hasRestrictedRole}
-                >
-                  <MenuItem value="">All Agents</MenuItem>
-                  {uniqueAgents.map((agent) => (
-                    <MenuItem key={agent} value={agent}>
-                      {agent}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect size="medium" label="Agent" value={agentFilter} disabled={hasRestrictedRole} options={withAllOption('All Agents', uniqueAgents)} onChange={setAgentFilter} />
             </Grid>
           </Grid>
         </Box>

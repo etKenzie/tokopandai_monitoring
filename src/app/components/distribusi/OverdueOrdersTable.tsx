@@ -23,13 +23,9 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControl,
   Grid,
   InputAdornment,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Table,
   TableBody,
   TableCell,
@@ -45,6 +41,7 @@ import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo
 import * as XLSX from 'xlsx';
 import { fetchOverdueOrders, Order } from '../../api/distribusi/DistribusiSlice';
 import OrderDetailModal from '../shared/OrderDetailModal';
+import SearchableSelect, { withAllOption } from '../shared/SearchableSelect';
 import OverdueStatusDistributionChart from './OverdueStatusDistributionChart';
 import OverdueTransitionRecap from './OverdueTransitionRecap';
 
@@ -679,127 +676,34 @@ const OverdueOrdersTable = forwardRef<OverdueOrdersTableHandle, OverdueOrdersTab
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>Overdue Status</InputLabel>
-                <Select
-                  value={overdueStatusFilter}
-                  label="Overdue Status"
-                  onChange={(e) => {
-                    setOverdueStatusFilter(e.target.value);
-                    setPage(0);
-                  }}
-                >
-                  <MenuItem value="">All Overdue Statuses</MenuItem>
-                  {uniqueOverdueStatuses.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                size="medium"
+                label="Overdue Status"
+                value={overdueStatusFilter}
+                options={withAllOption('All Overdue Statuses', uniqueOverdueStatuses)}
+                onChange={(value) => {
+                  setOverdueStatusFilter(value);
+                  setPage(0);
+                }}
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>Order Status</InputLabel>
-                <Select
-                  value={statusOrderFilter}
-                  label="Order Status"
-                  onChange={(e) => setStatusOrderFilter(e.target.value)}
-                >
-                  <MenuItem value="">All Statuses</MenuItem>
-                  {uniqueStatusOrders.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect size="medium" label="Order Status" value={statusOrderFilter} options={withAllOption('All Statuses', uniqueStatusOrders)} onChange={setStatusOrderFilter} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>Payment Status</InputLabel>
-                <Select
-                  value={paymentStatusFilter}
-                  label="Payment Status"
-                  onChange={(e) => setPaymentStatusFilter(e.target.value)}
-                >
-                  <MenuItem value="">All Payment Statuses</MenuItem>
-                  {uniquePaymentStatuses.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect size="medium" label="Payment Status" value={paymentStatusFilter} options={withAllOption('All Payment Statuses', uniquePaymentStatuses)} onChange={setPaymentStatusFilter} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>Agent</InputLabel>
-                <Select
-                  value={agentFilter}
-                  label="Agent"
-                  onChange={(e) => setAgentFilter(e.target.value)}
-                  disabled={hasRestrictedRole}
-                >
-                  <MenuItem value="">All Agents</MenuItem>
-                  {uniqueAgents.map((agent) => (
-                    <MenuItem key={agent} value={agent}>
-                      {agent}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect size="medium" label="Agent" value={agentFilter} disabled={hasRestrictedRole} options={withAllOption('All Agents', uniqueAgents)} onChange={setAgentFilter} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>Segment</InputLabel>
-                <Select
-                  value={segmentFilter}
-                  label="Segment"
-                  onChange={(e) => setSegmentFilter(e.target.value)}
-                >
-                  <MenuItem value="">All Segments</MenuItem>
-                  {uniqueSegments.map((segment) => (
-                    <MenuItem key={segment} value={segment}>
-                      {segment}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect size="medium" label="Segment" value={segmentFilter} options={withAllOption('All Segments', uniqueSegments)} onChange={setSegmentFilter} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>Business Type</InputLabel>
-                <Select
-                  value={businessTypeFilter}
-                  label="Business Type"
-                  onChange={(e) => setBusinessTypeFilter(e.target.value)}
-                >
-                  <MenuItem value="">All Business Types</MenuItem>
-                  {uniqueBusinessTypes.map((businessType) => (
-                    <MenuItem key={businessType} value={businessType}>
-                      {businessType}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect size="medium" label="Business Type" value={businessTypeFilter} options={withAllOption('All Business Types', uniqueBusinessTypes)} onChange={setBusinessTypeFilter} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>Area</InputLabel>
-                <Select
-                  value={areaFilter}
-                  label="Area"
-                  onChange={(e) => setAreaFilter(e.target.value)}
-                >
-                  <MenuItem value="">All Areas</MenuItem>
-                  {uniqueAreas.map((area) => (
-                    <MenuItem key={area} value={area}>
-                      {area}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect size="medium" label="Area" value={areaFilter} options={withAllOption('All Areas', uniqueAreas)} onChange={setAreaFilter} />
             </Grid>
           </Grid>
         </Box>

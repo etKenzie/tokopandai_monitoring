@@ -13,16 +13,12 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-    FormControl,
     Grid,
     IconButton,
     ImageList,
     ImageListItem,
     InputAdornment,
-    InputLabel,
-    MenuItem,
     Paper,
-    Select,
     Table,
     TableBody,
     TableCell,
@@ -37,6 +33,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { fetchVisits, Visit } from '../../api/distribusi/MonitoringSlice';
+import SearchableSelect, { withAllOption } from '../shared/SearchableSelect';
 
 type OrderDirection = 'asc' | 'desc';
 type SortableField = keyof Visit;
@@ -379,52 +376,23 @@ const DistribusiVisitTable = ({
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>Agent</InputLabel>
-                <Select
-                  value={agentFilter}
-                  label="Agent"
-                  onChange={(e) => setAgentFilter(e.target.value)}
-                >
-                  <MenuItem value="">All Agents</MenuItem>
-                  {uniqueAgents.map((agent) => (
-                    <MenuItem key={agent} value={agent}>
-                      {agent}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect size="medium" label="Agent" value={agentFilter} options={withAllOption('All Agents', uniqueAgents)} onChange={setAgentFilter} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>Purpose</InputLabel>
-                <Select
-                  value={purposeFilter}
-                  label="Purpose"
-                  onChange={(e) => setPurposeFilter(e.target.value)}
-                >
-                  <MenuItem value="">All Purposes</MenuItem>
-                  {uniquePurposes.map((purpose) => (
-                    <MenuItem key={purpose} value={purpose}>
-                      {purpose}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect size="medium" label="Purpose" value={purposeFilter} options={withAllOption('All Purposes', uniquePurposes)} onChange={setPurposeFilter} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>Follow Up</InputLabel>
-                <Select
-                  value={followUpFilter}
-                  label="Follow Up"
-                  onChange={(e) => setFollowUpFilter(e.target.value)}
-                >
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="yes">Yes</MenuItem>
-                  <MenuItem value="no">No</MenuItem>
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                size="medium"
+                label="Follow Up"
+                value={followUpFilter}
+                options={[
+                  { value: '', label: 'All' },
+                  { value: 'yes', label: 'Yes' },
+                  { value: 'no', label: 'No' },
+                ]}
+                onChange={setFollowUpFilter}
+              />
             </Grid>
           </Grid>
         </Box>

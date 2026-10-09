@@ -7,6 +7,7 @@ import StoresOrderOnceMonthlyChart from "@/app/components/distribusi/StoresOrder
 import { useAuth } from "@/app/context/AuthContext";
 import { useCheckRoles } from "@/app/hooks/useCheckRoles";
 import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from "@/config/roles";
+import SearchableSelect from "@/app/components/shared/SearchableSelect";
 import { Box, FormControl, Grid, InputLabel, MenuItem, Select, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 
@@ -115,18 +116,16 @@ const NOOPage = () => {
               </FormControl>
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Payment Status</InputLabel>
-                <Select
-                  value={filters.statusPayment}
-                  label="Payment Status"
-                  onChange={(e) => setFilters(prev => ({ ...prev, statusPayment: e.target.value }))}
-                >
-                  <MenuItem value="">All Status</MenuItem>
-                  <MenuItem value="LUNAS">LUNAS</MenuItem>
-                  <MenuItem value="BELUM LUNAS">BELUM LUNAS</MenuItem>
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                label="Payment Status"
+                value={filters.statusPayment}
+                options={[
+                  { value: '', label: 'All Status' },
+                  { value: 'LUNAS', label: 'LUNAS' },
+                  { value: 'BELUM LUNAS', label: 'BELUM LUNAS' },
+                ]}
+                onChange={(statusPayment) => setFilters(prev => ({ ...prev, statusPayment }))}
+              />
             </Grid>
           </Grid>
         </Box>

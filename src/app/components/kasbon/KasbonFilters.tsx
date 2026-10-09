@@ -11,6 +11,7 @@ import {
 import { useEffect, useState } from 'react';
 import type { KasbonFilters as KasbonFiltersType } from '../../api/kasbon/KasbonSlice';
 import { fetchKasbonFilters } from '../../api/kasbon/KasbonSlice';
+import SearchableSelect, { withAllOption } from '../shared/SearchableSelect';
 
 export interface KasbonFilterValues {
   month: string;
@@ -113,64 +114,34 @@ const KasbonFilters = ({ filters, onFiltersChange }: KasbonFiltersProps) => {
         </FormControl>
       </Grid>
 
-      {/* Employer Filter */}
       <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-        <FormControl fullWidth size="small">
-          <InputLabel>Employer</InputLabel>
-          <Select
-            value={filters.employer}
-            label="Employer"
-            onChange={handleFilterChange('employer')}
-            disabled={loading}
-          >
-            <MenuItem value="">All Employers</MenuItem>
-            {availableFilters?.employers.map((employer) => (
-              <MenuItem key={employer} value={employer}>
-                {employer}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <SearchableSelect
+          label="Employer"
+          value={filters.employer}
+          disabled={loading}
+          options={withAllOption('All Employers', availableFilters?.employers)}
+          onChange={(employer) => onFiltersChange({ ...filters, employer })}
+        />
       </Grid>
 
-      {/* Placement Filter */}
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-        <FormControl fullWidth size="small">
-          <InputLabel>Placement</InputLabel>
-          <Select
-            value={filters.placement}
-            label="Placement"
-            onChange={handleFilterChange('placement')}
-            disabled={loading}
-          >
-            <MenuItem value="">All Placements</MenuItem>
-            {availableFilters?.placements.map((placement) => (
-              <MenuItem key={placement} value={placement}>
-                {placement}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <SearchableSelect
+          label="Placement"
+          value={filters.placement}
+          disabled={loading}
+          options={withAllOption('All Placements', availableFilters?.placements)}
+          onChange={(placement) => onFiltersChange({ ...filters, placement })}
+        />
       </Grid>
 
-      {/* Project Filter */}
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-        <FormControl fullWidth size="small">
-          <InputLabel>Project</InputLabel>
-          <Select
-            value={filters.project}
-            label="Project"
-            onChange={handleFilterChange('project')}
-            disabled={loading}
-          >
-            <MenuItem value="">All Projects</MenuItem>
-            {availableFilters?.projects.map((project) => (
-              <MenuItem key={project} value={project}>
-                {project}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <SearchableSelect
+          label="Project"
+          value={filters.project}
+          disabled={loading}
+          options={withAllOption('All Projects', availableFilters?.projects)}
+          onChange={(project) => onFiltersChange({ ...filters, project })}
+        />
       </Grid>
     </Grid>
   );

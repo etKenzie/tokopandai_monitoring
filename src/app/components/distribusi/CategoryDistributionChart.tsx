@@ -1,6 +1,7 @@
 'use client';
 
 import { fetchProductCategory, ProductCategoryMonthlyResponse } from '@/app/api/distribusi/DistribusiSlice';
+import SearchableSelect from '@/app/components/shared/SearchableSelect';
 import {
     Box,
     Card,
@@ -180,10 +181,6 @@ const CategoryDistributionChart = ({ filters }: CategoryDistributionChartProps) 
       fetchChartData();
     }
   }, [filters.agent, filters.area, filters.segment]);
-
-  const handleCategoryChange = (event: SelectChangeEvent<string>) => {
-    setSelectedCategory(event.target.value);
-  };
 
   const handleStartMonthYearChange = (event: SelectChangeEvent<string>) => {
     console.log('Start month changed to:', event.target.value);
@@ -438,21 +435,16 @@ const CategoryDistributionChart = ({ filters }: CategoryDistributionChartProps) 
               }
               label="Margin view"
             />
-            <FormControl size="small">
-              <InputLabel>Category</InputLabel>
-              <Select
-                value={selectedCategory}
-                label="Category"
-                onChange={handleCategoryChange}
-                disabled={availableCategories.length === 0}
-              >
-                {availableCategories.map((category) => (
-                  <MenuItem key={category} value={category}>
-                    {category}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <SearchableSelect
+              label="Category"
+              value={selectedCategory}
+              options={availableCategories.map((category) => ({ value: category, label: category }))}
+              onChange={setSelectedCategory}
+              disabled={availableCategories.length === 0}
+              clearable={false}
+              fullWidth={false}
+              sx={{ minWidth: 200 }}
+            />
             
             {/* Start Month Year */}
             <FormControl size="small">

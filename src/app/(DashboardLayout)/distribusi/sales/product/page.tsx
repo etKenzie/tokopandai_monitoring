@@ -7,6 +7,7 @@ import CategoryDistributionChart from '@/app/components/distribusi/CategoryDistr
 import ProductTypeMonthlyChart from '@/app/components/distribusi/ProductTypeMonthlyChart';
 import StoreProductsTable from '@/app/components/distribusi/StoreProductsTable';
 import SubCategoryChart from '@/app/components/distribusi/SubCategoryChart';
+import SearchableSelect, { withAllOption } from '@/app/components/shared/SearchableSelect';
 import { useAuth } from '@/app/context/AuthContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from '@/config/roles';
@@ -255,61 +256,48 @@ const ProductPage = () => {
 
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Area</InputLabel>
-                <Select
-                  value={filters.area}
-                  label="Area"
-                  onChange={(e) => handleFiltersChange({ ...filters, area: e.target.value })}
-                >
-                  <MenuItem value="">All Areas</MenuItem>
-                  <MenuItem value="JAKARTA">JAKARTA</MenuItem>
-                  <MenuItem value="BANDUNG">BANDUNG</MenuItem>
-                  <MenuItem value="SURABAYA">SURABAYA</MenuItem>
-                  <MenuItem value="MEDAN">MEDAN</MenuItem>
-                  <MenuItem value="SEMARANG">SEMARANG</MenuItem>
-                  <MenuItem value="MAKASSAR">MAKASSAR</MenuItem>
-                  <MenuItem value="PALEMBANG">PALEMBANG</MenuItem>
-                  <MenuItem value="TANGERANG">TANGERANG</MenuItem>
-                  <MenuItem value="DEPOK">DEPOK</MenuItem>
-                  <MenuItem value="BEKASI">BEKASI</MenuItem>
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                label="Area"
+                value={filters.area}
+                options={[
+                  { value: '', label: 'All Areas' },
+                  { value: 'JAKARTA', label: 'JAKARTA' },
+                  { value: 'BANDUNG', label: 'BANDUNG' },
+                  { value: 'SURABAYA', label: 'SURABAYA' },
+                  { value: 'MEDAN', label: 'MEDAN' },
+                  { value: 'SEMARANG', label: 'SEMARANG' },
+                  { value: 'MAKASSAR', label: 'MAKASSAR' },
+                  { value: 'PALEMBANG', label: 'PALEMBANG' },
+                  { value: 'TANGERANG', label: 'TANGERANG' },
+                  { value: 'DEPOK', label: 'DEPOK' },
+                  { value: 'BEKASI', label: 'BEKASI' },
+                ]}
+                onChange={(area) => handleFiltersChange({ ...filters, area })}
+              />
             </Grid>
 
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Segment</InputLabel>
-                <Select
-                  value={filters.segment}
-                  label="Segment"
-                  onChange={(e) => handleFiltersChange({ ...filters, segment: e.target.value })}
-                >
-                  <MenuItem value="">All Segments</MenuItem>
-                  <MenuItem value="RESELLER">RESELLER</MenuItem>
-                  <MenuItem value="HORECA">HORECA</MenuItem>
-                  <MenuItem value="OTHER">OTHER</MenuItem>
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                label="Segment"
+                value={filters.segment}
+                options={[
+                  { value: '', label: 'All Segments' },
+                  { value: 'RESELLER', label: 'RESELLER' },
+                  { value: 'HORECA', label: 'HORECA' },
+                  { value: 'OTHER', label: 'OTHER' },
+                ]}
+                onChange={(segment) => handleFiltersChange({ ...filters, segment })}
+              />
             </Grid>
 
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Agent</InputLabel>
-                <Select
-                  value={filters.agent}
-                  label="Agent"
-                  onChange={(e) => handleFiltersChange({ ...filters, agent: e.target.value })}
-                  disabled={hasRestrictedRole || filtersLoading}
-                >
-                  <MenuItem value="">All Agents</MenuItem>
-                  {availableFilters?.agents?.map((agent) => (
-                    <MenuItem key={agent} value={agent}>
-                      {agent}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                label="Agent"
+                value={filters.agent}
+                disabled={hasRestrictedRole || filtersLoading}
+                options={withAllOption('All Agents', availableFilters?.agents)}
+                onChange={(agent) => handleFiltersChange({ ...filters, agent })}
+              />
             </Grid>
           </Grid>
         </Box>

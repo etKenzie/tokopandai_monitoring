@@ -5,6 +5,7 @@ import PageContainer from "@/app/components/container/PageContainer";
 import { fetchOverdueSnapshot, fetchOrderFilters, OverdueSnapshotResponse, OrderFiltersData } from "@/app/api/distribusi/DistribusiSlice";
 import OverdueSnapshotMonthlyChart from "@/app/components/distribusi/OverdueSnapshotMonthlyChart";
 import OverdueSnapshotListTable from "@/app/components/distribusi/OverdueSnapshotListTable";
+import SearchableSelect, { withAllOption } from "@/app/components/shared/SearchableSelect";
 import SummaryTiles from "@/app/components/shared/SummaryTiles";
 import { getPageRoles, getRestrictedRoles, getAgentNameFromRole } from "@/config/roles";
 import { useAuth } from "@/app/context/AuthContext";
@@ -262,24 +263,14 @@ const OverdueSnapshotPage = () => {
               </FormControl>
             </Grid>
             
-            {/* Agent Filter */}
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Agent</InputLabel>
-                <Select
-                  value={selectedAgent}
-                  label="Agent"
-                  onChange={(e) => setSelectedAgent(e.target.value)}
-                  disabled={filtersLoading || hasRestrictedRole}
-                >
-                  <MenuItem value="">All Agents</MenuItem>
-                  {availableFilters?.agents.map((agent) => (
-                    <MenuItem key={agent} value={agent}>
-                      {agent}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                label="Agent"
+                value={selectedAgent}
+                disabled={filtersLoading || hasRestrictedRole}
+                options={withAllOption('All Agents', availableFilters?.agents)}
+                onChange={setSelectedAgent}
+              />
             </Grid>
           </Grid>
         </Box>

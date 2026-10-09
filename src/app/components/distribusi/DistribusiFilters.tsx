@@ -1,6 +1,7 @@
 'use client';
 
 import { fetchCashInFilters, OrderFiltersData } from '@/app/api/distribusi/DistribusiSlice';
+import SearchableSelect, { withAllOption } from '@/app/components/shared/SearchableSelect';
 import {
   FormControl,
   Grid,
@@ -129,78 +130,55 @@ const DistribusiFilters = ({ filters, onFiltersChange, hasRestrictedRole = false
         </FormControl>
       </Grid>
 
-      {/* Row 2+: Agent, Area, Segment, Business Type */}
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-        <FormControl fullWidth size="small">
-          <InputLabel>Agent</InputLabel>
-          <Select
-            value={filters.agent}
-            label="Agent"
-            onChange={handleFilterChange('agent')}
-            disabled={loading || hasRestrictedRole}
-          >
-            <MenuItem value="">All Agents</MenuItem>
-            {availableFilters?.agents.map((agent) => (
-              <MenuItem key={agent} value={agent}>
-                {agent}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <SearchableSelect
+          label="Agent"
+          value={filters.agent}
+          disabled={loading || hasRestrictedRole}
+          options={withAllOption('All Agents', availableFilters?.agents)}
+          onChange={(agent) => onFiltersChange({ ...filters, agent })}
+        />
       </Grid>
 
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-        <FormControl fullWidth size="small">
-          <InputLabel>Area</InputLabel>
-          <Select
-            value={filters.area}
-            label="Area"
-            onChange={handleFilterChange('area')}
-            disabled={loading}
-          >
-            <MenuItem value="">All Areas</MenuItem>
-            {availableFilters?.areas.map((area) => (
-              <MenuItem key={area} value={area}>
-                {area}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <SearchableSelect
+          label="Area"
+          value={filters.area}
+          disabled={loading}
+          options={withAllOption('All Areas', availableFilters?.areas)}
+          onChange={(area) => onFiltersChange({ ...filters, area })}
+        />
       </Grid>
 
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-        <FormControl fullWidth size="small">
-          <InputLabel>Segment</InputLabel>
-          <Select
-            value={filters.segment}
-            label="Segment"
-            onChange={handleFilterChange('segment')}
-            disabled={loading}
-          >
-            <MenuItem value="">All Segments</MenuItem>
-            <MenuItem value="RESELLER">RESELLER</MenuItem>
-            <MenuItem value="HORECA">HORECA</MenuItem>
-            <MenuItem value="OTHER">OTHER</MenuItem>
-          </Select>
-        </FormControl>
+        <SearchableSelect
+          label="Segment"
+          value={filters.segment}
+          disabled={loading}
+          options={[
+            { value: '', label: 'All Segments' },
+            { value: 'RESELLER', label: 'RESELLER' },
+            { value: 'HORECA', label: 'HORECA' },
+            { value: 'OTHER', label: 'OTHER' },
+          ]}
+          onChange={(segment) => onFiltersChange({ ...filters, segment })}
+        />
       </Grid>
 
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-        <FormControl fullWidth size="small">
-          <InputLabel>Business Type</InputLabel>
-          <Select
-            value={filters.business_type}
-            label="Business Type"
-            onChange={handleFilterChange('business_type')}
-            disabled={loading}
-          >
-            <MenuItem value="">All Business Types</MenuItem>
-            <MenuItem value="Hotel">Hotel</MenuItem>
-            <MenuItem value="Resto">Resto</MenuItem>
-            <MenuItem value="Catering">Catering</MenuItem>
-            <MenuItem value="Retail Tradisional">Retail Tradisional</MenuItem>
-          </Select>
-        </FormControl>
+        <SearchableSelect
+          label="Business Type"
+          value={filters.business_type}
+          disabled={loading}
+          options={[
+            { value: '', label: 'All Business Types' },
+            { value: 'Hotel', label: 'Hotel' },
+            { value: 'Resto', label: 'Resto' },
+            { value: 'Catering', label: 'Catering' },
+            { value: 'Retail Tradisional', label: 'Retail Tradisional' },
+          ]}
+          onChange={(business_type) => onFiltersChange({ ...filters, business_type })}
+        />
       </Grid>
     </Grid>
   );

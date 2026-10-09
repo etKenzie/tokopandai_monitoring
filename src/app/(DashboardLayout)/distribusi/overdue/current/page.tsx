@@ -6,6 +6,7 @@ import OverdueOrdersTable from "@/app/components/distribusi/OverdueOrdersTable";
 import { useAuth } from "@/app/context/AuthContext";
 import { useCheckRoles } from "@/app/hooks/useCheckRoles";
 import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from "@/config/roles";
+import SearchableSelect, { withAllOption } from "@/app/components/shared/SearchableSelect";
 import { Box, FormControl, Grid, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 
@@ -135,22 +136,13 @@ const OverduePage = () => {
               </>
             )}
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Agent</InputLabel>
-                <Select
-                  value={filters.agent}
-                  label="Agent"
-                  onChange={(e) => setFilters(prev => ({ ...prev, agent: e.target.value }))}
-                  disabled={hasRestrictedRole}
-                >
-                  <MenuItem value="">All Agents</MenuItem>
-                  {availableAgents.map((agent) => (
-                    <MenuItem key={agent} value={agent}>
-                      {agent}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                label="Agent"
+                value={filters.agent}
+                disabled={hasRestrictedRole}
+                options={withAllOption('All Agents', availableAgents)}
+                onChange={(agent) => setFilters(prev => ({ ...prev, agent }))}
+              />
             </Grid>
           </Grid>
         </Box>

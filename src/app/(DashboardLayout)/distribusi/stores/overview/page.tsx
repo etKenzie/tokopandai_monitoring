@@ -14,6 +14,7 @@ import StoresTable from "@/app/components/distribusi/StoresTable";
 import { useAuth } from "@/app/context/AuthContext";
 import { useCheckRoles } from "@/app/hooks/useCheckRoles";
 import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from "@/config/roles";
+import SearchableSelect from "@/app/components/shared/SearchableSelect";
 import { Box, FormControl, Grid, InputLabel, MenuItem, Select, Typography } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 
@@ -105,18 +106,17 @@ const StoresOverviewPage = () => {
         <Box sx={{ mb: 3 }}>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>User Status</InputLabel>
-                <Select
-                  value={filters.user_status}
-                  label="User Status"
-                  onChange={(e) => setFilters(prev => ({ ...prev, user_status: e.target.value }))}
-                >
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="Active">Active</MenuItem>
-                  <MenuItem value="Inactive">Inactive</MenuItem>
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                size="medium"
+                label="User Status"
+                value={filters.user_status}
+                options={[
+                  { value: '', label: 'All' },
+                  { value: 'Active', label: 'Active' },
+                  { value: 'Inactive', label: 'Inactive' },
+                ]}
+                onChange={(user_status) => setFilters(prev => ({ ...prev, user_status }))}
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth>

@@ -10,6 +10,7 @@ import {
 import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import PageContainer from "@/app/components/container/PageContainer";
 import StoreDetailModal from "@/app/components/distribusi/StoreDetailModal";
+import SearchableSelect, { withAllOption } from "@/app/components/shared/SearchableSelect";
 import { useAuth } from "@/app/context/AuthContext";
 import { useCheckRoles } from "@/app/hooks/useCheckRoles";
 import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from "@/config/roles";
@@ -800,44 +801,28 @@ const StoresComparePage = () => {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>Segment</InputLabel>
-                <Select
-                  value={segmentFilter}
-                  label="Segment"
-                  onChange={(e) => {
-                    setSegmentFilter(e.target.value);
-                    setPage(0);
-                  }}
-                >
-                  <MenuItem value="">All Segments</MenuItem>
-                  {uniqueSegments.map((segment) => (
-                    <MenuItem key={segment} value={segment}>
-                      {segment}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                size="medium"
+                label="Segment"
+                value={segmentFilter}
+                options={withAllOption('All Segments', uniqueSegments)}
+                onChange={(value) => {
+                  setSegmentFilter(value);
+                  setPage(0);
+                }}
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>Agent</InputLabel>
-                <Select
-                  value={agentFilter}
-                  label="Agent"
-                  onChange={(e) => {
-                    setAgentFilter(e.target.value);
-                    setPage(0);
-                  }}
-                >
-                  <MenuItem value="">All Agents</MenuItem>
-                  {uniqueAgents.map((agent) => (
-                    <MenuItem key={agent} value={agent}>
-                      {agent}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                size="medium"
+                label="Agent"
+                value={agentFilter}
+                options={withAllOption('All Agents', uniqueAgents)}
+                onChange={(value) => {
+                  setAgentFilter(value);
+                  setPage(0);
+                }}
+              />
             </Grid>
           </Grid>
         </Box>

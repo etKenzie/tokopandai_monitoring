@@ -8,6 +8,7 @@ import PageContainer from "@/app/components/container/PageContainer";
 import StoreAreaMap from "@/app/components/distribusi/StoreAreaMap";
 import StoreDetailModal from "@/app/components/distribusi/StoreDetailModal";
 import StoreMonthlyTable from "@/app/components/distribusi/StoreMonthlyTable";
+import SearchableSelect, { withAllOption } from "@/app/components/shared/SearchableSelect";
 import { useAuth } from "@/app/context/AuthContext";
 import { useCheckRoles } from "@/app/hooks/useCheckRoles";
 import { getAgentNameFromRole, getPageRoles, getRestrictedRoles } from "@/config/roles";
@@ -534,104 +535,64 @@ const StoresMonthlyPage = () => {
                       />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                      <FormControl fullWidth>
-                        <InputLabel>Agent</InputLabel>
-                        <Select
-                          value={noOrderAgentFilter}
-                          label="Agent"
-                          onChange={(e) => {
-                            setNoOrderAgentFilter(e.target.value);
-                            setNoOrderPage(0);
-                          }}
-                        >
-                          <MenuItem value="">All Agents</MenuItem>
-                          {uniqueNoOrderAgents.map((agent) => (
-                            <MenuItem key={agent} value={agent}>
-                              {agent}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
+                      <SearchableSelect
+                        size="medium"
+                        label="Agent"
+                        value={noOrderAgentFilter}
+                        options={withAllOption('All Agents', uniqueNoOrderAgents)}
+                        onChange={(value) => {
+                          setNoOrderAgentFilter(value);
+                          setNoOrderPage(0);
+                        }}
+                      />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                      <FormControl fullWidth>
-                        <InputLabel>Segment</InputLabel>
-                        <Select
-                          value={noOrderSegmentFilter}
-                          label="Segment"
-                          onChange={(e) => {
-                            setNoOrderSegmentFilter(e.target.value);
-                            setNoOrderPage(0);
-                          }}
-                        >
-                          <MenuItem value="">All Segments</MenuItem>
-                          {uniqueNoOrderSegments.map((segment) => (
-                            <MenuItem key={segment} value={segment}>
-                              {segment}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
+                      <SearchableSelect
+                        size="medium"
+                        label="Segment"
+                        value={noOrderSegmentFilter}
+                        options={withAllOption('All Segments', uniqueNoOrderSegments)}
+                        onChange={(value) => {
+                          setNoOrderSegmentFilter(value);
+                          setNoOrderPage(0);
+                        }}
+                      />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                      <FormControl fullWidth>
-                        <InputLabel>User Status</InputLabel>
-                        <Select
-                          value={noOrderUserStatusFilter}
-                          label="User Status"
-                          onChange={(e) => {
-                            setNoOrderUserStatusFilter(e.target.value);
-                            setNoOrderPage(0);
-                          }}
-                        >
-                          <MenuItem value="">All User Statuses</MenuItem>
-                          {uniqueNoOrderUserStatuses.map((status) => (
-                            <MenuItem key={status} value={status}>
-                              {status}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
+                      <SearchableSelect
+                        size="medium"
+                        label="User Status"
+                        value={noOrderUserStatusFilter}
+                        options={withAllOption('All User Statuses', uniqueNoOrderUserStatuses)}
+                        onChange={(value) => {
+                          setNoOrderUserStatusFilter(value);
+                          setNoOrderPage(0);
+                        }}
+                      />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                      <FormControl fullWidth>
-                        <InputLabel>Business Type</InputLabel>
-                        <Select
-                          value={noOrderBusinessTypeFilter}
-                          label="Business Type"
-                          onChange={(e) => {
-                            setNoOrderBusinessTypeFilter(e.target.value);
-                            setNoOrderPage(0);
-                          }}
-                        >
-                          <MenuItem value="">All Business Types</MenuItem>
-                          {uniqueNoOrderBusinessTypes.map((businessType) => (
-                            <MenuItem key={businessType} value={businessType}>
-                              {businessType}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
+                      <SearchableSelect
+                        size="medium"
+                        label="Business Type"
+                        value={noOrderBusinessTypeFilter}
+                        options={withAllOption('All Business Types', uniqueNoOrderBusinessTypes)}
+                        onChange={(value) => {
+                          setNoOrderBusinessTypeFilter(value);
+                          setNoOrderPage(0);
+                        }}
+                      />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                      <FormControl fullWidth>
-                        <InputLabel>Payment Status</InputLabel>
-                        <Select
-                          value={noOrderPaymentStatusFilter}
-                          label="Payment Status"
-                          onChange={(e) => {
-                            setNoOrderPaymentStatusFilter(e.target.value);
-                            setNoOrderPage(0);
-                          }}
-                        >
-                          <MenuItem value="">All Payment Statuses</MenuItem>
-                          {uniqueNoOrderPaymentStatuses.map((paymentStatus) => (
-                            <MenuItem key={paymentStatus} value={paymentStatus}>
-                              {paymentStatus}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
+                      <SearchableSelect
+                        size="medium"
+                        label="Payment Status"
+                        value={noOrderPaymentStatusFilter}
+                        options={withAllOption('All Payment Statuses', uniqueNoOrderPaymentStatuses)}
+                        onChange={(value) => {
+                          setNoOrderPaymentStatusFilter(value);
+                          setNoOrderPage(0);
+                        }}
+                      />
                     </Grid>
                   </Grid>
                 </Box>

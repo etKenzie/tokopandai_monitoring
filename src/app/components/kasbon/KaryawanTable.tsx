@@ -7,13 +7,9 @@ import {
   Card,
   CardContent,
   Chip,
-  FormControl,
   Grid,
   InputAdornment,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Table,
   TableBody,
   TableCell,
@@ -27,6 +23,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { Karyawan } from '../../api/kasbon/KasbonSlice';
+import SearchableSelect from '../shared/SearchableSelect';
 
 type Order = 'asc' | 'desc';
 type SortableField = keyof Karyawan;
@@ -241,65 +238,42 @@ const KaryawanTable = ({
                 }}
               />
             </Grid>
-            <Grid
-              size={{
-                xs: 12,
-                sm: 4
-              }}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={statusFilter}
-                  label="Status"
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <MenuItem value="">All</MenuItem>
-                  {uniqueStatuses.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {getStatusLabel(status)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              <SearchableSelect
+                size="medium"
+                label="Status"
+                value={statusFilter}
+                options={[
+                  { value: '', label: 'All' },
+                  ...uniqueStatuses.map((status) => ({ value: status, label: getStatusLabel(status) })),
+                ]}
+                onChange={setStatusFilter}
+              />
             </Grid>
-            <Grid
-              size={{
-                xs: 12,
-                sm: 4
-              }}>
-              <FormControl fullWidth>
-                <InputLabel>Kasbon Eligible</InputLabel>
-                <Select
-                  value={eligibleFilter}
-                  label="Kasbon Eligible"
-                  onChange={(e) => setEligibleFilter(e.target.value)}
-                >
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="1">Yes</MenuItem>
-                  <MenuItem value="0">No</MenuItem>
-                </Select>
-              </FormControl>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              <SearchableSelect
+                size="medium"
+                label="Kasbon Eligible"
+                value={eligibleFilter}
+                options={[
+                  { value: '', label: 'All' },
+                  { value: '1', label: 'Yes' },
+                  { value: '0', label: 'No' },
+                ]}
+                onChange={setEligibleFilter}
+              />
             </Grid>
-            <Grid
-              size={{
-                xs: 12,
-                sm: 4
-              }}>
-              <FormControl fullWidth>
-                <InputLabel>Client</InputLabel>
-                <Select
-                  value={clientFilter}
-                  label="Client"
-                  onChange={(e) => setClientFilter(e.target.value)}
-                >
-                  <MenuItem value="">All</MenuItem>
-                  {uniqueClients.map((client) => (
-                    <MenuItem key={client} value={client}>
-                      Client {client}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              <SearchableSelect
+                size="medium"
+                label="Client"
+                value={clientFilter}
+                options={[
+                  { value: '', label: 'All' },
+                  ...uniqueClients.map((client) => ({ value: client, label: `Client ${client}` })),
+                ]}
+                onChange={setClientFilter}
+              />
             </Grid>
           </Grid>
         </Box>

@@ -8,14 +8,10 @@ import {
   CardContent,
   Chip,
   CircularProgress,
-  FormControl,
   FormControlLabel,
   Grid,
   InputAdornment,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Switch,
   Table,
   TableBody,
@@ -32,6 +28,7 @@ import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { ProductSummaryData } from '../../api/distribusi/DistribusiSlice';
 import { Product } from '../../api/distribusi/ProductSlice';
+import SearchableSelect, { withAllOption } from '../shared/SearchableSelect';
 import ProductDetailModal from './ProductDetailModal';
 
 type ProductDirection = 'asc' | 'desc';
@@ -573,55 +570,13 @@ const StoreProductsTable = ({
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <FormControl fullWidth>
-                <InputLabel>Brand</InputLabel>
-                <Select
-                  value={brandFilter}
-                  label="Brand"
-                  onChange={(e) => setBrandFilter(e.target.value)}
-                >
-                  <MenuItem value="">All Brands</MenuItem>
-                  {uniqueBrands.map((brand) => (
-                    <MenuItem key={brand} value={brand}>
-                      {brand}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect size="medium" label="Brand" value={brandFilter} options={withAllOption('All Brands', uniqueBrands)} onChange={setBrandFilter} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <FormControl fullWidth>
-                <InputLabel>Type Category</InputLabel>
-                <Select
-                  value={typeCategoryFilter}
-                  label="Type Category"
-                  onChange={(e) => setTypeCategoryFilter(e.target.value)}
-                >
-                  <MenuItem value="">All Types</MenuItem>
-                  {uniqueTypeCategories.map((type) => (
-                    <MenuItem key={type} value={type}>
-                      {type}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect size="medium" label="Type Category" value={typeCategoryFilter} options={withAllOption('All Types', uniqueTypeCategories)} onChange={setTypeCategoryFilter} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <FormControl fullWidth>
-                <InputLabel>Sub Category</InputLabel>
-                <Select
-                  value={subCategoryFilter}
-                  label="Sub Category"
-                  onChange={(e) => setSubCategoryFilter(e.target.value)}
-                >
-                  <MenuItem value="">All Sub Categories</MenuItem>
-                  {uniqueSubCategories.map((subCategory) => (
-                    <MenuItem key={subCategory} value={subCategory}>
-                      {subCategory}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect size="medium" label="Sub Category" value={subCategoryFilter} options={withAllOption('All Sub Categories', uniqueSubCategories)} onChange={setSubCategoryFilter} />
             </Grid>
           </Grid>
         </Box>

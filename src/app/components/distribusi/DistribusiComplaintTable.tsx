@@ -13,14 +13,10 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControl,
   Grid,
   IconButton,
   InputAdornment,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Table,
   TableBody,
   TableCell,
@@ -35,6 +31,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { Complaint, fetchComplaints } from '../../api/distribusi/MonitoringSlice';
+import SearchableSelect, { withAllOption } from '../shared/SearchableSelect';
 
 type OrderDirection = 'asc' | 'desc';
 type SortableField = keyof Complaint;
@@ -350,21 +347,7 @@ const DistribusiComplaintTable = ({
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth>
-                <InputLabel>Reason</InputLabel>
-                <Select
-                  value={reasonFilter}
-                  label="Reason"
-                  onChange={(e) => setReasonFilter(e.target.value)}
-                >
-                  <MenuItem value="">All Reasons</MenuItem>
-                  {uniqueReasons.map((reason) => (
-                    <MenuItem key={reason} value={reason}>
-                      {reason}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect size="medium" label="Reason" value={reasonFilter} options={withAllOption('All Reasons', uniqueReasons)} onChange={setReasonFilter} />
             </Grid>
           </Grid>
         </Box>

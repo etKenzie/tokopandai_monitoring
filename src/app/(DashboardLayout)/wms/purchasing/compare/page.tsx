@@ -9,6 +9,7 @@ import {
 } from "@/app/api/wms/PurchasingSlice";
 import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import PageContainer from "@/app/components/container/PageContainer";
+import SearchableSelect from "@/app/components/shared/SearchableSelect";
 import ProductPriceTrackingModal from "@/app/components/wms/ProductPriceTrackingModal";
 import { getPageRoles } from "@/config/roles";
 import {
@@ -525,23 +526,23 @@ const PriceComparePage = () => {
                   />
                 </Grid>
                 <Grid size={{ xs: 12 }}>
-                  <FormControl fullWidth>
-                    <InputLabel>Status</InputLabel>
-                    <Select
-                      value={statusFilter}
-                      label="Status"
-                      onChange={(e) => {
-                        setStatusFilter(e.target.value as StatusFilter);
-                        setPage(0);
-                      }}
-                    >
-                      <MenuItem value="all">All Changes</MenuItem>
-                      <MenuItem value="up">Price Up</MenuItem>
-                      <MenuItem value="down">Price Down</MenuItem>
-                      <MenuItem value="flat">Price Flat</MenuItem>
-                      <MenuItem value="new">New Product</MenuItem>
-                    </Select>
-                  </FormControl>
+                  <SearchableSelect
+                    size="medium"
+                    label="Status"
+                    value={statusFilter}
+                    allValue="all"
+                    options={[
+                      { value: 'all', label: 'All Changes' },
+                      { value: 'up', label: 'Price Up' },
+                      { value: 'down', label: 'Price Down' },
+                      { value: 'flat', label: 'Price Flat' },
+                      { value: 'new', label: 'New Product' },
+                    ]}
+                    onChange={(value) => {
+                      setStatusFilter(value as StatusFilter);
+                      setPage(0);
+                    }}
+                  />
                 </Grid>
               </Grid>
             </Box>

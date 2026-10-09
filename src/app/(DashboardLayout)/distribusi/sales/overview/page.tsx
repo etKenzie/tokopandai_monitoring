@@ -13,6 +13,7 @@ import {
 import ProtectedRoute from '@/app/components/auth/ProtectedRoute';
 import PageContainer from '@/app/components/container/PageContainer';
 import { DistribusiFilterValues } from '@/app/components/distribusi/DistribusiFilters';
+import SearchableSelect, { withAllOption } from '@/app/components/shared/SearchableSelect';
 import OrderTypeChart from '@/app/components/distribusi/OrderTypeChart';
 import InvoiceSummaryCard from '@/app/components/distribusi/InvoiceSummaryCard';
 import ProfitProgressCard from '@/app/components/distribusi/ProfitProgressCard';
@@ -37,7 +38,6 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  SelectChangeEvent,
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
@@ -404,14 +404,10 @@ const SalesOverview = () => {
     [],
   );
 
-  const handleStatusPaymentChange = useCallback(
-    (event: SelectChangeEvent<string>) => {
-      const newStatus = event.target.value;
-      console.log('Status payment changed:', newStatus);
-      setStatusPayment(newStatus);
-    },
-    [],
-  );
+  const handleStatusPaymentChange = useCallback((newStatus: string) => {
+    console.log('Status payment changed:', newStatus);
+    setStatusPayment(newStatus);
+  }, []);
 
   const handleApplyFilters = useCallback(() => {
     console.log('Applying filters:', filters, 'status payment:', statusPayment);
@@ -737,98 +733,63 @@ const SalesOverview = () => {
 
             {/* Row 2: Other filters + apply */}
             <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Agent</InputLabel>
-                <Select
-                  value={filters.agent}
-                  label="Agent"
-                  onChange={(e) =>
-                    handleFiltersChange({ ...filters, agent: e.target.value })
-                  }
-                  disabled={filtersLoading || hasRestrictedRole}
-                >
-                  <MenuItem value="">All Agents</MenuItem>
-                  {availableFilters?.agents.map((agent) => (
-                    <MenuItem key={agent} value={agent}>
-                      {agent}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                label="Agent"
+                value={filters.agent}
+                disabled={filtersLoading || hasRestrictedRole}
+                options={withAllOption('All Agents', availableFilters?.agents)}
+                onChange={(agent) => handleFiltersChange({ ...filters, agent })}
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Area</InputLabel>
-                <Select
-                  value={filters.area}
-                  label="Area"
-                  onChange={(e) =>
-                    handleFiltersChange({ ...filters, area: e.target.value })
-                  }
-                  disabled={filtersLoading}
-                >
-                  <MenuItem value="">All Areas</MenuItem>
-                  {availableFilters?.areas.map((area) => (
-                    <MenuItem key={area} value={area}>
-                      {area}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                label="Area"
+                value={filters.area}
+                disabled={filtersLoading}
+                options={withAllOption('All Areas', availableFilters?.areas)}
+                onChange={(area) => handleFiltersChange({ ...filters, area })}
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Segment</InputLabel>
-                <Select
-                  value={filters.segment}
-                  label="Segment"
-                  onChange={(e) =>
-                    handleFiltersChange({ ...filters, segment: e.target.value })
-                  }
-                >
-                  <MenuItem value="">All Segments</MenuItem>
-                  <MenuItem value="RESELLER">RESELLER</MenuItem>
-                  <MenuItem value="HORECA">HORECA</MenuItem>
-                  <MenuItem value="OTHER">OTHER</MenuItem>
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                label="Segment"
+                value={filters.segment}
+                options={[
+                  { value: '', label: 'All Segments' },
+                  { value: 'RESELLER', label: 'RESELLER' },
+                  { value: 'HORECA', label: 'HORECA' },
+                  { value: 'OTHER', label: 'OTHER' },
+                ]}
+                onChange={(segment) => handleFiltersChange({ ...filters, segment })}
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Business Type</InputLabel>
-                <Select
-                  value={filters.business_type}
-                  label="Business Type"
-                  onChange={(e) =>
-                    handleFiltersChange({
-                      ...filters,
-                      business_type: e.target.value,
-                    })
-                  }
-                >
-                  <MenuItem value="">All Business Types</MenuItem>
-                  <MenuItem value="Hotel">Hotel</MenuItem>
-                  <MenuItem value="Resto">Resto</MenuItem>
-                  <MenuItem value="Catering">Catering</MenuItem>
-                  <MenuItem value="Retail Tradisional">
-                    Retail Tradisional
-                  </MenuItem>
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                label="Business Type"
+                value={filters.business_type}
+                options={[
+                  { value: '', label: 'All Business Types' },
+                  { value: 'Hotel', label: 'Hotel' },
+                  { value: 'Resto', label: 'Resto' },
+                  { value: 'Catering', label: 'Catering' },
+                  { value: 'Retail Tradisional', label: 'Retail Tradisional' },
+                ]}
+                onChange={(business_type) =>
+                  handleFiltersChange({ ...filters, business_type })
+                }
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Payment Status</InputLabel>
-                <Select
-                  value={statusPayment}
-                  label="Payment Status"
-                  onChange={handleStatusPaymentChange}
-                >
-                  <MenuItem value="">All Status</MenuItem>
-                  <MenuItem value="LUNAS">LUNAS</MenuItem>
-                  <MenuItem value="BELUM LUNAS">BELUM LUNAS</MenuItem>
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                label="Payment Status"
+                value={statusPayment}
+                options={[
+                  { value: '', label: 'All Status' },
+                  { value: 'LUNAS', label: 'LUNAS' },
+                  { value: 'BELUM LUNAS', label: 'BELUM LUNAS' },
+                ]}
+                onChange={handleStatusPaymentChange}
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2 }}>
               <Button

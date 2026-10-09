@@ -7,13 +7,9 @@ import {
   Card,
   CardContent,
   CircularProgress,
-  FormControl,
   Grid,
   InputAdornment,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Table,
   TableBody,
   TableCell,
@@ -28,6 +24,7 @@ import {
 import { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { Store, StoreMonthly } from '../../api/distribusi/StoreSlice';
+import SearchableSelect, { withAllOption } from '../shared/SearchableSelect';
 import StoreDetailModal from './StoreDetailModal';
 
 type StoreDirection = 'asc' | 'desc';
@@ -350,92 +347,28 @@ const StoreMonthlyTable = ({
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-              <FormControl fullWidth>
-                <InputLabel>Agent</InputLabel>
-                <Select
-                  value={agentFilter}
-                  label="Agent"
-                  onChange={(e) => handleAgentFilterChange(e.target.value)}
-                >
-                  <MenuItem value="">All Agents</MenuItem>
-                  {uniqueAgents.map((agent) => (
-                    <MenuItem key={agent} value={agent}>
-                      {agent}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect size="medium" label="Agent" value={agentFilter} options={withAllOption('All Agents', uniqueAgents)} onChange={handleAgentFilterChange} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-              <FormControl fullWidth>
-                <InputLabel>Segment</InputLabel>
-                <Select
-                  value={segmentFilter}
-                  label="Segment"
-                  onChange={(e) => setSegmentFilter(e.target.value)}
-                >
-                  <MenuItem value="">All Segments</MenuItem>
-                  {uniqueSegments.map((segment) => (
-                    <MenuItem key={segment} value={segment}>
-                      {segment}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect size="medium" label="Segment" value={segmentFilter} options={withAllOption('All Segments', uniqueSegments)} onChange={setSegmentFilter} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-              <FormControl fullWidth>
-                <InputLabel>Business Type</InputLabel>
-                <Select
-                  value={businessTypeFilter}
-                  label="Business Type"
-                  onChange={(e) => setBusinessTypeFilter(e.target.value)}
-                >
-                  <MenuItem value="">All Business Types</MenuItem>
-                  {uniqueBusinessTypes.map((businessType) => (
-                    <MenuItem key={businessType} value={businessType}>
-                      {businessType}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect size="medium" label="Business Type" value={businessTypeFilter} options={withAllOption('All Business Types', uniqueBusinessTypes)} onChange={setBusinessTypeFilter} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-              <FormControl fullWidth>
-                <InputLabel>Sub Business Type</InputLabel>
-                <Select
-                  value={subBusinessTypeFilter}
-                  label="Sub Business Type"
-                  onChange={(e) => setSubBusinessTypeFilter(e.target.value)}
-                >
-                  <MenuItem value="">All Sub Business Types</MenuItem>
-                  {uniqueSubBusinessTypes.map((subBusinessType) => (
-                    <MenuItem key={subBusinessType} value={subBusinessType}>
-                      {subBusinessType}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect size="medium" label="Sub Business Type" value={subBusinessTypeFilter} options={withAllOption('All Sub Business Types', uniqueSubBusinessTypes)} onChange={setSubBusinessTypeFilter} />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-              <FormControl fullWidth>
-                <InputLabel>User Status</InputLabel>
-                <Select
-                  value={userStatusFilter}
-                  label="User Status"
-                  onChange={(e) => {
-                    setUserStatusFilter(e.target.value);
-                    setPage(0);
-                  }}
-                >
-                  <MenuItem value="">All User Statuses</MenuItem>
-                  {uniqueUserStatuses.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                size="medium"
+                label="User Status"
+                value={userStatusFilter}
+                options={withAllOption('All User Statuses', uniqueUserStatuses)}
+                onChange={(value) => {
+                  setUserStatusFilter(value);
+                  setPage(0);
+                }}
+              />
             </Grid>
           </Grid>
         </Box>

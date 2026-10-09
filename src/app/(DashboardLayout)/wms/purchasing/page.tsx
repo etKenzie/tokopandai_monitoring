@@ -11,6 +11,7 @@ import {
 import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import PageContainer from "@/app/components/container/PageContainer";
 import CompanySplitCards from "@/app/components/wms/CompanySplitCards";
+import SearchableSelect, { withAllOption } from "@/app/components/shared/SearchableSelect";
 import ProductPriceTrackingModal from "@/app/components/wms/ProductPriceTrackingModal";
 import { getPageRoles } from "@/config/roles";
 import {
@@ -25,13 +26,9 @@ import {
   CardContent,
   Chip,
   CircularProgress,
-  FormControl,
   Grid,
   InputAdornment,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Table,
   TableBody,
   TableCell,
@@ -314,38 +311,22 @@ const PurchasingPage = () => {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-              <FormControl fullWidth>
-                <InputLabel>Buyer Company</InputLabel>
-                <Select
-                  value={buyerCompany}
-                  label="Buyer Company"
-                  onChange={(e) => setBuyerCompany(e.target.value)}
-                >
-                  <MenuItem value="">All Companies</MenuItem>
-                  {BUYER_COMPANY_OPTIONS.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                size="medium"
+                label="Buyer Company"
+                value={buyerCompany}
+                options={[{ value: '', label: 'All Companies' }, ...BUYER_COMPANY_OPTIONS]}
+                onChange={setBuyerCompany}
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-              <FormControl fullWidth>
-                <InputLabel>Warehouse</InputLabel>
-                <Select
-                  value={warehouseId}
-                  label="Warehouse"
-                  onChange={(e) => setWarehouseId(e.target.value)}
-                >
-                  <MenuItem value="">All Warehouses</MenuItem>
-                  {WAREHOUSE_OPTIONS.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SearchableSelect
+                size="medium"
+                label="Warehouse"
+                value={warehouseId}
+                options={[{ value: '', label: 'All Warehouses' }, ...WAREHOUSE_OPTIONS]}
+                onChange={setWarehouseId}
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2 }}>
               <Button
@@ -473,24 +454,16 @@ const PurchasingPage = () => {
                   />
                 </Grid>
                 <Grid size={{ xs: 12 }}>
-                  <FormControl fullWidth>
-                    <InputLabel>Category</InputLabel>
-                    <Select
-                      value={categoryFilter}
-                      label="Category"
-                      onChange={(e) => {
-                        setCategoryFilter(e.target.value);
-                        setPage(0);
-                      }}
-                    >
-                      <MenuItem value="">All Categories</MenuItem>
-                      {categoryOptions.map((category) => (
-                        <MenuItem key={category} value={category}>
-                          {category}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                  <SearchableSelect
+                    size="medium"
+                    label="Category"
+                    value={categoryFilter}
+                    options={withAllOption('All Categories', categoryOptions)}
+                    onChange={(value) => {
+                      setCategoryFilter(value);
+                      setPage(0);
+                    }}
+                  />
                 </Grid>
               </Grid>
             </Box>

@@ -12,6 +12,7 @@ import ProtectedRoute from "@/app/components/auth/ProtectedRoute";
 import PageContainer from "@/app/components/container/PageContainer";
 import CategoryStockBreakdown from "@/app/components/wms/CategoryStockBreakdown";
 import HubSplitCards, { HubSplit } from "@/app/components/wms/HubSplitCards";
+import SearchableSelect, { withAllOption } from "@/app/components/shared/SearchableSelect";
 import ProductPriceTrackingModal from "@/app/components/wms/ProductPriceTrackingModal";
 import { getPageRoles } from "@/config/roles";
 import {
@@ -26,13 +27,9 @@ import {
   CardContent,
   Chip,
   CircularProgress,
-  FormControl,
   Grid,
   InputAdornment,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Table,
   TableBody,
   TableCell,
@@ -392,44 +389,28 @@ const WarehousePage = () => {
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControl fullWidth>
-                    <InputLabel>Warehouse</InputLabel>
-                    <Select
-                      value={warehouseFilter}
-                      label="Warehouse"
-                      onChange={(e) => {
-                        setWarehouseFilter(e.target.value);
-                        setPage(0);
-                      }}
-                    >
-                      <MenuItem value="">All Warehouses</MenuItem>
-                      {warehouseOptions.map((warehouse) => (
-                        <MenuItem key={warehouse} value={warehouse}>
-                          {warehouse}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                  <SearchableSelect
+                    size="medium"
+                    label="Warehouse"
+                    value={warehouseFilter}
+                    options={withAllOption('All Warehouses', warehouseOptions)}
+                    onChange={(value) => {
+                      setWarehouseFilter(value);
+                      setPage(0);
+                    }}
+                  />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControl fullWidth>
-                    <InputLabel>Category</InputLabel>
-                    <Select
-                      value={categoryFilter}
-                      label="Category"
-                      onChange={(e) => {
-                        setCategoryFilter(e.target.value);
-                        setPage(0);
-                      }}
-                    >
-                      <MenuItem value="">All Categories</MenuItem>
-                      {categoryOptions.map((category) => (
-                        <MenuItem key={category} value={category}>
-                          {category}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                  <SearchableSelect
+                    size="medium"
+                    label="Category"
+                    value={categoryFilter}
+                    options={withAllOption('All Categories', categoryOptions)}
+                    onChange={(value) => {
+                      setCategoryFilter(value);
+                      setPage(0);
+                    }}
+                  />
                 </Grid>
               </Grid>
             </Box>
