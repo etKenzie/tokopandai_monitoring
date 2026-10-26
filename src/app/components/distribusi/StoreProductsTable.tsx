@@ -85,13 +85,18 @@ interface StoreProductsTableProps {
   loading?: boolean;
   onRefresh?: () => void;
   title?: string;
+  /** Limits the product modal to this store. Omit for the generic product modal. */
+  storeUserId?: string;
+  storeName?: string;
 }
 
 const StoreProductsTable = ({ 
   products, 
   loading = false, 
   onRefresh,
-  title = 'Product Performance'
+  title = 'Product Performance',
+  storeUserId,
+  storeName,
 }: StoreProductsTableProps) => {
   const [orderBy, setOrderBy] = useState<SortableProductField>('total_invoice');
   const [order, setOrder] = useState<ProductDirection>('desc');
@@ -783,6 +788,8 @@ const StoreProductsTable = ({
         open={modalOpen}
         onClose={handleCloseModal}
         product={convertToProduct(selectedProduct)}
+        storeUserId={storeUserId}
+        storeName={storeName}
       />
     </Card>
   );

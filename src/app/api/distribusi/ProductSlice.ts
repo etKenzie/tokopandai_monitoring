@@ -63,12 +63,13 @@ export interface ProductOrdersResponse {
 // Get API URL from environment variable with fallback
 const AM_API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-// Fetch Product Orders by product_id
-export const fetchProductOrders = async (productId: string): Promise<ProductOrdersResponse> => {
+// Fetch Product Orders by product_id. Pass userId to limit results to one store.
+export const fetchProductOrders = async (productId: string, userId?: string): Promise<ProductOrdersResponse> => {
   const baseUrl = AM_API_URL;
   
   const queryParams = new URLSearchParams();
   queryParams.append('product_id', productId);
+  if (userId) queryParams.append('user_id', userId);
   
   const url = `${baseUrl}/product/item?${queryParams.toString()}`;
   

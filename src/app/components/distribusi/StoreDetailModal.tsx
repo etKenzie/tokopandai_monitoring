@@ -348,7 +348,9 @@ const StoreDetailModal = ({ open, onClose, store }: StoreDetailModalProps) => {
               ) : (
                 <StoreProductsTable 
                   products={storeProducts} 
-                  loading={productsLoading} 
+                  loading={productsLoading}
+                  storeUserId={store.user_id}
+                  storeName={store.store_name}
                 />
               )}
             </TabPanel>

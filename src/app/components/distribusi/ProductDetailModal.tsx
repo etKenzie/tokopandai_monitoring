@@ -35,6 +35,9 @@ interface ProductDetailModalProps {
   open: boolean;
   onClose: () => void;
   product: Product | null;
+  /** When set, this modal shows only this store's orders for the product. */
+  storeUserId?: string;
+  storeName?: string;
 }
 
 interface TabPanelProps {
@@ -63,7 +66,7 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-const ProductDetailModal = ({ open, onClose, product }: ProductDetailModalProps) => {
+const ProductDetailModal = ({ open, onClose, product, storeUserId, storeName }: ProductDetailModalProps) => {
   const [productOrders, setProductOrders] = useState<ProductOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +77,7 @@ const ProductDetailModal = ({ open, onClose, product }: ProductDetailModalProps)
       fetchProductOrdersData();
       setTabValue(0); // Reset to first tab when opening
     }
-  }, [open, product]);
+  }, [open, product, storeUserId]);
 
   const fetchProductOrdersData = async () => {
     if (!product) return;
@@ -82,7 +85,7 @@ const ProductDetailModal = ({ open, onClose, product }: ProductDetailModalProps)
     setLoading(true);
     setError(null);
     try {
-      const response = await fetchProductOrders(product.product_id);
+      const response = await fetchProductOrders(product.product_id, storeUserId);
       setProductOrders(response.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch product orders');
@@ -112,8 +115,8 @@ const ProductDetailModal = ({ open, onClose, product }: ProductDetailModalProps)
 
   // Calculate metrics from productOrders, but prefer product-level values if available
   const calculateMetrics = () => {
-    // Use product-level values if available (new API format)
-    if (product && (product.order_count !== undefined || product.active_stores !== undefined)) {
+    // Store-scoped opens use the filtered order list. The generic modal keeps product-level totals.
+    if (!storeUserId && product && (product.order_count !== undefined || product.active_stores !== undefined)) {
       let totalInvoice = product.total_invoice;
       let totalQuantity = product.total_quantity;
       
@@ -545,7 +548,7 @@ const ProductDetailModal = ({ open, onClose, product }: ProductDetailModalProps)
               {product.product_name}
             </Typography>
             <Typography variant="body2" color="textSecondary">
-              {product.sku} • {product.brands} • {product.type_category}
+              {storeName ? `${storeName} • ` : ''}{product.sku} • {product.brands} • {product.type_category}
             </Typography>
           </Box>
           <Button
@@ -705,7 +708,7 @@ const ProductDetailModal = ({ open, onClose, product }: ProductDetailModalProps)
               <Tabs value={tabValue} onChange={handleTabChange} aria-label="product detail tabs">
                 <Tab label="Overview" />
                 <Tab label="Orders" />
-                <Tab label="Stores" />
+                {!storeUserId && <Tab label="Stores" />}
               </Tabs>
             </Box>
 
@@ -728,9 +731,11 @@ const ProductDetailModal = ({ open, onClose, product }: ProductDetailModalProps)
               />
             </TabPanel>
 
-            <TabPanel value={tabValue} index={2}>
-              <ProductStoresList productOrders={productOrders} />
-            </TabPanel>
+            {!storeUserId && (
+              <TabPanel value={tabValue} index={2}>
+                <ProductStoresList productOrders={productOrders} />
+              </TabPanel>
+            )}
           </Box>
         )}
       </DialogContent>
